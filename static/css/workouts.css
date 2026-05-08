@@ -1,0 +1,10 @@
+/* Workout page currently composes shared base utilities/components only. */
+
+.min-h-440 {
+    min-height: 440px;
+}
+
+/* Warmup set rows: subtle tint, no extra column in the table */
+.set-row-warmup td {
+    background: #fff8ed;
+}
