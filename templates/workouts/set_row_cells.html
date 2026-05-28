@@ -1,0 +1,27 @@
+{% load formatting %}
+<td>
+    <button type="button" class="table-cell-trigger" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="workouts/set_edit_modal_form" data-set-id="{{ set.pk }}">{{ set.weight|weight_display }}</button>
+</td>
+<td>
+    <button type="button" class="table-cell-trigger" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="workouts/set_edit_modal_form" data-set-id="{{ set.pk }}">{{ set.reps }}</button>
+</td>
+<td class="text-center">
+    <button
+        type="button"
+        class="btn{% if set.is_completed %} btn-success text-white{% else %} btn-outline{% endif %}"
+        data-endpoint="click->workouts/toggle_set_done"
+        data-set-id="{{ set.pk }}"
+        data-exercise-id="{{ we.pk }}"
+        aria-label="Set done"
+    >✓</button>
+</td>
+<td>
+    <button
+        type="button"
+        class="btn btn-danger text-white"
+        data-endpoint="click->workouts/delete_set"
+        data-set-id="{{ set.pk }}"
+        data-exercise-id="{{ we.pk }}"
+        aria-label="Delete set"
+    >X</button>
+</td>

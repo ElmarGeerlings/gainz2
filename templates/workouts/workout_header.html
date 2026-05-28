@@ -1,0 +1,33 @@
+{% load formatting %}
+<section
+    class="panel stack-sm mb-4"
+    data-workout-id="{{ workout.pk }}"
+    data-workout-date="{{ workout.date|date:'Y-m-d' }}"
+>
+    <div class="row-between gap-md">
+        <h1 id="workout-name" class="title-lg">{{ workout.name }}</h1>
+        <div class="row-center gap-sm">
+            <button type="button" class="btn btn-outline" data-function="click->openWorkoutEditModal" aria-label="Edit workout">
+                Edit
+            </button>
+            <button
+                type="button"
+                class="btn btn-danger-outline"
+                data-function="click->show_confirm_toast"
+                data-text="Delete workout &quot;{{ workout.name }}&quot;? This cannot be undone."
+                data-endpoint="workouts/delete_workout"
+                data-workout-id="{{ workout.pk }}"
+                data-confirm-label="Delete"
+                aria-label="Delete workout"
+            >
+                Delete
+            </button>
+        </div>
+    </div>
+    <p class="text-muted text-sm m-1 font-italic">{{ workout.date|datetime_format }}</p>
+    <span id="workout-notes-text" hidden>{{ workout.notes }}</span>
+    <p id="workout-notes-display" class="text-muted text-sm m-1{% if not workout.notes %} hidden{% endif %}"><strong>Notes:</strong> <span id="workout-notes-visible">{{ workout.notes }}</span></p>
+    {% if workout.routine_source %}
+    <p class="text-muted text-sm m-1">Based on Routine: <a href="#">{{ workout.routine_source.name }}</a></p>
+    {% endif %}
+</section>

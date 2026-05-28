@@ -67,10 +67,12 @@ function sendWsRequest(endpoint, element) {
 }
 
 function ws_request(event, endpoint) {
-  const target = event.currentTarget.getAttribute('data-selector');
-  const toRefresh = event.currentTarget.hasAttribute('data-refresh');
+  const trigger = event.currentTarget;
+  const target = trigger.getAttribute('data-target');
+  const toRefresh = trigger.hasAttribute('data-refresh');
+  const closeModalSelector = trigger.getAttribute('data-close-modal');
 
-  sendWsRequest(endpoint, event.currentTarget).then((response) => {
+  sendWsRequest(endpoint, trigger).then((response) => {
     if (response.status === 302 && response.headers && response.headers.length) {
       window.location.href = response.headers[0][1];
       return;
@@ -79,21 +81,90 @@ function ws_request(event, endpoint) {
       window.location.reload();
       return;
     }
-    if (target && response.html_content) {
-      document.querySelector(target).innerHTML = response.html_content;
-      return;
-    }
     if (response.json_content?.target && response.json_content?.html) {
       document.querySelector(response.json_content.target).innerHTML =
         response.json_content.html;
-      return;
-    }
-    if (target && response.json_content?.html) {
+    } else if (target && response.json_content?.html) {
       document.querySelector(target).innerHTML = response.json_content.html;
-      return;
+    } else {
+      console.log('WS response:', response);
     }
-    console.log('WS response:', response);
+    if (response.status === 200 && closeModalSelector) {
+      const modal = document.querySelector(closeModalSelector);
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+    if (response.status === 200 && response.json_content?.toast_html) {
+      appendToast(
+        response.json_content.toast_html,
+        response.json_content.toast_delay_ms
+      );
+    }
   });
+}
+
+function appendToast(htmlString, delayMs) {
+  const toastContainer = document.querySelector('.toast-container');
+  if (!toastContainer) {
+    console.error('Toast container not found');
+    return;
+  }
+  const parser = new DOMParser();
+  const toast = parser.parseFromString(htmlString, 'text/html').body.firstChild;
+  toastContainer.appendChild(toast);
+  const delay = Number(delayMs) || 2000;
+  setTimeout(() => {
+    toast.remove();
+  }, delay);
+}
+
+function dismissToast(event) {
+  const toast = event.currentTarget.closest('.gainz-toast');
+  if (toast) {
+    toast.remove();
+  }
+}
+
+function show_confirm_toast(req_event) {
+  const trigger = req_event.currentTarget;
+  const text = trigger.getAttribute('data-text');
+  const endpoint = trigger.getAttribute('data-endpoint');
+  const confirmLabel = trigger.getAttribute('data-confirm-label') || 'Confirm';
+  const toastContainer = document.querySelector('.toast-container');
+  if (!text || !endpoint || !toastContainer) {
+    return;
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'gainz-toast gainz-toast-warning';
+  toast.setAttribute('role', 'alert');
+  toast.innerHTML =
+    '<button type="button" class="gainz-toast-close" data-function="click->dismissToast" aria-label="Close">×</button>' +
+    '<p class="gainz-toast-message"></p>' +
+    '<div class="gainz-toast-actions mt-2">' +
+    `<button type="button" class="btn btn-danger btn-sm">${confirmLabel}</button>` +
+    '</div>';
+  toast.querySelector('.gainz-toast-message').textContent = text;
+
+  const confirmBtn = toast.querySelector('.btn');
+  confirmBtn.setAttribute('data-endpoint', `click->${endpoint}`);
+  for (const attribute of trigger.attributes) {
+    if (
+      attribute.name.startsWith('data-') &&
+      attribute.name !== 'data-function' &&
+      attribute.name !== 'data-text' &&
+      attribute.name !== 'data-endpoint' &&
+      attribute.name !== 'data-confirm-label'
+    ) {
+      confirmBtn.setAttribute(attribute.name, attribute.value);
+    }
+  }
+
+  toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 7000);
 }
 
 document.addEventListener('keydown', (event) => {
@@ -166,7 +237,7 @@ document.querySelectorAll('[data-endpoint], [data-function]').forEach((element) 
 // New functions under here
 ////////////////////////////////////////////////////////////////////////
 
-function show_modal(event) {
+function ShowModal(event) {
   const trigger = event.currentTarget;
   const modalName = trigger.getAttribute('data-modal-name');
   const modal = document.getElementById(modalName);
@@ -184,7 +255,7 @@ function show_modal(event) {
   }
 }
 
-function morphing_modal(event) {
+function MorphingModal(event) {
   const trigger = event.currentTarget;
   const modalName = trigger.getAttribute('data-modal-name');
   const endpoint = trigger.getAttribute('data-routing');
@@ -198,7 +269,7 @@ function morphing_modal(event) {
   });
 }
 
-function close_modal(event) {
+function CloseModal(event) {
   if (
     event.target.classList.contains('gainz-modal') ||
     event.target.closest('.gainz-modal-close')

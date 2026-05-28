@@ -2,8 +2,13 @@
 .venv/
 venv/
 env/
+staticfiles/
+.env
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
+bullshit.py
+
+commands.txt

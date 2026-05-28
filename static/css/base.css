@@ -347,7 +347,7 @@ a:hover {
     background: #fff;
 }
 
-.carousel-item.is-hidden {
+.carousel-item.hidden {
     display: none;
 }
 
@@ -367,7 +367,7 @@ a:hover {
     padding: 0;
 }
 
-.carousel-indicator.is-active {
+.carousel-indicator.active {
     width: 18px;
     background: var(--primary);
 }
@@ -424,4 +424,80 @@ a:hover {
     content: "";
     clear: both;
     display: table;
+}
+
+.toast-container {
+    position: fixed;
+    bottom: var(--space-4);
+    right: var(--space-4);
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    max-width: min(100vw - 2 * var(--space-4), 360px);
+    pointer-events: none;
+}
+
+.gainz-toast {
+    position: relative;
+    padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    background: var(--surface);
+    pointer-events: auto;
+}
+
+.gainz-toast-success {
+    background: #e8f5ec;
+    border-color: #b8dfc4;
+    color: #0d4a22;
+}
+
+.gainz-toast-warning {
+    background: #fff8e6;
+    border-color: #f5d88a;
+    color: #6b4e00;
+}
+
+.gainz-toast-danger {
+    background: #fdeef3;
+    border-color: #f0b8cc;
+    color: #7a1035;
+}
+
+.gainz-toast-close {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: var(--space-1) var(--space-2);
+    opacity: 0.75;
+}
+
+.gainz-toast-close:hover,
+.gainz-toast-close:focus {
+    opacity: 1;
+}
+
+.gainz-toast-message {
+    margin: 0;
+    padding-right: var(--space-5);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+}
+
+.gainz-toast-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.hidden {
+    display: none;
 }

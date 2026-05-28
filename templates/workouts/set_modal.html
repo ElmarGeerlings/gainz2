@@ -1,0 +1,47 @@
+<form id="set-modal-form">
+    {% if is_add %}
+    <input type="hidden" name="workout_exercise_id" value="{{ we.pk }}">
+    {% else %}
+    <input type="hidden" name="set_id" id="set-modal-set-id" value="{{ set.pk }}">
+    {% endif %}
+    <h2 class="title-md m-0 mb-3">{% if is_add %}Add set{% else %}Set{% endif %}</h2>
+    {% if uses_wheel %}
+    <div class="set-modal-fields-row">
+        <div class="value-picker" data-picker="weight" data-min="0" data-max="999.5" data-unit="kg" aria-label="Weight">
+            <div class="value-picker-window">
+                <ul class="value-picker-list"></ul>
+            </div>
+        </div>
+        <span class="set-modal-times" aria-hidden="true">X</span>
+        <div class="value-picker" data-picker="reps" data-min="0" data-max="99" aria-label="Reps">
+            <div class="value-picker-window">
+                <ul class="value-picker-list">
+                    {% for n in reps_range %}
+                    <li class="value-picker-item" data-value="{{ n }}">{{ n }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="weight" id="set-modal-weight" value="{{ weight }}">
+    <input type="hidden" name="reps" id="set-modal-reps" value="{{ reps }}">
+    {% else %}
+    <div class="set-modal-fields-row">
+        <input type="number" id="set-modal-weight" name="weight" class="form-control" min="0" step="0.1" inputmode="decimal" autocomplete="off" aria-label="Weight" value="{{ weight }}">
+        <span class="set-modal-times" aria-hidden="true">X</span>
+        <input type="number" id="set-modal-reps" name="reps" class="form-control" min="0" step="1" inputmode="numeric" autocomplete="off" aria-label="Reps" value="{{ reps }}">
+    </div>
+    {% endif %}
+    <div class="set-modal-actions mt-4">
+        <button
+            type="button"
+            class="btn btn-primary set-modal-confirm"
+            data-endpoint="click->{% if is_add %}workouts/create_set{% else %}workouts/update_set{% endif %}"
+            data-close-modal="#set-modal"
+        >Confirm</button>
+        <label class="set-modal-warmup-label">
+            <input type="checkbox" id="set-modal-warmup" name="is_warmup"{% if is_warmup %} checked{% endif %}>
+            Warmup
+        </label>
+    </div>
+</form>

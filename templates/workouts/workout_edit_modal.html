@@ -1,0 +1,18 @@
+<form id="workout-edit-form" class="form-stack">
+    <input type="hidden" name="workout_id" id="workout-edit-id" value="">
+    <h2 class="title-md m-0 mb-3">Edit workout</h2>
+    <label for="workout-edit-name" class="form-label">Name</label>
+    <input type="text" id="workout-edit-name" name="name" class="form-control" autocomplete="off">
+    <label for="workout-edit-date" class="form-label">Date</label>
+    <input type="date" id="workout-edit-date" name="date" class="form-control">
+    <label for="workout-edit-notes" class="form-label">Notes</label>
+    <textarea id="workout-edit-notes" name="notes" class="form-control" rows="4"></textarea>
+    <div class="set-modal-actions mt-4">
+        <button
+            type="button"
+            class="btn btn-primary"
+            data-endpoint="click->workouts/update_workout"
+            data-close-modal="#workout-modal"
+        >Save</button>
+    </div>
+</form>

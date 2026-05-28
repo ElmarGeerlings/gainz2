@@ -16,9 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from workouts.views import workout_detail_page
+
+from accounts.views import home_page, login_page, logout_page, register_page
+from workouts.views import workout_detail_page, workouts_list_page
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("", home_page, name="home"),
+    path("login/", login_page, name="login"),
+    path("register/", register_page, name="register"),
+    path("logout/", logout_page, name="logout"),
+    path("admin/", admin.site.urls),
+    path("workouts/", workouts_list_page, name="workouts-list"),
     path("workouts/<int:workout_id>/", workout_detail_page, name="workout-detail"),
 ]

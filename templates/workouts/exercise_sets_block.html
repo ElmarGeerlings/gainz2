@@ -1,0 +1,25 @@
+<h3 class="title-sm">Sets & Reps</h3>
+{% if we.sets.all %}
+<div class="table-shell">
+    <table class="table table-compact">
+        <thead>
+            <tr>
+                <th>Weight</th>
+                <th>Reps</th>
+                <th class="text-center">Done</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for set in we.sets.all %}
+            <tr class="{% if set.is_warmup %}set-row-warmup{% endif %}" data-set-id="{{ set.pk }}" data-exercise-id="{{ we.pk }}">
+                {% include "workouts/set_row_cells.html" %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted text-sm m-0">No sets recorded for this exercise.</p>
+{% endif %}
+<button type="button" class="btn btn-outline btn-full" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="workouts/set_modal_form" data-exercise-id="{{ we.pk }}">Add Set</button>

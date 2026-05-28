@@ -1,6 +1,8 @@
 import json
 
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from gainz2.ws_dispatch import dispatch_ws_endpoint
 
 
 class MainConsumer(AsyncWebsocketConsumer):
@@ -12,22 +14,9 @@ class MainConsumer(AsyncWebsocketConsumer):
         request_id = data.get("request_id")
         endpoint = data.get("endpoint")
         attributes = data.get("attributes") or {}
-
-        if endpoint == "ping":
-            payload = {
-                'request_id': request_id,
-                'status': 200,
-                'headers': [],
-                'html_content': None,
-                'json_content': {'message': 'pong', 'echo_attributes': attributes},
-            }
-        else:
-            payload = {
-                "request_id": request_id,
-                "status": 404,
-                "headers": [],
-                "html_content": None,
-                "json_content": {"error": f"unknown endpoint: {endpoint}"},
-            }
+        payload = await database_sync_to_async(dispatch_ws_endpoint)(
+            self.scope.get("user"), endpoint, attributes
+        )
+        payload["request_id"] = request_id
 
         await self.send(text_data=json.dumps(payload))

@@ -49,10 +49,12 @@ project_root/
     asgi.py
     routing.py
     consumers.py
+    ws_dispatch.py
   workouts/
     models.py
     admin.py
     services.py
+    ws_handlers.py
     views.py
   programs/
     models.py
@@ -73,8 +75,9 @@ project_root/
 ```
 
 **`urls.py`** — all HTTP routes in one file (import views from apps as needed).  
-**`routing.py`** — WebSocket URL → consumer mapping.  
-**`consumers.py`** — WebSocket receive/send and **endpoint → callable** dispatch.  
+**`routing.py`** — WebSocket **connection** URL → consumer class (Channels).  
+**`ws_dispatch.py`** — WebSocket **message** `endpoint` string → handler callable (application registry; grouped like `urls.py`).  
+**`consumers.py`** — WebSocket receive/send; delegates dispatch to **`ws_dispatch`** (thin).  
 **`asgi.py`** — ASGI application combining Django HTTP and Channels.
 
 **Apps** hold **models**, **migrations**, **admin**, **`services.py`** (operations), **`views.py`** (thin HTTP handlers). Split into extra modules or `views/` / `services/` packages when a file grows too large.
@@ -129,6 +132,14 @@ Prefer **`data-endpoint`** when generic handling is enough; use **`data-function
 ```
 
 **Server → client:** include `request_id`, `status`, and payload fields your client expects (`html_content`, `json_content` with target + html, etc.) — match your real **`stolen_js.js`** contract.
+
+### Endpoint registry (`gainz2/ws_dispatch.py`)
+
+- **`routing.py`** maps the **socket URL** (e.g. `/ws/`) to **`MainConsumer`**. It does **not** define per-message endpoints.
+- **`ws_dispatch.py`** holds **`WS_ENDPOINT_REGISTRY`**: one dict mapping **`endpoint` string → sync handler**, organized in grouped sections (e.g. **`CORE`**, **`WORKOUTS`**) like **`urls.py`**.
+- **Adding a feature:** register the endpoint string in **`WS_ENDPOINT_REGISTRY`**, implement a **handler** `(user, attributes) -> response dict`. Handler implementations for an app may live in **`workouts/ws_handlers.py`** (or similar) and are **imported** into **`ws_dispatch`** — the **index of all message endpoints stays in one file**.
+- **Handlers** stay thin: parse **`attributes`**, call **`services.py`** for business logic, build **`html_content` / `json_content`** for the client. **`services`** are the internal API shared with HTTP views where behavior overlaps.
+- **`MainConsumer.receive`** runs sync dispatch via **`database_sync_to_async(dispatch_ws_endpoint)`** so sync ORM/services do not block the ASGI event loop.
 
 **Dispatch:** registry **`endpoint` string → callable**; callable receives **user** and **attributes**; returns the response dict. **Django Channels** + ASGI for WebSockets.
 

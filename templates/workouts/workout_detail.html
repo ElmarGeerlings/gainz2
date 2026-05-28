@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load formatting %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -9,143 +10,50 @@
 
 {% block content %}
 <main class="page page-narrow">
-    <section class="panel stack-sm mb-4">
-        <div class="row-between gap-md">
-            <h1 class="title-lg">{{ workout.name }}</h1>
-            <div class="row-center gap-sm">
-                <button type="button" class="btn btn-outline" data-function="click->placeholderEditWorkout" aria-label="Edit workout">
-                    Edit
-                </button>
-                <button type="button" class="btn btn-danger-outline" data-function="click->placeholderDeleteWorkout" aria-label="Delete workout">
-                    Delete
-                </button>
-            </div>
-        </div>
-        <p class="text-muted text-sm m-1 font-italic">{{ workout.datetime_display }}</p>
-        {% if workout.notes %}
-        <p class="text-muted text-sm m-1"><strong>Notes:</strong> {{ workout.notes }}</p>
-        {% endif %}
-        {% if workout.routine_source %}
-        <p class="text-muted text-sm m-1">Based on Routine: <a href="#">{{ workout.routine_source.name }}</a></p>
-        {% endif %}
-    </section>
+    <div id="workout-header">
+        {% include "workouts/workout_header.html" %}
+    </div>
 
-    <section id="exercise-card-container" class="exercise-card-container relative min-h-440" aria-live="polite">
-        {% for exercise in exercises %}
-        <article
-            class="panel stack-md exercise-card carousel-item{% if not forloop.first %} is-hidden{% endif %}"
-            data-exercise-index="{{ forloop.counter0 }}"
-            data-exercise-id="{{ exercise.id }}"
-            data-order="{{ exercise.order }}"
-            data-exercise-type="{{ exercise.exercise_type }}"
-        >
-            <header class="row-between gap-sm">
-                <h2 class="title-md">{{ exercise.name }}</h2>
-                <button type="button" class="icon-btn" data-function="click->placeholderRemoveExercise" data-exercise-id="{{ exercise.id }}" aria-label="Remove exercise">
-                    X
-                </button>
-            </header>
-
-            <div class="panel surface-soft p-3">
-                <div class="fs-xl fw-700 text-center mb-3">0:00</div>
-                <div class="grid-3">
-                    <button type="button" class="btn btn-success">Start</button>
-                    <button type="button" class="btn btn-warning">Pause</button>
-                    <button type="button" class="btn btn-danger">Stop</button>
-                </div>
-            </div>
-
-            <div class="grid-3 mt-3">
-                <button type="button" class="btn btn-outline">Increase</button>
-                <button type="button" class="btn btn-outline">Same</button>
-                <button type="button" class="btn btn-outline">Decrease</button>
-            </div>
-
-            <div class="stack-sm">
-                <h3 class="title-sm">Sets & Reps</h3>
-                {% if exercise.sets %}
-                <div class="table-shell">
-                    <table class="table table-compact">
-                        <thead>
-                            <tr>
-                                <th>Weight</th>
-                                <th>Reps</th>
-                                <th class="text-center">Done</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for set in exercise.sets %}
-                            <tr class="{% if set.is_warmup %}set-row-warmup{% endif %}" data-set-id="{{ set.id }}" data-exercise-id="{{ exercise.id }}">
-                                <td>{{ set.weight }}</td>
-                                <td>{% if set.is_amrap %}infinity{% else %}{{ set.reps }}{% endif %}</td>
-                                <td class="text-center">
-                                    <button
-                                        type="button"
-                                        class="btn{% if set.is_completed %} btn-success text-white{% else %} btn-outline{% endif %}"
-                                        data-function="click->toggleSetDone"
-                                        data-set-id="{{ set.id }}"
-                                        data-exercise-id="{{ exercise.id }}"
-                                        aria-label="Set done"
-                                    >✓</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-muted text-sm m-0">No sets recorded for this exercise.</p>
-                {% endif %}
-                <button type="button" class="btn btn-outline btn-full" data-function="click->placeholderAddSet" data-exercise-id="{{ exercise.id }}">Add Set</button>
-            </div>
-        </article>
-        {% endfor %}
-    </section>
-
-    <section class="stack-sm mt-4">
-        <div class="carousel-indicators">
-            {% for exercise in exercises %}
-            <button
-                type="button"
-                class="carousel-indicator{% if forloop.first %} is-active{% endif %}"
-                data-function="click->goToWorkoutCard"
-                data-exercise-index="{{ forloop.counter0 }}"
-                aria-label="Go to exercise {{ forloop.counter }}"
-            ></button>
-            {% endfor %}
-        </div>
-        <div class="carousel-nav">
-            <button type="button" class="btn btn-outline" id="prev-exercise" data-function="click->showPreviousWorkoutCard" disabled>Previous</button>
-            <p class="text-muted text-sm m-0"><span id="current-exercise-num">1</span> of <span id="total-exercises-num">{{ exercises|length }}</span></p>
-            <button type="button" class="btn btn-outline" id="next-exercise" data-function="click->showNextWorkoutCard"{% if exercises|length <= 1 %} disabled{% endif %}>Next</button>
-        </div>
-    </section>
+    {% include "workouts/workout_exercise_ui.html" with active_exercise_index=0 %}
 
     <section class="panel stack-sm mt-5">
         <h3 class="title-sm">Add Exercise to This Workout</h3>
         <form class="form-stack">
-            <label for="exercise-select-{{ workout.id }}" class="form-label">Exercise</label>
-            <select id="exercise-select-{{ workout.id }}" name="exercise" class="form-control">
+            <input type="hidden" name="workout_id" value="{{ workout.pk }}">
+            <label for="exercise-select-{{ workout.pk }}" class="form-label">Exercise</label>
+            <select id="exercise-select-{{ workout.pk }}" name="exercise" class="form-control">
                 <option value="" selected disabled>Choose an exercise...</option>
                 {% for ex in add_exercise_options %}
-                <option value="{{ ex.id }}">{{ ex.name }}</option>
+                <option value="{{ ex.pk }}">{{ ex.name }}</option>
                 {% endfor %}
             </select>
 
-            <label for="exercise-type-{{ workout.id }}" class="form-label">Type (Optional)</label>
-            <select id="exercise-type-{{ workout.id }}" name="exercise_type" class="form-control">
+            <label for="exercise-type-{{ workout.pk }}" class="form-label">Type (Optional)</label>
+            <select id="exercise-type-{{ workout.pk }}" name="exercise_type" class="form-control">
                 <option value="">Default</option>
                 {% for type in exercise_type_choices %}
                 <option value="{{ type.value }}">{{ type.label }}</option>
                 {% endfor %}
             </select>
 
-            <button type="button" class="btn btn-primary btn-full" data-function="click->placeholderAddExercise" data-workout-id="{{ workout.id }}">
+            <button type="button" class="btn btn-primary btn-full" data-function="click->addExerciseToWorkout" data-workout-id="{{ workout.pk }}">
                 Add Exercise
             </button>
         </form>
     </section>
 </main>
+
+<div id="set-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div id="set-modal-content" class="gainz-modal-content">
+        {% include "workouts/set_modal.html" %}
+    </div>
+</div>
+
+<div id="workout-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        {% include "workouts/workout_edit_modal.html" %}
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}

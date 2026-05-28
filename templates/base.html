@@ -9,7 +9,15 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    {% if messages %}
+    <div class="page page-narrow" aria-live="polite">
+        {% for message in messages %}
+        <p class="panel text-sm m-0 mb-2">{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% block content %}{% endblock %}
+    <div class="toast-container" aria-live="polite"></div>
     <script defer src="{% static 'js/app.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
