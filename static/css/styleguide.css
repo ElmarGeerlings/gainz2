@@ -1,0 +1,105 @@
+.styleguide-page {
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+.styleguide-section {
+    margin-bottom: var(--space-6);
+}
+
+.styleguide-h2 {
+    margin: 0 0 var(--space-3);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.styleguide-lead {
+    margin: 0 0 var(--space-4);
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.styleguide-use {
+    line-height: 1.4;
+}
+
+.styleguide-code {
+    padding: var(--space-3);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface-soft);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    font-family: ui-monospace, monospace;
+}
+
+.styleguide-token-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+}
+
+.token-swatch {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+}
+
+.token-swatch-color {
+    height: 48px;
+}
+
+.token-swatch-label {
+    padding: var(--space-2);
+    font-size: 0.75rem;
+    font-family: ui-monospace, monospace;
+    word-break: break-all;
+}
+
+.styleguide-demo {
+    position: relative;
+}
+
+.styleguide-demo .gainz-modal {
+    display: flex;
+    position: relative;
+    z-index: auto;
+    left: auto;
+    top: auto;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    background-color: rgba(31, 36, 48, 0.12);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+}
+
+.styleguide-demo .gainz-modal-content {
+    margin: 0;
+}
+
+.styleguide-toast-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.styleguide-toast-stack .gainz-toast {
+    position: relative;
+    max-width: none;
+}
+
+.styleguide-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.styleguide-btn-row .btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+}

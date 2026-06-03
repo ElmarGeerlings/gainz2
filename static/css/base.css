@@ -1,6 +1,9 @@
+/* ── Tokens ──────────────────────────────────── */
+
 :root {
     --bg: #f7f8fb;
     --surface: #ffffff;
+    --surface-soft: #f9fafc;
     --text: #1f2430;
     --muted: #687084;
     --border: #d8dce6;
@@ -8,6 +11,19 @@
     --success: #198754;
     --warning: #f59f00;
     --danger: #d63384;
+    --danger-border: #efb8d2;
+    --tint-warmup-bg: #fff8ed;
+    --tint-feedback-bg: #fff3cc;
+    --tint-feedback-border: #e8d48a;
+    --toast-success-bg: #e8f5ec;
+    --toast-success-border: #b8dfc4;
+    --toast-success-text: #0d4a22;
+    --toast-warning-bg: #fff8e6;
+    --toast-warning-border: #f5d88a;
+    --toast-warning-text: #6b4e00;
+    --toast-danger-bg: #fdeef3;
+    --toast-danger-border: #f0b8cc;
+    --toast-danger-text: #7a1035;
     --radius: 12px;
     --shadow: 0 6px 18px rgba(20, 25, 40, 0.08);
     --space-1: 0.25rem;
@@ -17,6 +33,8 @@
     --space-5: 1.25rem;
     --space-6: 1.5rem;
 }
+
+/* ── Reset ───────────────────────────────────── */
 
 * {
     box-sizing: border-box;
@@ -40,6 +58,8 @@ a:hover {
     text-decoration: underline;
 }
 
+/* ── Layout ──────────────────────────────────── */
+
 .page {
     padding: var(--space-4);
 }
@@ -58,7 +78,7 @@ a:hover {
 }
 
 .surface-soft {
-    background: #f9fafc;
+    background: var(--surface-soft);
 }
 
 .row-between {
@@ -95,6 +115,8 @@ a:hover {
 .gap-md {
     gap: var(--space-3);
 }
+
+/* ── Typography ──────────────────────────────── */
 
 .text-muted {
     color: var(--muted);
@@ -140,6 +162,8 @@ a:hover {
 .font-italic {
     font-style: italic;
 }
+
+/* ── Spacing utilities ───────────────────────── */
 
 .m-0 {
     margin: 0;
@@ -209,6 +233,8 @@ a:hover {
     padding-bottom: var(--space-3);
 }
 
+/* ── Misc utilities ──────────────────────────── */
+
 .relative {
     position: relative;
 }
@@ -216,6 +242,8 @@ a:hover {
 .opacity-50 {
     opacity: 0.5;
 }
+
+/* ── Buttons ─────────────────────────────────── */
 
 .btn {
     border: 1px solid var(--border);
@@ -240,14 +268,14 @@ a:hover {
 }
 
 .btn-outline {
-    background: #fff;
+    background: var(--surface);
     border-color: var(--border);
 }
 
 .btn-danger-outline {
-    background: #fff;
+    background: var(--surface);
     color: var(--danger);
-    border-color: #efb8d2;
+    border-color: var(--danger-border);
 }
 
 .btn-success {
@@ -259,12 +287,12 @@ a:hover {
 .btn-warning {
     background: var(--warning);
     border-color: var(--warning);
-    color: #1f2430;
+    color: var(--text);
 }
 
 .btn-danger {
-    background: #dc3545;
-    border-color: #dc3545;
+    background: var(--danger);
+    border-color: var(--danger);
     color: #fff;
 }
 
@@ -273,9 +301,9 @@ a:hover {
 }
 
 .icon-btn {
-    border: 1px solid #efb8d2;
+    border: 1px solid var(--danger-border);
     color: var(--danger);
-    background: #fff;
+    background: var(--surface);
     border-radius: 8px;
     min-width: 36px;
     min-height: 36px;
@@ -290,17 +318,21 @@ a:hover {
     padding: 0;
 }
 
+/* ── Grid ────────────────────────────────────── */
+
 .grid-3 {
     display: grid;
     gap: var(--space-2);
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* ── Table ───────────────────────────────────── */
+
 .table-shell {
     border: 1px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
-    background: #fff;
+    background: var(--surface);
 }
 
 .table {
@@ -329,6 +361,8 @@ a:hover {
     cursor: pointer;
 }
 
+/* ── Forms ───────────────────────────────────── */
+
 .form-stack {
     display: grid;
     gap: var(--space-2);
@@ -344,40 +378,10 @@ a:hover {
     border-radius: 10px;
     min-height: 42px;
     padding: 0 0.75rem;
-    background: #fff;
+    background: var(--surface);
 }
 
-.carousel-item.hidden {
-    display: none;
-}
-
-.carousel-indicators {
-    display: flex;
-    justify-content: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-3);
-}
-
-.carousel-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    border: 0;
-    background: #c8cedd;
-    padding: 0;
-}
-
-.carousel-indicator.active {
-    width: 18px;
-    background: var(--primary);
-}
-
-.carousel-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
-}
+/* ── Modal ───────────────────────────────────── */
 
 .gainz-modal {
     display: none;
@@ -426,6 +430,8 @@ a:hover {
     display: table;
 }
 
+/* ── Toast ───────────────────────────────────── */
+
 .toast-container {
     position: fixed;
     bottom: var(--space-4);
@@ -450,21 +456,21 @@ a:hover {
 }
 
 .gainz-toast-success {
-    background: #e8f5ec;
-    border-color: #b8dfc4;
-    color: #0d4a22;
+    background: var(--toast-success-bg);
+    border-color: var(--toast-success-border);
+    color: var(--toast-success-text);
 }
 
 .gainz-toast-warning {
-    background: #fff8e6;
-    border-color: #f5d88a;
-    color: #6b4e00;
+    background: var(--toast-warning-bg);
+    border-color: var(--toast-warning-border);
+    color: var(--toast-warning-text);
 }
 
 .gainz-toast-danger {
-    background: #fdeef3;
-    border-color: #f0b8cc;
-    color: #7a1035;
+    background: var(--toast-danger-bg);
+    border-color: var(--toast-danger-border);
+    color: var(--toast-danger-text);
 }
 
 .gainz-toast-close {
@@ -497,6 +503,8 @@ a:hover {
     display: flex;
     justify-content: flex-end;
 }
+
+/* ── Visibility ──────────────────────────────── */
 
 .hidden {
     display: none;

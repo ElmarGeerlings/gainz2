@@ -1,12 +1,70 @@
 {% extends "base.html" %}
+{% load formatting %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
 <main class="page page-narrow">
-    <section class="panel stack-sm">
-        <h1 class="title-lg">Workouts</h1>
-        <p class="text-muted m-0">Workout list coming soon.</p>
-    </section>
+    <header class="stack-sm mb-4">
+        <h1 class="title-lg m-0">My Workouts</h1>
+        <div class="row-center gap-sm">
+            <button type="button" class="btn btn-primary" disabled>Start</button>
+            <a href="{% url 'start-empty-workout' %}" class="btn btn-outline">Empty</a>
+            <button
+                type="button"
+                class="btn btn-outline"
+                data-function="click->ShowModal"
+                data-modal-name="choose-workout-modal"
+            >
+                Choose
+            </button>
+        </div>
+    </header>
+
+    <div class="stack-sm">
+        {% for workout in workouts %}
+        <article class="panel stack-sm" data-workout-id="{{ workout.pk }}">
+            <div class="row-between gap-md">
+                <h2 class="title-md m-0">
+                    <a href="{% url 'workout-detail' workout.pk %}">{{ workout.name }}</a>
+                </h2>
+                <button
+                    type="button"
+                    class="btn btn-danger-outline"
+                    data-function="click->show_confirm_toast"
+                    data-text="Delete workout &quot;{{ workout.name }}&quot;? This cannot be undone."
+                    data-endpoint="workouts/delete_workout"
+                    data-workout-id="{{ workout.pk }}"
+                    data-confirm-label="Delete"
+                    aria-label="Delete workout"
+                >
+                    Delete
+                </button>
+            </div>
+            <p class="text-muted text-sm m-0 font-italic">{{ workout.date|datetime_format }}</p>
+            {% if workout.notes %}
+            <p class="text-sm m-0">{{ workout.notes|truncatewords:15 }}</p>
+            {% endif %}
+            <div class="row-center gap-md text-muted text-sm">
+                <span>{{ workout.exercise_count }} exercises</span>
+                <span>{{ workout.set_count }} sets</span>
+            </div>
+        </article>
+        {% empty %}
+        <p class="text-muted text-center m-0">You haven't created any workouts yet.</p>
+        {% endfor %}
+    </div>
 </main>
+
+<div id="choose-workout-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true">&times;</span>
+        <h2 class="title-md m-0 mb-3">Choose Workout</h2>
+        <p class="text-sm m-0">You don't have any routines yet.</p>
+        <div class="row-center gap-sm mt-4">
+            <button type="button" class="btn btn-outline gainz-modal-close">Cancel</button>
+            <button type="button" class="btn btn-primary" disabled>Start</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

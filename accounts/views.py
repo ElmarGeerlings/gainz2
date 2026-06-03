@@ -22,6 +22,10 @@ def home_page(req_event):
     return render(req_event, "accounts/home.html", {"title": "Home"})
 
 
+def design_page(req_event):
+    return render(req_event, "design/styleguide.html", {"title": "Design"})
+
+
 def login_page(req_event):
     if req_event.user.is_authenticated:
         return redirect(settings.LOGIN_REDIRECT_URL)

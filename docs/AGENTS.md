@@ -115,7 +115,8 @@ Prefer **`data-endpoint`** when generic handling is enough; use **`data-function
 - **Per-area files** (`workouts.css`, `programs.css`, …) via `extra_css` for rules that must not apply globally (page glue, domain-specific layout).
 - **Mobile-first:** base styles assume a narrow viewport; add min-width media queries when larger screens need extra space — not the other way around.
 - Prefer touch-friendly control sizes and spacing for logging flows; layout and theme live in stylesheets, not inline.
-- **Detailed policy** (what lives in `base.css` vs area CSS, promotion rule, naming): [docs/frontend-css.md](docs/frontend-css.md).
+- **Detailed policy** (core components, area CSS scoping, promotion rule): [docs/frontend-css.md](docs/frontend-css.md).
+- **Styleguide** (logged-in): `/design/` — **core** tokens and components only; design new features from this page. Page-specific UI uses scoped area CSS, not new global classes.
 
 ---
 

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Design — Gainz{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/styleguide.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow styleguide-page">
+    <header class="mb-4">
+        <h1 class="title-lg">Design system</h1>
+        <p class="styleguide-lead m-0">Core tokens and components. Build new features from this page only.</p>
+    </header>
+
+    <section class="styleguide-section panel stack-sm" id="rules">
+        <h2 class="styleguide-h2">Rules</h2>
+        <ul class="text-sm m-0 stack-sm">
+            <li>Compose screens from sections on this page (<code>base.css</code> only).</li>
+            <li>Page-specific UI uses scoped area CSS (e.g. <code>workout-sets-table</code>) — not listed here.</li>
+            <li>New core classes: add to <code>base.css</code> and this page first.</li>
+            <li>Promote to <code>base.css</code> when a second feature needs the same pattern.</li>
+            <li>Mobile-first: default styles target a phone viewport.</li>
+        </ul>
+        <p class="text-sm m-0">Policy: <code>docs/frontend-css.md</code></p>
+    </section>
+
+    <section class="styleguide-section" id="tokens">
+        <h2 class="styleguide-h2">Tokens</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Colors and scale used by core components.</p>
+        <div class="styleguide-token-grid mt-3">
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--bg);"></div>
+                <div class="token-swatch-label">--bg</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--surface); border-bottom: 1px solid var(--border);"></div>
+                <div class="token-swatch-label">--surface</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--surface-soft);"></div>
+                <div class="token-swatch-label">--surface-soft</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--text);"></div>
+                <div class="token-swatch-label">--text</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--muted);"></div>
+                <div class="token-swatch-label">--muted</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--border);"></div>
+                <div class="token-swatch-label">--border</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--primary);"></div>
+                <div class="token-swatch-label">--primary</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--success);"></div>
+                <div class="token-swatch-label">--success</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--warning);"></div>
+                <div class="token-swatch-label">--warning</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--danger);"></div>
+                <div class="token-swatch-label">--danger</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--toast-success-bg); border: 1px solid var(--toast-success-border);"></div>
+                <div class="token-swatch-label">--toast-success-*</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--toast-warning-bg); border: 1px solid var(--toast-warning-border);"></div>
+                <div class="token-swatch-label">--toast-warning-*</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--toast-danger-bg); border: 1px solid var(--toast-danger-border);"></div>
+                <div class="token-swatch-label">--toast-danger-*</div>
+            </div>
+        </div>
+        <p class="text-sm text-muted mt-3 m-0">Spacing: --space-1 … --space-6 · Radius: --radius · Shadow: --shadow</p>
+    </section>
+
+    <section class="styleguide-section panel stack-md" id="panel">
+        <h2 class="styleguide-h2">Panel</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Primary content container on a screen.</p>
+        <div class="panel stack-sm mt-3">
+            <h3 class="title-md m-0">panel</h3>
+            <p class="text-sm m-0">Bordered card with padding and shadow.</p>
+        </div>
+        <div class="panel surface-soft p-3 mt-3">
+            <p class="text-sm m-0">panel + surface-soft for nested emphasis</p>
+        </div>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;section class="panel stack-sm"&gt;…&lt;/section&gt;</pre>
+    </section>
+
+    <section class="styleguide-section panel stack-md" id="typography">
+        <h2 class="styleguide-h2">Typography</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Headings and body text; pair with text-muted for secondary copy.</p>
+        <h3 class="title-lg mt-3">title-lg</h3>
+        <h3 class="title-md">title-md</h3>
+        <h3 class="title-sm">title-sm</h3>
+        <p class="text-sm m-0">text-sm</p>
+        <p class="text-muted m-0">text-muted</p>
+        <p class="fw-700 m-0">fw-700</p>
+    </section>
+
+    <section class="styleguide-section panel stack-md" id="layout">
+        <h2 class="styleguide-h2">Layout</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Page shell, stacks, rows, and grids.</p>
+        <p class="text-sm m-0 mt-3"><code>page page-narrow</code> wraps screen content (this page uses it).</p>
+        <div class="stack-sm mt-3">
+            <p class="m-0 text-sm">stack-sm</p>
+            <p class="m-0 text-sm">stack-sm item 2</p>
+        </div>
+        <div class="row-between gap-sm mt-3">
+            <span class="text-sm">row-between</span>
+            <span class="text-sm text-muted">right</span>
+        </div>
+        <div class="grid-3 mt-3">
+            <div class="panel p-2 text-center text-sm">grid-3</div>
+            <div class="panel p-2 text-center text-sm">2</div>
+            <div class="panel p-2 text-center text-sm">3</div>
+        </div>
+        <p class="text-sm text-muted mt-3 m-0">Spacing utilities: mt-1 … mt-5, mb-1 … mb-4, p-2 … p-4, gap-sm, gap-md</p>
+    </section>
+
+    <section class="styleguide-section panel stack-md" id="buttons">
+        <h2 class="styleguide-h2">Buttons</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Actions and navigation; use btn-full for primary form submit.</p>
+        <div class="styleguide-btn-row mt-3">
+            <button type="button" class="btn">btn</button>
+            <button type="button" class="btn btn-primary">btn-primary</button>
+            <button type="button" class="btn btn-outline">btn-outline</button>
+        </div>
+        <div class="styleguide-btn-row">
+            <button type="button" class="btn btn-success">btn-success</button>
+            <button type="button" class="btn btn-warning">btn-warning</button>
+            <button type="button" class="btn btn-danger">btn-danger</button>
+        </div>
+        <div class="styleguide-btn-row">
+            <button type="button" class="btn btn-danger-outline">btn-danger-outline</button>
+            <button type="button" class="btn" disabled>disabled</button>
+            <button type="button" class="icon-btn" aria-label="Remove">X</button>
+        </div>
+        <button type="button" class="btn btn-primary btn-full mt-3">btn-full</button>
+        <button type="button" class="link-btn mt-3">link-btn</button>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;button type="button" class="btn btn-primary"&gt;Save&lt;/button&gt;</pre>
+    </section>
+
+    <section class="styleguide-section panel stack-md" id="forms">
+        <h2 class="styleguide-h2">Forms</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Labels and inputs in a vertical stack.</p>
+        <div class="form-stack mt-3">
+            <label for="sg-name">Label</label>
+            <input id="sg-name" type="text" class="form-control" placeholder="Text input">
+            <label for="sg-notes">Notes</label>
+            <textarea id="sg-notes" class="form-control" rows="2" placeholder="Optional"></textarea>
+        </div>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;div class="form-stack"&gt;
+  &lt;label for="id"&gt;Label&lt;/label&gt;
+  &lt;input id="id" class="form-control"&gt;
+&lt;/div&gt;</pre>
+    </section>
+
+    <section class="styleguide-section stack-md" id="tables">
+        <h2 class="styleguide-h2">Tables</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Default table and dense variant (table-compact = smaller font only).</p>
+        <div class="table-shell mt-3">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Value</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Item A</td>
+                        <td>42</td>
+                        <td>Active</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="table-shell">
+            <table class="table table-compact">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Value</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Item B</td>
+                        <td>7</td>
+                        <td>Done</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <pre class="styleguide-code text-xs m-0">&lt;div class="table-shell"&gt;
+  &lt;table class="table"&gt;…&lt;/table&gt;
+&lt;/div&gt;</pre>
+    </section>
+
+    <section class="styleguide-section" id="modal">
+        <h2 class="styleguide-h2">Modal</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Overlay dialog; toggled visible by JS in the app.</p>
+        <div class="styleguide-demo mt-3">
+            <div class="gainz-modal" role="dialog" aria-modal="true" aria-labelledby="sg-modal-title">
+                <div class="gainz-modal-content">
+                    <span class="gainz-modal-close" aria-hidden="true">&times;</span>
+                    <h3 id="sg-modal-title" class="title-md">Modal title</h3>
+                    <p class="text-sm m-0">gainz-modal-content body</p>
+                </div>
+            </div>
+        </div>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;div class="gainz-modal"&gt;
+  &lt;div class="gainz-modal-content"&gt;…&lt;/div&gt;
+&lt;/div&gt;</pre>
+    </section>
+
+    <section class="styleguide-section" id="toasts">
+        <h2 class="styleguide-h2">Toasts</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Transient feedback; live app uses .toast-container in base.html.</p>
+        <div class="styleguide-demo styleguide-toast-stack mt-3">
+            <div class="gainz-toast gainz-toast-success" role="status">
+                <button type="button" class="gainz-toast-close" aria-label="Dismiss">&times;</button>
+                <p class="gainz-toast-message">Success message.</p>
+            </div>
+            <div class="gainz-toast gainz-toast-warning" role="status">
+                <button type="button" class="gainz-toast-close" aria-label="Dismiss">&times;</button>
+                <p class="gainz-toast-message">Warning with action.</p>
+                <div class="gainz-toast-actions mt-2">
+                    <button type="button" class="btn btn-danger">Confirm</button>
+                </div>
+            </div>
+            <div class="gainz-toast gainz-toast-danger" role="status">
+                <button type="button" class="gainz-toast-close" aria-label="Dismiss">&times;</button>
+                <p class="gainz-toast-message">Error message.</p>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

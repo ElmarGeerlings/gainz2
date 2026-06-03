@@ -9,6 +9,105 @@ This doc is the detailed styling policy for gainz2. **`AGENTS.md` §6 stays shor
 
 Every page should load `base.css` (via `base.html`). Area CSS is optional.
 
+## Styleguide (`/design/`)
+
+- **URL:** `/design/` (requires login).
+- **Purpose:** The **only** visual reference needed to design a new feature (lists, auth, programs, etc.). Shows core tokens and components from `base.css`.
+- **Rule:** Compose new UI from what appears on the styleguide. If a core class or token is missing, add it to `base.css` and the styleguide first.
+- **Not on the styleguide:** Page-specific UI (workout set table columns, carousel, feedback toggles, modals with pickers, etc.). Those live in scoped area CSS and feature templates.
+- **`styleguide.css`** is layout-only for the styleguide page; not part of the reusable system.
+
+## Area CSS (scoped overrides)
+
+Page-specific CSS must **extend** core components, not replace them globally.
+
+- Use a **scoped class** on the feature markup (e.g. `workout-sets-table` on the sets table).
+- **Do not** target bare `.table`, `.btn`, or `.table-compact` for layout that only one page needs.
+- Example: column widths and cell triggers for workout sets are under `.workout-sets-table` in `workouts.css`, not under `.table-compact` globally.
+
+Promote a pattern to `base.css` (and the styleguide) when a **second** feature needs the same thing.
+
+## Core components
+
+Markup below is the contract; see `/design/` for live examples.
+
+### Page shell
+
+- **Use when:** Any full-screen view.
+- **Classes:** `page`, `page-narrow` (centered max width on main).
+
+```html
+<main class="page page-narrow">…</main>
+```
+
+### Panel
+
+- **Use when:** Grouped content, cards, form sections.
+- **Classes:** `panel`, optional `surface-soft`, `stack-sm` / `stack-md` for vertical spacing inside.
+
+```html
+<section class="panel stack-sm">…</section>
+```
+
+### Typography
+
+- **Use when:** Titles and body copy.
+- **Classes:** `title-lg`, `title-md`, `title-sm`, `text-sm`, `text-muted`, `fw-700`.
+
+### Layout utilities
+
+- **Use when:** Spacing and alignment without new CSS.
+- **Classes:** `stack-xs` … `stack-lg`, `gap-sm`, `gap-md`, `row-between`, `row-center`, `grid-3`, `mt-*`, `mb-*`, `p-*`, `m-0`, `text-center`.
+
+### Button
+
+- **Use when:** Actions, submits, icon dismiss.
+- **Base:** `btn`
+- **Variants:** `btn-primary`, `btn-outline`, `btn-success`, `btn-warning`, `btn-danger`, `btn-danger-outline`, `btn-full`, `icon-btn`, `link-btn`
+- **State:** `disabled` attribute on `<button>`
+
+```html
+<button type="button" class="btn btn-primary btn-full">Save</button>
+```
+
+### Form
+
+- **Use when:** Label + input stacks (no Django Forms).
+- **Classes:** `form-stack`, `form-control` on inputs/textareas; `label` wraps text in `form-stack label` styling via child `label` elements.
+
+```html
+<div class="form-stack">
+  <label for="field-id">Label</label>
+  <input id="field-id" type="text" class="form-control">
+</div>
+```
+
+### Table
+
+- **Use when:** Tabular data.
+- **Structure:** `table-shell` > `table`
+- **Dense variant:** add `table-compact` (smaller font only in `base.css`; no column overrides in core)
+
+```html
+<div class="table-shell">
+  <table class="table">
+    <thead><tr><th>…</th></tr></thead>
+    <tbody><tr><td>…</td></tr></tbody>
+  </table>
+</div>
+```
+
+### Modal
+
+- **Use when:** Focused overlay content; visibility toggled in JS.
+- **Classes:** `gainz-modal`, `gainz-modal-content`, `gainz-modal-close`
+
+### Toast
+
+- **Use when:** Success, warning, or danger feedback.
+- **Classes:** `gainz-toast`, `gainz-toast-success` | `gainz-toast-warning` | `gainz-toast-danger`, `gainz-toast-message`, `gainz-toast-close`, optional `gainz-toast-actions`
+- **Container:** `.toast-container` in `base.html` for live toasts.
+
 ## Single source of truth
 
 - **Tokens** (colors, spacing scale, radius, shadows) live in `:root` in `base.css` only.
@@ -16,34 +115,28 @@ Every page should load `base.css` (via `base.html`). Area CSS is optional.
 
 ## What belongs in `base.css`
 
-Put rules here when any of these apply:
-
 1. **Global** — resets, `html`/`body`, links, box-sizing.
 2. **Tokens** — CSS variables in `:root`.
-3. **Reusable components** — buttons, panels, tables, form controls, carousel chrome, etc.
-4. **Generic utilities** you expect on **multiple** screens — e.g. `mb-3`, `text-muted`, `fw-700`, `opacity-70`.
+3. **Reusable components** — buttons, panels, tables, form controls, modals, toasts.
+4. **Generic utilities** used on **multiple** screens — e.g. `mb-3`, `text-muted`, `fw-700`.
 
 ## What belongs in area CSS (`workouts.css`, etc.)
 
-Use area CSS only for:
-
-1. **Layout glue** unique to that screen (e.g. a fixed min-height so a carousel does not jump between slides).
-2. **Domain-specific** presentation that should not leak globally (prefer a clear name, e.g. `.workout-*` or `.set-row--completed`, if you introduce it).
-3. **Short-lived** experiments — promote to `base.css` once a second page needs the same thing.
-
-If a rule encodes a **magic number** or behavior only one page needs, area CSS is appropriate.
+1. **Layout glue** unique to that screen.
+2. **Scoped overrides** on core components (prefixed or wrapper class).
+3. **Domain-only** presentation until promoted (e.g. carousel chrome on workout detail only).
 
 ## Promotion rule
 
-- **First use** on one page: utilities in the template or a small area rule is fine.
-- **Second use** on another page or feature: **promote** to `base.css` (as a component or utility).
+- **First use** on one page: scoped area CSS is fine.
+- **Second use** on another page: **promote** to `base.css` and add to `/design/`.
 - **Do not** copy the same block into a second area file.
 
 ## Naming
 
 - **Utilities:** short and predictable (`mt-4`, `mb-3`, `p-3`, `text-sm`, `fw-700`).
 - **Components:** noun-based (`panel`, `btn-primary`, `table-shell`).
-- **Page/domain:** use a prefix when not meant to be global (`workout-card-track`, etc.) so it is obvious.
+- **Page/domain:** scoped names (`workout-sets-table`, `workout-*`) so globals are not overridden.
 
 ## Templates
 
@@ -58,7 +151,7 @@ If a rule encodes a **magic number** or behavior only one page needs, area CSS i
 ## Checklist (before merging CSS changes)
 
 1. No duplicate class definitions across `base.css` and area files.
-2. New utilities/components in `base.css` are **generic** enough for reuse, or stay in area CSS with a clear name.
-3. Area CSS is loaded only where needed (`extra_css`).
+2. New core utilities/components are on `/design/` and generic enough for reuse.
+3. Area CSS is scoped and loaded only where needed (`extra_css`).
 4. No inline styles for layout/theme (prefer classes).
-5. Tokens referenced via `var(--...)` instead of hard-coding the same color/spacing in many places.
+5. Tokens referenced via `var(--...)` instead of repeating hex.

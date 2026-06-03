@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from django.db.models import F, Max, Prefetch
+from django.db.models import Count, F, Max, Prefetch
 from django.utils import timezone
 
 from exercises.models import Exercise
@@ -11,6 +11,26 @@ from workouts.models import Workout, WorkoutExercise, ExerciseSet
 def quantize_weight(weight):
     half_steps = (Decimal(weight) * 2).quantize(Decimal("1"))
     return half_steps / Decimal("2")
+
+
+def list_workouts(user):
+    return (
+        Workout.objects.filter(user=user)
+        .annotate(
+            exercise_count=Count("exercises", distinct=True),
+            set_count=Count("exercises__sets", distinct=True),
+        )
+        .order_by("-date")
+    )
+
+
+def start_empty_workout(user):
+    workout_count = Workout.objects.filter(user=user).count()
+    return Workout.objects.create(
+        user=user,
+        name=f"Workout #{workout_count + 1}",
+        notes="",
+    )
 
 
 def get_workout_exercise(workout_exercise_id):

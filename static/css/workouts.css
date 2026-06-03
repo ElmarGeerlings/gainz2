@@ -1,21 +1,60 @@
-/* Workout page currently composes shared base utilities/components only. */
+/* Workout page composes core components from base.css; overrides stay scoped below. */
+
+/* ── Carousel ────────────────────────────────── */
+
+.carousel-item.hidden {
+    display: none;
+}
+
+.carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.carousel-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    border: 0;
+    background: #c8cedd;
+    padding: 0;
+}
+
+.carousel-indicator.active {
+    width: 18px;
+    background: var(--primary);
+}
+
+.carousel-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+/* ── Exercise card layout ────────────────────── */
 
 .min-h-440 {
     min-height: 440px;
 }
 
-/* Warmup set rows: subtle tint, no extra column in the table */
+/* ── Set row states ──────────────────────────── */
+
 .set-row-warmup td {
-    background: #fff8ed;
+    background: var(--tint-warmup-bg);
 }
 
 .feedback-selected {
-    background: #fff3cc;
-    border-color: #e8d48a;
+    background: var(--tint-feedback-bg);
+    border-color: var(--tint-feedback-border);
     color: inherit;
 }
 
-.table-compact .table-cell-trigger {
+/* ── Sets table (workout-sets-table) ────────── */
+
+.workout-sets-table .table-cell-trigger {
     display: block;
     width: 100%;
     margin: 0;
@@ -28,45 +67,38 @@
     cursor: pointer;
 }
 
-.table-compact td:nth-child(1) .table-cell-trigger {
+.workout-sets-table td:nth-child(1) .table-cell-trigger,
+.workout-sets-table td:nth-child(2) .table-cell-trigger {
     text-align: left;
 }
 
-.table-compact td:nth-child(2) .table-cell-trigger {
-    text-align: left;
-}
-
-.table-compact th:nth-child(3),
-.table-compact td:nth-child(3),
-.table-compact th:nth-child(4),
-.table-compact td:nth-child(4) {
+.workout-sets-table th:nth-child(3),
+.workout-sets-table td:nth-child(3),
+.workout-sets-table th:nth-child(4),
+.workout-sets-table td:nth-child(4) {
     width: 52px;
     white-space: nowrap;
-}
-
-.table-compact th:nth-child(3),
-.table-compact th:nth-child(4),
-.table-compact td:nth-child(3),
-.table-compact td:nth-child(4) {
     text-align: right;
 }
 
-.table-compact td:nth-child(3),
-.table-compact td:nth-child(4) {
+.workout-sets-table td:nth-child(3),
+.workout-sets-table td:nth-child(4) {
     padding-left: 0.25rem;
     padding-right: 0.25rem;
 }
 
-.table-compact th:nth-child(3) {
+.workout-sets-table th:nth-child(3) {
     padding-right: 0.85rem;
 }
 
-.table-compact td:nth-child(3) .btn,
-.table-compact td:nth-child(4) .btn {
+.workout-sets-table td:nth-child(3) .btn,
+.workout-sets-table td:nth-child(4) .btn {
     min-width: 42px;
     padding-left: 0;
     padding-right: 0;
 }
+
+/* ── Set modal ───────────────────────────────── */
 
 .set-modal-fields-row {
     display: flex;
@@ -83,7 +115,7 @@
     flex-shrink: 0;
     font-weight: 600;
     line-height: 1;
-    color: var(--color-muted, #6b7280);
+    color: var(--muted);
 }
 
 .set-modal-actions {
@@ -103,6 +135,8 @@
     font-weight: 500;
 }
 
+/* ── Value picker ────────────────────────────── */
+
 .value-picker {
     flex: 1;
     min-width: 0;
@@ -115,7 +149,7 @@
     -webkit-overflow-scrolling: touch;
     position: relative;
     border-radius: var(--radius-md, 8px);
-    background: var(--surface-soft, #f4f4f5);
+    background: var(--surface-soft);
     mask-image: linear-gradient(
         to bottom,
         transparent 0%,
