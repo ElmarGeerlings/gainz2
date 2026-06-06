@@ -1,0 +1,27 @@
+<div
+    class="panel exercise-overview-row stack-xs p-3{% if not is_routine and we.total_set_count > 0 and we.completed_set_count == we.total_set_count %} exercise-overview-row--complete{% endif %}"
+    data-exercise-id="{{ we.pk }}"
+    data-exercise-index="{{ exercise_index }}"
+>
+    <div class="row-between gap-sm">
+        <p class="title-sm m-0">{{ we.exercise.name }}</p>
+        <span class="text-muted text-sm">{{ we.effective_exercise_type }}</span>
+    </div>
+    <p class="text-muted text-sm m-0">
+        {% if we.total_set_count == 0 %}
+        No sets
+        {% elif we.warmup_set_count > 0 %}
+        {{ we.warmup_set_count }} warmup, {{ we.work_set_count }} work
+        {% else %}
+        {{ we.work_set_count }} work
+        {% endif %}
+    </p>
+    {% if not is_routine and we.total_set_count > 0 %}
+    <div class="exercise-overview-progress" aria-hidden="true">
+        <div
+            class="exercise-overview-progress-fill"
+            style="width: {% widthratio we.completed_set_count we.total_set_count 100 %}%;"
+        ></div>
+    </div>
+    {% endif %}
+</div>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <header class="stack-sm mb-4">
+        <h1 class="title-lg m-0">My Routines</h1>
+        <div class="row-center gap-sm">
+            <select class="form-control" disabled aria-label="Filter by program">
+                <option selected>All Routines</option>
+            </select>
+            <a href="{% url 'routine-import' %}" class="btn btn-outline">Import</a>
+            <a href="{% url 'new-routine' %}" class="btn btn-primary">New</a>
+        </div>
+    </header>
+
+    <div class="stack-sm">
+        {% for routine in routines %}
+        {% include "workouts/workout_list_card.html" with entity="routine" item=routine %}
+        {% empty %}
+        <p class="text-muted text-center m-0">You haven't created any routines yet.</p>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}

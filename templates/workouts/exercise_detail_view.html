@@ -1,0 +1,90 @@
+<section id="exercise-card-container" class="exercise-card-container relative min-h-440" aria-live="polite">
+    {% for we in session.exercises.all %}
+    <article
+        class="panel stack-md exercise-card carousel-item{% if forloop.counter0 != active_exercise_index %} hidden{% endif %}"
+        data-exercise-index="{{ forloop.counter0 }}"
+        data-exercise-id="{{ we.pk }}"
+        data-order="{{ we.order }}"
+        data-exercise-type="{{ we.effective_exercise_type }}"
+    >
+        <header class="row-between gap-sm">
+            <h2 class="title-md">{{ we.exercise.name }} <span class="text-muted">({{ we.effective_exercise_type }})</span></h2>
+            <button type="button" class="icon-btn" data-function="click->removeExercise" data-ws-remove-exercise="{{ endpoint_ns }}/delete_exercise" data-exercise-id="{{ we.pk }}" aria-label="Remove exercise">
+                X
+            </button>
+        </header>
+
+        {% if not is_routine %}
+        <div class="panel surface-soft p-3">
+            <div class="fs-xl fw-700 text-center mb-3">0:00</div>
+            <div class="grid-3">
+                <button type="button" class="btn btn-success">Start</button>
+                <button type="button" class="btn btn-warning">Pause</button>
+                <button type="button" class="btn btn-danger">Stop</button>
+            </div>
+        </div>
+
+        <div class="grid-3 mt-3" data-feedback-for="{{ we.pk }}">
+            <button
+                type="button"
+                class="btn{% if we.performance_feedback == 'increase' %} feedback-selected{% else %} btn-outline{% endif %}"
+                data-function="click->setWorkoutExerciseFeedback"
+                data-exercise-id="{{ we.pk }}"
+                data-feedback="increase"
+                aria-label="Increase next time"
+            >+</button>
+            <button
+                type="button"
+                class="btn{% if we.performance_feedback == 'stay' %} feedback-selected{% else %} btn-outline{% endif %}"
+                data-function="click->setWorkoutExerciseFeedback"
+                data-exercise-id="{{ we.pk }}"
+                data-feedback="stay"
+                aria-label="Stay the same"
+            >=</button>
+            <button
+                type="button"
+                class="btn{% if we.performance_feedback == 'decrease' %} feedback-selected{% else %} btn-outline{% endif %}"
+                data-function="click->setWorkoutExerciseFeedback"
+                data-exercise-id="{{ we.pk }}"
+                data-feedback="decrease"
+                aria-label="Decrease next time"
+            >-</button>
+        </div>
+        {% endif %}
+
+        <div class="stack-sm exercise-sets" data-exercise-sets-for="{{ we.pk }}">
+            {% if is_routine %}
+            {% include "workouts/exercise_sets_block.html" with we=we is_routine=True endpoint_ns=endpoint_ns %}
+            {% else %}
+            {% include "workouts/exercise_sets_block.html" with we=we endpoint_ns=endpoint_ns %}
+            {% endif %}
+        </div>
+    </article>
+    {% empty %}
+    <article class="panel stack-md exercise-card carousel-item">
+        <header class="row-between gap-sm">
+            <h2 class="title-md">{% if is_routine %}No exercises in this routine{% else %}No exercises in this workout{% endif %}</h2>
+        </header>
+        <p class="text-muted m-0">Add one below to get started.</p>
+    </article>
+    {% endfor %}
+</section>
+
+<section class="stack-sm mt-4">
+    <div class="row-center justify-center gap-sm mb-3">
+        {% for we in session.exercises.all %}
+        <button
+            type="button"
+            class="carousel-indicator{% if forloop.counter0 == active_exercise_index %} active{% endif %}"
+            data-function="click->goToWorkoutCard"
+            data-exercise-index="{{ forloop.counter0 }}"
+            aria-label="Go to exercise {{ forloop.counter }}"
+        ></button>
+        {% endfor %}
+    </div>
+    <div class="row-between gap-sm">
+        <button type="button" class="btn btn-outline" id="prev-exercise" data-function="click->showPreviousWorkoutCard" disabled>Previous</button>
+        <p class="text-muted text-sm m-0"><span id="current-exercise-num">1</span> of <span id="total-exercises-num">{{ session.exercises.count }}</span></p>
+        <button type="button" class="btn btn-outline" id="next-exercise" data-function="click->showNextWorkoutCard"{% if session.exercises.count <= 1 %} disabled{% endif %}>Next</button>
+    </div>
+</section>

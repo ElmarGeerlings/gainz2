@@ -18,7 +18,13 @@ from django.contrib import admin
 from django.urls import path
 
 from accounts.views import design_page, home_page, login_page, logout_page, register_page
-from workouts.views import start_empty_workout_page, workout_detail_page, workouts_list_page
+from routines.views import (
+    import_routine_page,
+    new_routine_page,
+    routine_detail_page,
+    routines_list_page,
+)
+from workouts.views import new_workout_page, workout_detail_page, workouts_list_page
 
 urlpatterns = [
     path("", home_page, name="home"),
@@ -28,6 +34,10 @@ urlpatterns = [
     path("logout/", logout_page, name="logout"),
     path("admin/", admin.site.urls),
     path("workouts/", workouts_list_page, name="workouts-list"),
-    path("workouts/start-empty/", start_empty_workout_page, name="start-empty-workout"),
+    path("workouts/new/", new_workout_page, name="new-workout"),
     path("workouts/<int:workout_id>/", workout_detail_page, name="workout-detail"),
+    path("routines/", routines_list_page, name="routines-list"),
+    path("routines/import/", import_routine_page, name="routine-import"),
+    path("routines/new/", new_routine_page, name="new-routine"),
+    path("routines/<int:routine_id>/", routine_detail_page, name="routine-detail"),
 ]

@@ -10,33 +10,33 @@
 
 {% block content %}
 <main class="page page-narrow">
-    <div id="workout-header">
-        {% include "workouts/workout_header.html" %}
+    <div id="routine-header">
+        {% include "routines/routine_header.html" %}
     </div>
 
-    {% include "workouts/workout_exercise_ui.html" with session=workout endpoint_ns="workouts" active_exercise_index=0 %}
+    {% include "workouts/workout_exercise_ui.html" with session=routine is_routine=True endpoint_ns="routines" active_exercise_index=0 %}
 
     <section class="panel stack-sm mt-5">
-        <h3 class="title-sm">Add Exercise to This Workout</h3>
+        <h3 class="title-sm">Add Exercise to This Routine</h3>
         <form class="form-stack">
-            <input type="hidden" name="workout_id" value="{{ workout.pk }}">
-            <label for="exercise-select-{{ workout.pk }}" class="form-label">Exercise</label>
-            <select id="exercise-select-{{ workout.pk }}" name="exercise" class="form-control">
+            <input type="hidden" name="routine_id" value="{{ routine.pk }}">
+            <label for="exercise-select-{{ routine.pk }}" class="form-label">Exercise</label>
+            <select id="exercise-select-{{ routine.pk }}" name="exercise" class="form-control">
                 <option value="" selected disabled>Choose an exercise...</option>
                 {% for ex in add_exercise_options %}
                 <option value="{{ ex.pk }}">{{ ex.name }}</option>
                 {% endfor %}
             </select>
 
-            <label for="exercise-type-{{ workout.pk }}" class="form-label">Type (Optional)</label>
-            <select id="exercise-type-{{ workout.pk }}" name="exercise_type" class="form-control">
+            <label for="exercise-type-{{ routine.pk }}" class="form-label">Type (Optional)</label>
+            <select id="exercise-type-{{ routine.pk }}" name="exercise_type" class="form-control">
                 <option value="">Default</option>
                 {% for type in exercise_type_choices %}
                 <option value="{{ type.value }}">{{ type.label }}</option>
                 {% endfor %}
             </select>
 
-            <button type="button" class="btn btn-primary btn-full" data-function="click->addExercise" data-ws-add-exercise="workouts/add_exercise" data-workout-id="{{ workout.pk }}">
+            <button type="button" class="btn btn-primary btn-full" data-function="click->addExercise" data-ws-add-exercise="routines/add_exercise" data-routine-id="{{ routine.pk }}">
                 Add Exercise
             </button>
         </form>
@@ -45,13 +45,13 @@
 
 <div id="set-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
     <div id="set-modal-content" class="gainz-modal-content">
-        {% include "workouts/set_modal.html" with endpoint_ns="workouts" %}
+        {% include "workouts/set_modal.html" with is_routine=True endpoint_ns="routines" %}
     </div>
 </div>
 
-<div id="workout-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+<div id="routine-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
     <div class="gainz-modal-content">
-        {% include "workouts/workout_edit_modal.html" %}
+        {% include "routines/routine_edit_modal.html" %}
     </div>
 </div>
 {% endblock %}

@@ -1,6 +1,10 @@
 <form id="set-modal-form">
     {% if is_add %}
+    {% if is_routine %}
+    <input type="hidden" name="routine_exercise_id" value="{{ we.pk }}">
+    {% else %}
     <input type="hidden" name="workout_exercise_id" value="{{ we.pk }}">
+    {% endif %}
     {% else %}
     <input type="hidden" name="set_id" id="set-modal-set-id" value="{{ set.pk }}">
     {% endif %}
@@ -36,7 +40,7 @@
         <button
             type="button"
             class="btn btn-primary set-modal-confirm"
-            data-endpoint="click->{% if is_add %}workouts/create_set{% else %}workouts/update_set{% endif %}"
+            data-endpoint="click->{% if is_add %}{{ endpoint_ns }}/create_set{% else %}{{ endpoint_ns }}/update_set{% endif %}"
             data-close-modal="#set-modal"
         >Confirm</button>
         <label class="set-modal-warmup-label">

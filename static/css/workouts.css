@@ -1,17 +1,46 @@
 /* Workout page composes core components from base.css; overrides stay scoped below. */
 
+/* ── Exercise view toggle + overview ─────────── */
+
+#workout-exercise-ui .exercise-view-toggle .btn {
+    min-width: 7rem;
+}
+
+#workout-exercise-ui .exercise-overview-row--complete {
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+}
+
+#workout-exercise-ui .exercise-overview-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: #e2e6ef;
+    overflow: hidden;
+}
+
+#workout-exercise-ui .exercise-overview-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--success);
+}
+
+#workout-exercise-ui .exercise-overview-row {
+    cursor: grab;
+}
+
+#workout-exercise-ui .exercise-overview-row:active {
+    cursor: grabbing;
+}
+
+#workout-exercise-ui .sortable-ghost {
+    opacity: 0.45;
+}
+
+#workout-exercise-ui .sortable-chosen {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
 /* ── Carousel ────────────────────────────────── */
-
-.carousel-item.hidden {
-    display: none;
-}
-
-.carousel-indicators {
-    display: flex;
-    justify-content: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-3);
-}
 
 .carousel-indicator {
     width: 8px;
@@ -25,13 +54,6 @@
 .carousel-indicator.active {
     width: 18px;
     background: var(--primary);
-}
-
-.carousel-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
 }
 
 /* ── Exercise card layout ────────────────────── */

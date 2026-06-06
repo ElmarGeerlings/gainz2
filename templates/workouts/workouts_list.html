@@ -9,7 +9,7 @@
         <h1 class="title-lg m-0">My Workouts</h1>
         <div class="row-center gap-sm">
             <button type="button" class="btn btn-primary" disabled>Start</button>
-            <a href="{% url 'start-empty-workout' %}" class="btn btn-outline">Empty</a>
+            <a href="{% url 'new-workout' %}" class="btn btn-outline">Empty</a>
             <button
                 type="button"
                 class="btn btn-outline"
@@ -23,33 +23,7 @@
 
     <div class="stack-sm">
         {% for workout in workouts %}
-        <article class="panel stack-sm" data-workout-id="{{ workout.pk }}">
-            <div class="row-between gap-md">
-                <h2 class="title-md m-0">
-                    <a href="{% url 'workout-detail' workout.pk %}">{{ workout.name }}</a>
-                </h2>
-                <button
-                    type="button"
-                    class="btn btn-danger-outline"
-                    data-function="click->show_confirm_toast"
-                    data-text="Delete workout &quot;{{ workout.name }}&quot;? This cannot be undone."
-                    data-endpoint="workouts/delete_workout"
-                    data-workout-id="{{ workout.pk }}"
-                    data-confirm-label="Delete"
-                    aria-label="Delete workout"
-                >
-                    Delete
-                </button>
-            </div>
-            <p class="text-muted text-sm m-0 font-italic">{{ workout.date|datetime_format }}</p>
-            {% if workout.notes %}
-            <p class="text-sm m-0">{{ workout.notes|truncatewords:15 }}</p>
-            {% endif %}
-            <div class="row-center gap-md text-muted text-sm">
-                <span>{{ workout.exercise_count }} exercises</span>
-                <span>{{ workout.set_count }} sets</span>
-            </div>
-        </article>
+        {% include "workouts/workout_list_card.html" with entity="workout" item=workout %}
         {% empty %}
         <p class="text-muted text-center m-0">You haven't created any workouts yet.</p>
         {% endfor %}

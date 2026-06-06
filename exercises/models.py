@@ -57,6 +57,7 @@ class Exercise(models.Model):
         blank=True,
         help_text="Weight increment in kg for this exercise (e.g., 1.0, 2.5)"
     )
+    alternative_names = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.name

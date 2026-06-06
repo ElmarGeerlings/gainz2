@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <section class="panel stack-sm">
+        <h1 class="title-lg m-0">Import Routine from Text</h1>
+
+        {% if errors %}
+        <ul class="text-danger text-sm m-0 pl-4">
+            {% for error in errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <form method="post" class="form-stack">
+            {% csrf_token %}
+
+            <label for="routine-name" class="form-label">Routine Name</label>
+            <input
+                type="text"
+                id="routine-name"
+                name="routine_name"
+                class="form-control"
+                value="{{ routine_name }}"
+                required
+                autocomplete="off"
+                placeholder="e.g., Upper A"
+            >
+
+            <label for="workout-text" class="form-label">Paste Your Routine Text</label>
+            <textarea
+                id="workout-text"
+                name="workout_text"
+                class="form-control"
+                rows="12"
+                required
+                placeholder="Paste your routine's exercises here..."
+            >{{ workout_text }}</textarea>
+            <p class="text-muted text-sm m-0">
+                Format: Exercise Name SetsxReps Weight
+            </p>
+            <pre class="text-sm p-3 surface-soft m-0">{{ sample_format }}</pre>
+
+            <div class="row-center gap-sm mt-2">
+                <button type="submit" name="step" value="parse" class="btn btn-primary">Import</button>
+                <a href="{% url 'routines-list' %}" class="btn btn-outline">Cancel</a>
+            </div>
+
+            <div
+                id="import-confirm-modal"
+                class="gainz-modal"
+                {% if show_confirm_modal %}style="display: flex;"{% else %}style="display: none;"{% endif %}
+                data-function="click->CloseModal"
+            >
+                <div class="gainz-modal-content">
+                    <h2 class="title-md m-0 mb-3">Exercises not found</h2>
+                    <p class="text-sm m-0 mb-3">Create these exercises and import the routine?</p>
+                    <ul class="text-sm m-0 mb-4 pl-4">
+                        {% for name in unmatched_names %}
+                        <li>{{ name }}</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="row-center gap-sm">
+                        <button type="submit" name="step" value="confirm" class="btn btn-primary">Create and import</button>
+                        <button type="button" class="btn btn-outline gainz-modal-close">Keep editing</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </section>
+</main>
+{% endblock %}

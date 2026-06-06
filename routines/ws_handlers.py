@@ -1,52 +1,52 @@
-"""WebSocket message handlers for the workouts app.
-
-Each handler is a sync function (user, attributes) -> dict matching static/js/app.js
-(status, headers, html_content, json_content).
-
-Register handlers in gainz2.ws_dispatch.WS_ENDPOINT_REGISTRY.
-
-Business logic belongs in workouts.services; keep these thin.
-"""
-
 from decimal import Decimal
 
 from django.template.loader import render_to_string
 
 from gainz2.utils import render_toast
-from utils.templatetags.formatting import weight_display
-from workouts.models import ExerciseSet, Workout
-from workouts.services import (
-    add_exercise_to_workout,
-    create_exercise_set,
-    delete_exercise_set,
-    delete_workout,
-    delete_workout_exercise,
+from routines.models import RoutineSet
+from routines.models import Routine
+from routines.services import (
+    add_exercise_to_routine,
+    create_routine_set,
+    delete_routine,
+    delete_routine_exercise,
+    delete_routine_set,
     get_add_set_defaults,
-    get_workout,
-    get_workout_exercise,
-    reorder_workout_exercises,
-    set_workout_exercise_feedback,
-    toggle_exercise_set_completed,
-    update_exercise_set,
-    update_workout,
+    get_routine,
+    get_routine_exercise,
+    reorder_routine_exercises,
+    update_routine,
+    update_routine_set,
 )
+from utils.templatetags.formatting import weight_display
+
+
+def handle_delete_routine(user, attributes):
+    routine_id = int(attributes["data-routine-id"])
+    delete_routine(user, routine_id)
+    return {
+        "status": 302,
+        "headers": [["Location", "/routines/"]],
+        "json_content": {},
+    }
 
 
 def handle_set_modal_form(user, attributes):
-    workout_exercise_id = int(attributes["data-exercise-id"])
-    weight, reps = get_add_set_defaults(user, workout_exercise_id)
-    we = get_workout_exercise(workout_exercise_id)
+    routine_exercise_id = int(attributes["data-exercise-id"])
+    weight, reps = get_add_set_defaults(user, routine_exercise_id)
+    re = get_routine_exercise(routine_exercise_id)
     html = render_to_string(
         "workouts/set_modal.html",
         {
             "is_add": True,
-            "we": we,
+            "we": re,
             "weight": weight,
             "reps": reps,
             "is_warmup": False,
             "uses_wheel": True,
             "reps_range": range(100),
-            "endpoint_ns": "workouts",
+            "is_routine": True,
+            "endpoint_ns": "routines",
         },
     )
     return {
@@ -58,18 +58,19 @@ def handle_set_modal_form(user, attributes):
 
 def handle_set_edit_modal_form(user, attributes):
     set_id = int(attributes["data-set-id"])
-    exercise_set = ExerciseSet.objects.select_related("workout_exercise").get(pk=set_id)
+    routine_set = RoutineSet.objects.select_related("routine_exercise").get(pk=set_id)
     html = render_to_string(
         "workouts/set_modal.html",
         {
             "is_add": False,
-            "set": exercise_set,
-            "weight": exercise_set.weight,
-            "reps": exercise_set.reps,
-            "is_warmup": exercise_set.is_warmup,
+            "set": routine_set,
+            "weight": routine_set.weight,
+            "reps": routine_set.reps,
+            "is_warmup": routine_set.is_warmup,
             "uses_wheel": True,
             "reps_range": range(100),
-            "endpoint_ns": "workouts",
+            "is_routine": True,
+            "endpoint_ns": "routines",
         },
     )
     return {
@@ -80,23 +81,24 @@ def handle_set_edit_modal_form(user, attributes):
 
 
 def handle_create_set(user, attributes):
-    workout_exercise_id = int(attributes["workout_exercise_id"])
+    routine_exercise_id = int(attributes["routine_exercise_id"])
     weight = Decimal(attributes["weight"])
     reps = int(float(attributes["reps"]))
     is_warmup = attributes.get("is_warmup", False)
-    exercise_set, workout_exercise = create_exercise_set(
-        workout_exercise_id, weight, reps, bool(is_warmup)
+    routine_set, routine_exercise = create_routine_set(
+        routine_exercise_id, weight, reps, bool(is_warmup)
     )
     html = render_to_string(
         "workouts/exercise_sets_block.html",
         {
-            "we": workout_exercise,
-            "endpoint_ns": "workouts",
+            "we": routine_exercise,
+            "is_routine": True,
+            "endpoint_ns": "routines",
         },
     )
-    target = f'[data-exercise-sets-for="{workout_exercise.pk}"]'
+    target = f'[data-exercise-sets-for="{routine_exercise.pk}"]'
     message = (
-        f"Set added: {weight_display(exercise_set.weight)} x {exercise_set.reps}"
+        f"Set added: {weight_display(routine_set.weight)} x {routine_set.reps}"
     )
     toast_html = render_toast(message, variant="success")
     delay_ms = 2500
@@ -112,59 +114,27 @@ def handle_create_set(user, attributes):
     }
 
 
-def handle_set_performance_feedback(user, attributes):
-    workout_exercise_id = int(attributes["data-exercise-id"])
-    feedback = attributes["data-feedback"]
-    set_workout_exercise_feedback(user, workout_exercise_id, feedback)
-    return {
-        "status": 200,
-        "headers": [],
-        "json_content": {},
-    }
-
-
-def handle_toggle_set_done(user, attributes):
-    set_id = int(attributes["data-set-id"])
-    exercise_set, workout_exercise, is_completed = toggle_exercise_set_completed(set_id)
-    html = render_to_string(
-        "workouts/set_row_cells.html",
-        {
-            "set": exercise_set,
-            "we": workout_exercise,
-            "endpoint_ns": "workouts",
-        },
-    )
-    target = f'[data-set-id="{exercise_set.pk}"]'
-    return {
-        "status": 200,
-        "headers": [],
-        "json_content": {
-            "target": target,
-            "html": html,
-        },
-    }
-
-
 def handle_add_exercise(user, attributes):
-    workout_id = int(attributes["data-workout-id"])
+    routine_id = int(attributes["data-routine-id"])
     exercise_id = int(attributes["exercise"])
     exercise_type = attributes.get("exercise_type") or None
-    current_workout_exercise_id = attributes.get("data-current-exercise-id")
-    if current_workout_exercise_id:
-        current_workout_exercise_id = int(current_workout_exercise_id)
+    current_routine_exercise_id = attributes.get("data-current-exercise-id")
+    if current_routine_exercise_id:
+        current_routine_exercise_id = int(current_routine_exercise_id)
     else:
-        current_workout_exercise_id = None
-    workout, new_workout_exercise, new_exercise_index = add_exercise_to_workout(
-        workout_id,
+        current_routine_exercise_id = None
+    routine, new_exercise_index = add_exercise_to_routine(
+        routine_id,
         exercise_id,
-        current_workout_exercise_id,
+        current_routine_exercise_id,
         exercise_type,
     )
     html = render_to_string(
         "workouts/workout_exercise_ui.html",
         {
-            "session": workout,
-            "endpoint_ns": "workouts",
+            "session": routine,
+            "is_routine": True,
+            "endpoint_ns": "routines",
             "active_exercise_index": new_exercise_index,
         },
     )
@@ -181,15 +151,16 @@ def handle_add_exercise(user, attributes):
 
 def handle_delete_set(user, attributes):
     set_id = int(attributes["data-set-id"])
-    workout_exercise = delete_exercise_set(set_id)
+    routine_exercise = delete_routine_set(set_id)
     html = render_to_string(
         "workouts/exercise_sets_block.html",
         {
-            "we": workout_exercise,
-            "endpoint_ns": "workouts",
+            "we": routine_exercise,
+            "is_routine": True,
+            "endpoint_ns": "routines",
         },
     )
-    target = f'[data-exercise-sets-for="{workout_exercise.pk}"]'
+    target = f'[data-exercise-sets-for="{routine_exercise.pk}"]'
     return {
         "status": 200,
         "headers": [],
@@ -201,17 +172,18 @@ def handle_delete_set(user, attributes):
 
 
 def handle_delete_exercise(user, attributes):
-    workout_exercise_id = int(attributes["data-exercise-id"])
+    routine_exercise_id = int(attributes["data-exercise-id"])
     current_exercise_index = int(attributes["data-current-exercise-index"])
-    workout, active_exercise_index = delete_workout_exercise(
-        workout_exercise_id,
+    routine, active_exercise_index = delete_routine_exercise(
+        routine_exercise_id,
         current_exercise_index,
     )
     html = render_to_string(
         "workouts/workout_exercise_ui.html",
         {
-            "session": workout,
-            "endpoint_ns": "workouts",
+            "session": routine,
+            "is_routine": True,
+            "endpoint_ns": "routines",
             "active_exercise_index": active_exercise_index,
         },
     )
@@ -226,31 +198,20 @@ def handle_delete_exercise(user, attributes):
     }
 
 
-def handle_delete_workout(user, attributes):
-    workout_id = int(attributes["data-workout-id"])
-    delete_workout(user, workout_id)
-    return {
-        "status": 302,
-        "headers": [["Location", "/workouts/"]],
-        "json_content": {},
-    }
-
-
-def handle_update_workout(user, attributes):
-    workout_id = int(attributes["workout_id"])
+def handle_update_routine(user, attributes):
+    routine_id = int(attributes["routine_id"])
     name = attributes["name"]
-    date_str = attributes["date"]
     notes = attributes.get("notes", "")
-    workout = update_workout(user, workout_id, name, date_str, notes)
+    routine = update_routine(user, routine_id, name, notes)
     html = render_to_string(
-        "workouts/workout_header.html",
-        {"workout": workout},
+        "routines/routine_header.html",
+        {"routine": routine},
     )
     return {
         "status": 200,
         "headers": [],
         "json_content": {
-            "target": "#workout-header",
+            "target": "#routine-header",
             "html": html,
         },
     }
@@ -263,7 +224,7 @@ def handle_reorder_exercises(user, attributes):
         for exercise_id in attributes["data-exercise-ids"].split(",")
         if exercise_id
     ]
-    reorder_workout_exercises(user, session_id, ordered_exercise_ids)
+    reorder_routine_exercises(user, session_id, ordered_exercise_ids)
     return {
         "status": 200,
         "headers": [],
@@ -274,9 +235,9 @@ def handle_reorder_exercises(user, attributes):
 def handle_refresh_exercise_view(user, attributes):
     view = attributes.get("data-view")
     session_id = int(attributes["data-session-id"])
-    Workout.objects.get(pk=session_id, user=user)
-    workout = get_workout(session_id)
-    exercises = list(workout.exercises.all())
+    Routine.objects.get(pk=session_id, user=user)
+    routine = get_routine(session_id)
+    exercises = list(routine.exercises.all())
     active_exercise_index = 0
     if view == "detail":
         active_exercise_id = attributes.get("data-active-exercise-id")
@@ -291,8 +252,9 @@ def handle_refresh_exercise_view(user, attributes):
         html = render_to_string(
             "workouts/exercise_detail_view.html",
             {
-                "session": workout,
-                "endpoint_ns": "workouts",
+                "session": routine,
+                "endpoint_ns": "routines",
+                "is_routine": True,
                 "active_exercise_index": active_exercise_index,
             },
         )
@@ -301,8 +263,9 @@ def handle_refresh_exercise_view(user, attributes):
         html = render_to_string(
             "workouts/exercise_overview_view.html",
             {
-                "session": workout,
-                "endpoint_ns": "workouts",
+                "session": routine,
+                "endpoint_ns": "routines",
+                "is_routine": True,
                 "active_exercise_index": active_exercise_index,
             },
         )
@@ -330,30 +293,32 @@ def handle_update_set(user, attributes):
     weight = Decimal(attributes["weight"])
     reps = int(float(attributes["reps"]))
     is_warmup = attributes.get("is_warmup", False)
-    exercise_set, workout_exercise, warmup_changed = update_exercise_set(
+    routine_set, routine_exercise, warmup_changed = update_routine_set(
         set_id, weight, reps, bool(is_warmup)
     )
     if warmup_changed:
         html = render_to_string(
             "workouts/exercise_sets_block.html",
             {
-                "we": workout_exercise,
-                "endpoint_ns": "workouts",
+                "we": routine_exercise,
+                "is_routine": True,
+                "endpoint_ns": "routines",
             },
         )
-        target = f'[data-exercise-sets-for="{workout_exercise.pk}"]'
+        target = f'[data-exercise-sets-for="{routine_exercise.pk}"]'
     else:
         html = render_to_string(
             "workouts/set_row_cells.html",
             {
-                "set": exercise_set,
-                "we": workout_exercise,
-                "endpoint_ns": "workouts",
+                "set": routine_set,
+                "we": routine_exercise,
+                "is_routine": True,
+                "endpoint_ns": "routines",
             },
         )
-        target = f'[data-set-id="{exercise_set.pk}"]'
+        target = f'[data-set-id="{routine_set.pk}"]'
     message = (
-        f"Set updated to {weight_display(exercise_set.weight)} kg x {exercise_set.reps}"
+        f"Set updated to {weight_display(routine_set.weight)} kg x {routine_set.reps}"
     )
     toast_html = render_toast(message, variant="success")
     delay_ms = 2500

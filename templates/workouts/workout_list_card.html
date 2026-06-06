@@ -1,0 +1,53 @@
+{% load formatting %}
+<article class="panel stack-sm" data-{{ entity }}-id="{{ item.pk }}">
+    <div class="row-between gap-md">
+        <h2 class="title-md m-0">
+            {% if entity == "workout" %}
+            <a href="{% url 'workout-detail' item.pk %}">{{ item.name }}</a>
+            {% else %}
+            <a href="{% url 'routine-detail' item.pk %}">{{ item.name }}</a>
+            {% endif %}
+        </h2>
+        {% if entity == "workout" %}
+        <button
+            type="button"
+            class="btn btn-danger-outline"
+            data-function="click->show_confirm_toast"
+            data-text="Delete workout &quot;{{ item.name }}&quot;? This cannot be undone."
+            data-endpoint="workouts/delete_workout"
+            data-workout-id="{{ item.pk }}"
+            data-confirm-label="Delete"
+            aria-label="Delete workout"
+        >
+            Delete
+        </button>
+        {% else %}
+        <button
+            type="button"
+            class="btn btn-danger-outline"
+            data-function="click->show_confirm_toast"
+            data-text="Delete routine &quot;{{ item.name }}&quot;? This cannot be undone."
+            data-endpoint="routines/delete_routine"
+            data-routine-id="{{ item.pk }}"
+            data-confirm-label="Delete"
+            aria-label="Delete routine"
+        >
+            Delete
+        </button>
+        {% endif %}
+    </div>
+    <p class="text-muted text-sm m-0 font-italic">
+        {% if entity == "workout" %}
+        {{ item.date|datetime_format }}
+        {% else %}
+        {{ item.updated_at|datetime_format }}
+        {% endif %}
+    </p>
+    {% if item.notes %}
+    <p class="text-sm m-0">{{ item.notes|truncatewords:15 }}</p>
+    {% endif %}
+    <div class="row-center gap-md text-muted text-sm">
+        <span>{{ item.exercise_count }} exercises</span>
+        <span>{{ item.set_count }} sets</span>
+    </div>
+</article>

@@ -92,6 +92,10 @@ a:hover {
     align-items: center;
 }
 
+.justify-center {
+    justify-content: center;
+}
+
 .stack-xs > * + * {
     margin-top: var(--space-1);
 }

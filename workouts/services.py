@@ -24,7 +24,7 @@ def list_workouts(user):
     )
 
 
-def start_empty_workout(user):
+def new_workout(user):
     workout_count = Workout.objects.filter(user=user).count()
     return Workout.objects.create(
         user=user,
@@ -257,6 +257,19 @@ def delete_workout_exercise(workout_exercise_id, current_exercise_index):
 
     workout = get_workout(workout_id)
     return workout, active_exercise_index
+
+
+def reorder_workout_exercises(user, workout_id, ordered_exercise_ids):
+    Workout.objects.get(pk=workout_id, user=user)
+    exercises = {
+        exercise.pk: exercise
+        for exercise in WorkoutExercise.objects.filter(workout_id=workout_id)
+    }
+    for index, exercise_id in enumerate(ordered_exercise_ids):
+        exercise_id = int(exercise_id)
+        workout_exercise = exercises[exercise_id]
+        workout_exercise.order = index
+        workout_exercise.save(update_fields=["order"])
 
 
 def update_exercise_set(set_id, weight, reps, is_warmup):

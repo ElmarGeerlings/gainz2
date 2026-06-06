@@ -1,0 +1,29 @@
+{% load formatting %}
+<section
+    class="panel stack-sm mb-4"
+    data-routine-id="{{ routine.pk }}"
+>
+    <div class="row-between gap-md">
+        <h1 id="routine-name" class="title-lg">{{ routine.name }}</h1>
+        <div class="row-center gap-sm">
+            <button type="button" class="btn btn-outline" data-function="click->openWorkoutEditModal" data-session-type="routine" aria-label="Edit routine">
+                Edit
+            </button>
+            <button
+                type="button"
+                class="btn btn-danger-outline"
+                data-function="click->show_confirm_toast"
+                data-text="Delete routine &quot;{{ routine.name }}&quot;? This cannot be undone."
+                data-endpoint="routines/delete_routine"
+                data-routine-id="{{ routine.pk }}"
+                data-confirm-label="Delete"
+                aria-label="Delete routine"
+            >
+                Delete
+            </button>
+        </div>
+    </div>
+    <p class="text-muted text-sm m-1 font-italic">Updated {{ routine.updated_at|datetime_format }}</p>
+    <span id="routine-notes-text" hidden>{{ routine.notes }}</span>
+    <p id="routine-notes-display" class="text-muted text-sm m-1{% if not routine.notes %} hidden{% endif %}"><strong>Notes:</strong> <span id="routine-notes-visible">{{ routine.notes }}</span></p>
+</section>

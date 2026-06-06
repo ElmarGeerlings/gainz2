@@ -6,20 +6,22 @@
             <tr>
                 <th>Weight</th>
                 <th>Reps</th>
+                {% if not is_routine %}
                 <th class="text-center">Done</th>
+                {% endif %}
                 <th></th>
             </tr>
         </thead>
         <tbody>
             {% for set in we.sets.all %}
             <tr class="{% if set.is_warmup %}set-row-warmup{% endif %}" data-set-id="{{ set.pk }}" data-exercise-id="{{ we.pk }}">
-                {% include "workouts/set_row_cells.html" %}
+                {% include "workouts/set_row_cells.html" with set=set we=we is_routine=is_routine endpoint_ns=endpoint_ns %}
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 {% else %}
-<p class="text-muted text-sm m-0">No sets recorded for this exercise.</p>
+<p class="text-muted text-sm m-0">{% if is_routine %}No sets for this exercise.{% else %}No sets recorded for this exercise.{% endif %}</p>
 {% endif %}
-<button type="button" class="btn btn-outline btn-full" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="workouts/set_modal_form" data-exercise-id="{{ we.pk }}">Add Set</button>
+<button type="button" class="btn btn-outline btn-full" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="{{ endpoint_ns }}/set_modal_form" data-exercise-id="{{ we.pk }}">Add Set</button>

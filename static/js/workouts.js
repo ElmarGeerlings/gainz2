@@ -1,8 +1,114 @@
+/* ── State ───────────────────────────────────── */
+
 let workoutCurrentCardIndex = 0;
 let workoutCards = [];
 let workoutIndicators = [];
 let workoutTouchStartX = 0;
 let workoutTouchEndX = 0;
+let exerciseViewMode = "detail";
+let overviewSortables = [];
+let overviewLastTapTime = 0;
+let overviewLastTapRow = null;
+const OVERVIEW_DOUBLE_TAP_MS = 300;
+
+/* ── Exercise view mode (detail / overview) ──── */
+
+function applyExerciseViewMode() {
+    const detailView = document.getElementById("exercise-detail-view");
+    const overviewView = document.getElementById("exercise-overview-view");
+    const toggleButtons = document.querySelectorAll(".exercise-view-toggle-btn");
+
+    if (detailView) {
+        detailView.classList.toggle("hidden", exerciseViewMode !== "detail");
+    }
+    if (overviewView) {
+        overviewView.classList.toggle("hidden", exerciseViewMode !== "overview");
+    }
+    toggleButtons.forEach((button) => {
+        const isActive = button.dataset.view === exerciseViewMode;
+        button.classList.toggle("btn-primary", isActive);
+        button.classList.toggle("btn-outline", !isActive);
+    });
+}
+
+function setExerciseViewToggleDisabled(disabled) {
+    document.querySelectorAll(".exercise-view-toggle-btn").forEach((button) => {
+        button.disabled = disabled;
+    });
+}
+
+function refreshExerciseView(view, activeExerciseId) {
+    const exerciseUi = document.getElementById("workout-exercise-ui");
+    if (!exerciseUi) {
+        return;
+    }
+    const trigger = document.createElement("button");
+    trigger.setAttribute("data-session-id", exerciseUi.dataset.sessionId);
+    trigger.setAttribute("data-view", view);
+    if (view === "detail" && activeExerciseId) {
+        trigger.setAttribute("data-active-exercise-id", activeExerciseId);
+    }
+    const endpoint = `${exerciseUi.dataset.endpointNs}/refresh_exercise_view`;
+    setExerciseViewToggleDisabled(true);
+    sendWsRequest(endpoint, trigger).then((response) => {
+        setExerciseViewToggleDisabled(false);
+        if (response.json_content?.target && response.json_content?.html) {
+            document.querySelector(response.json_content.target).innerHTML =
+                response.json_content.html;
+        }
+        exerciseViewMode = view;
+        if (view === "detail") {
+            const activeIndex = response.json_content?.active_exercise_index;
+            initWorkoutCardsPage(
+                activeIndex != null ? Number(activeIndex) : undefined
+            );
+        } else {
+            applyExerciseViewMode();
+            initOverviewSortable();
+            initOverviewDoubleTap();
+        }
+    });
+}
+
+function setExerciseView(req_event) {
+    const trigger = req_event.currentTarget;
+    const view = trigger.dataset.view;
+    if (view !== "detail" && view !== "overview") {
+        return;
+    }
+    if (view === exerciseViewMode) {
+        return;
+    }
+
+    let activeExerciseId = null;
+    if (view === "detail") {
+        const currentCard = workoutCards[workoutCurrentCardIndex];
+        activeExerciseId = currentCard?.dataset.exerciseId ?? null;
+    }
+    refreshExerciseView(view, activeExerciseId);
+}
+
+/* ── Detail carousel ─────────────────────────── */
+
+function initWorkoutCardsPage(activeIndex) {
+    const container = document.getElementById("exercise-card-container");
+    if (!container) {
+        return;
+    }
+
+    workoutCards = Array.from(container.querySelectorAll(".exercise-card"));
+    workoutIndicators = Array.from(document.querySelectorAll(".carousel-indicator"));
+    if (activeIndex != null) {
+        workoutCurrentCardIndex = activeIndex;
+    } else if (!workoutCards.length) {
+        workoutCurrentCardIndex = 0;
+    } else if (workoutCurrentCardIndex > workoutCards.length - 1) {
+        workoutCurrentCardIndex = workoutCards.length - 1;
+    }
+    refreshWorkoutNavState();
+    bindWorkoutTouch(container);
+    applyExerciseViewMode();
+}
 
 function refreshWorkoutNavState() {
     const currentNumber = document.getElementById("current-exercise-num");
@@ -104,18 +210,68 @@ function bindWorkoutTouch(container) {
     }, { passive: true });
 }
 
-function initWorkoutCardsPage() {
-    const container = document.getElementById("exercise-card-container");
-    if (!container) {
+/* ── Overview (sort, reorder, double-tap) ──── */
+
+function readOverviewExerciseIds() {
+    const ids = [];
+    document.querySelectorAll("#exercise-overview-view .exercise-overview-sortable").forEach((container) => {
+        container.querySelectorAll(".exercise-overview-row").forEach((row) => {
+            ids.push(row.dataset.exerciseId);
+        });
+    });
+    return ids;
+}
+
+function persistOverviewExerciseOrder() {
+    const exerciseUi = document.getElementById("workout-exercise-ui");
+    if (!exerciseUi) {
         return;
     }
-
-    workoutCards = Array.from(container.querySelectorAll(".exercise-card"));
-    workoutIndicators = Array.from(document.querySelectorAll(".carousel-indicator"));
-    workoutCurrentCardIndex = 0;
-    refreshWorkoutNavState();
-    bindWorkoutTouch(container);
+    const trigger = document.createElement("button");
+    trigger.setAttribute("data-session-id", exerciseUi.dataset.sessionId);
+    trigger.setAttribute("data-exercise-ids", readOverviewExerciseIds().join(","));
+    sendWsRequest(`${exerciseUi.dataset.endpointNs}/reorder_exercises`, trigger);
 }
+
+function initOverviewSortable() {
+    overviewSortables.forEach((instance) => instance.destroy());
+    overviewSortables = [];
+    document.querySelectorAll("#exercise-overview-view .exercise-overview-sortable").forEach((container) => {
+        overviewSortables.push(
+            new Sortable(container, {
+                draggable: ".exercise-overview-row",
+                animation: 150,
+                onEnd(evt) {
+                    if (evt.oldIndex === evt.newIndex) {
+                        return;
+                    }
+                    persistOverviewExerciseOrder();
+                },
+            })
+        );
+    });
+}
+
+function initOverviewDoubleTap() {
+    document.querySelectorAll("#exercise-overview-view .exercise-overview-row").forEach((row) => {
+        row.addEventListener("click", (req_event) => {
+            if (!row) {
+                return;
+            }
+            const now = Date.now();
+            if (overviewLastTapRow === row && now - overviewLastTapTime < OVERVIEW_DOUBLE_TAP_MS) {
+                overviewLastTapTime = 0;
+                overviewLastTapRow = null;
+                refreshExerciseView("detail", row.dataset.exerciseId);
+                return;
+            }
+            overviewLastTapTime = now;
+            overviewLastTapRow = row;
+        });
+    });
+}
+
+/* ── Set modal value pickers ─────────────────── */
 
 const PICKER_ROW_HEIGHT = 44;
 const WEIGHT_WINDOW_HALF_STEPS = 40;
@@ -335,6 +491,8 @@ function syncPickersFromHidden(form) {
     }
 }
 
+/* ── Modals and exercise actions ─────────────── */
+
 function openSetModal(req_event) {
     const trigger = req_event.currentTarget;
     const modalName = trigger.getAttribute("data-modal-name");
@@ -353,22 +511,25 @@ function openSetModal(req_event) {
 }
 
 function openWorkoutEditModal(req_event) {
-    const header = document.getElementById("workout-header");
+    const kind = req_event.currentTarget.dataset.sessionType;
+    const header = document.getElementById(`${kind}-header`);
     const section = header.querySelector("section");
-    const nameInput = document.getElementById("workout-edit-name");
-    const dateInput = document.getElementById("workout-edit-date");
-    const notesInput = document.getElementById("workout-edit-notes");
-    const idInput = document.getElementById("workout-edit-id");
-    const notesText = document.getElementById("workout-notes-text");
-    const nameEl = document.getElementById("workout-name");
+    const nameInput = document.getElementById(`${kind}-edit-name`);
+    const notesInput = document.getElementById(`${kind}-edit-notes`);
+    const idInput = document.getElementById(`${kind}-edit-id`);
+    const notesText = document.getElementById(`${kind}-notes-text`);
+    const nameEl = document.getElementById(`${kind}-name`);
+    const idKey = kind === "workout" ? "workoutId" : "routineId";
 
-    idInput.value = section.dataset.workoutId;
+    idInput.value = section.dataset[idKey];
     nameInput.value = nameEl.textContent;
-    dateInput.value = section.dataset.workoutDate;
     notesInput.value = notesText ? notesText.textContent : "";
 
-    const modal = document.getElementById("workout-modal");
-    modal.style.display = "flex";
+    if (kind === "workout") {
+        document.getElementById("workout-edit-date").value = section.dataset.workoutDate;
+    }
+
+    document.getElementById(`${kind}-modal`).style.display = "flex";
 }
 
 function setWorkoutExerciseFeedback(req_event) {
@@ -383,13 +544,14 @@ function setWorkoutExerciseFeedback(req_event) {
     sendWsRequest("workouts/set_performance_feedback", trigger);
 }
 
-function removeExerciseFromWorkout(req_event) {
+function removeExercise(req_event) {
     const trigger = req_event.currentTarget;
+    const endpoint = trigger.getAttribute("data-ws-remove-exercise");
     trigger.setAttribute(
         "data-current-exercise-index",
         String(workoutCurrentCardIndex)
     );
-    sendWsRequest("workouts/delete_exercise", trigger).then((response) => {
+    sendWsRequest(endpoint, trigger).then((response) => {
         if (response.json_content?.target && response.json_content?.html) {
             document.querySelector(response.json_content.target).innerHTML =
                 response.json_content.html;
@@ -400,15 +562,17 @@ function removeExerciseFromWorkout(req_event) {
         }
     });
 }
-function addExerciseToWorkout(req_event) {
+
+function addExercise(req_event) {
     const trigger = req_event.currentTarget;
+    const endpoint = trigger.getAttribute("data-ws-add-exercise");
     const currentCard = workoutCards[workoutCurrentCardIndex];
     if (currentCard?.dataset.exerciseId) {
         trigger.setAttribute("data-current-exercise-id", currentCard.dataset.exerciseId);
     } else {
         trigger.removeAttribute("data-current-exercise-id");
     }
-    sendWsRequest("workouts/add_exercise", trigger).then((response) => {
+    sendWsRequest(endpoint, trigger).then((response) => {
         if (response.json_content?.target && response.json_content?.html) {
             document.querySelector(response.json_content.target).innerHTML =
                 response.json_content.html;
@@ -420,4 +584,6 @@ function addExerciseToWorkout(req_event) {
     });
 }
 
-document.addEventListener("DOMContentLoaded", initWorkoutCardsPage);
+/* ── Init ────────────────────────────────────── */
+
+document.addEventListener("DOMContentLoaded", () => initWorkoutCardsPage());

@@ -9,12 +9,27 @@ Handlers are sync callables: (user, attributes) -> response dict matching app.js
 
 from typing import Any, Callable
 
+from routines.ws_handlers import (
+    handle_add_exercise as handle_routine_add_exercise,
+    handle_create_set as handle_routine_create_set,
+    handle_delete_exercise as handle_routine_delete_exercise,
+    handle_delete_routine,
+    handle_delete_set as handle_routine_delete_set,
+    handle_reorder_exercises as handle_routine_reorder_exercises,
+    handle_refresh_exercise_view as handle_routine_refresh_exercise_view,
+    handle_set_edit_modal_form as handle_routine_set_edit_modal_form,
+    handle_set_modal_form as handle_routine_set_modal_form,
+    handle_update_routine,
+    handle_update_set as handle_routine_update_set,
+)
 from workouts.ws_handlers import (
     handle_add_exercise,
     handle_delete_exercise,
     handle_delete_workout,
     handle_create_set,
     handle_delete_set,
+    handle_reorder_exercises,
+    handle_refresh_exercise_view,
     handle_set_edit_modal_form,
     handle_set_modal_form,
     handle_set_performance_feedback,
@@ -48,6 +63,19 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "workouts/delete_exercise": handle_delete_exercise,
     "workouts/delete_workout": handle_delete_workout,
     "workouts/add_exercise": handle_add_exercise,
+    "workouts/refresh_exercise_view": handle_refresh_exercise_view,
+    "workouts/reorder_exercises": handle_reorder_exercises,
+    "routines/delete_routine": handle_delete_routine,
+    "routines/set_modal_form": handle_routine_set_modal_form,
+    "routines/set_edit_modal_form": handle_routine_set_edit_modal_form,
+    "routines/create_set": handle_routine_create_set,
+    "routines/update_set": handle_routine_update_set,
+    "routines/delete_set": handle_routine_delete_set,
+    "routines/add_exercise": handle_routine_add_exercise,
+    "routines/delete_exercise": handle_routine_delete_exercise,
+    "routines/update_routine": handle_update_routine,
+    "routines/refresh_exercise_view": handle_routine_refresh_exercise_view,
+    "routines/reorder_exercises": handle_routine_reorder_exercises,
 }
 
 

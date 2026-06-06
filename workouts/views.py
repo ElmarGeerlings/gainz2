@@ -5,7 +5,7 @@ from workouts.services import (
     get_workout,
     list_add_exercise_options,
     list_workouts,
-    start_empty_workout,
+    new_workout,
 )
 
 
@@ -17,8 +17,8 @@ def workouts_list_page(req_event):
     return render(req_event, "workouts/workouts_list.html", response)
 
 
-def start_empty_workout_page(req_event):
-    workout = start_empty_workout(req_event.user)
+def new_workout_page(req_event):
+    workout = new_workout(req_event.user)
     return redirect("workout-detail", workout_id=workout.pk)
 
 
