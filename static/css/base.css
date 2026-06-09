@@ -361,7 +361,8 @@ a:hover {
     font-size: 0.78rem;
 }
 
-.clickable-row {
+.clickable-row,
+.clickable {
     cursor: pointer;
 }
 
@@ -383,6 +384,58 @@ a:hover {
     min-height: 42px;
     padding: 0 0.75rem;
     background: var(--surface);
+}
+
+textarea.form-control {
+    padding-block: 0.65rem;
+}
+
+/* ── Dropdown ────────────────────────────────── */
+
+.gainz-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.gainz-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    z-index: 200;
+    min-width: 180px;
+    padding: 0.25rem 0;
+}
+
+.gainz-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.gainz-dropdown-item:hover {
+    background: var(--bg);
+}
+
+.gainz-dropdown-divider {
+    border-top: 1px solid var(--border);
+    margin: 0.25rem 0;
+}
+
+.gainz-dropdown-empty {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0;
 }
 
 /* ── Modal ───────────────────────────────────── */

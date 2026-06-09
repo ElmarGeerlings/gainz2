@@ -18,6 +18,7 @@ class Exercise(models.Model):
         ('legs', 'Legs'),
         ('core', 'Core'),
         ('cardio', 'Cardio'),
+        ('other', 'Other'),
     ]
 
     user = models.ForeignKey(

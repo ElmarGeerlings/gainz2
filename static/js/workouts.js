@@ -493,6 +493,21 @@ function syncPickersFromHidden(form) {
 
 /* ── Modals and exercise actions ─────────────── */
 
+function toggleSetModalOption(req_event) {
+    const button = req_event.currentTarget;
+    const option = button.dataset.setModalOption;
+    const hidden = document.getElementById(`set-modal-${option}-input`);
+    if (!hidden) {
+        return;
+    }
+    const enabled = hidden.value !== "on";
+    hidden.value = enabled ? "on" : "";
+    button.textContent = enabled ? button.dataset.labelOn : button.dataset.labelOff;
+    button.classList.toggle("btn-primary", enabled);
+    button.classList.toggle("btn-outline", !enabled);
+    button.setAttribute("aria-pressed", enabled ? "true" : "false");
+}
+
 function openSetModal(req_event) {
     const trigger = req_event.currentTarget;
     const modalName = trigger.getAttribute("data-modal-name");

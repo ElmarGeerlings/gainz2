@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+{% include "shared/import_workout_text_form.html" with import_title="Import Program from Text" name_label="Program Name" name_field="program_name" name_input_id="program-name" name_value=program_name name_placeholder="e.g., Push Pull Legs" workout_text_placeholder="Paste your program text here..." format_hint="Format: Exercise Name SetsxReps Weight. Empty line starts a new routine." confirm_prompt="Create these exercises and import the program?" cancel_url_name="programs-list" %}
+{% endblock %}

@@ -38,9 +38,9 @@
     </div>
     <p class="text-muted text-sm m-0 font-italic">
         {% if entity == "workout" %}
-        {{ item.date|datetime_format }}
+        {{ item.date|list_datetime_format }}
         {% else %}
-        {{ item.updated_at|datetime_format }}
+        {{ item.updated_at|list_datetime_format }}
         {% endif %}
     </p>
     {% if item.notes %}

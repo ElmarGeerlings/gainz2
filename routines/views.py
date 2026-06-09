@@ -1,15 +1,14 @@
 from django.shortcuts import get_object_or_404, redirect, render
 
+from exercises.models import Exercise
 from routines.models import Routine, RoutineExercise
 from routines.services import (
-    build_exercise_lookup,
-    build_import_name_to_exercise,
-    create_custom_exercise_for_import,
     get_routine,
     import_routine_from_parsed,
     list_routines,
     new_routine,
     prepare_routine_import,
+    resolve_import_exercises,
 )
 from workouts.services import list_add_exercise_options
 
@@ -52,6 +51,7 @@ def routine_detail_page(req_event, routine_id):
         "title": routine.name,
         "routine": routine,
         "add_exercise_options": list_add_exercise_options(),
+        "bodypart_choices": Exercise.BODYPART_CHOICES,
         "exercise_type_choices": [
             {"value": value, "label": label}
             for value, label in RoutineExercise.EXERCISE_TYPE_CHOICES
@@ -98,11 +98,11 @@ def import_routine_page(req_event):
     unmatched_names = prepared["unmatched_names"]
 
     if step == "confirm":
-        lookup = build_exercise_lookup(req_event.user)
-        for name in unmatched_names:
-            create_custom_exercise_for_import(req_event.user, name)
-        lookup = build_exercise_lookup(req_event.user)
-        name_to_exercise = build_import_name_to_exercise(parsed_lines, lookup)
+        name_to_exercise = resolve_import_exercises(
+            req_event.user,
+            unmatched_names,
+            parsed_lines,
+        )
         routine = import_routine_from_parsed(
             req_event.user,
             routine_name,
@@ -112,8 +112,11 @@ def import_routine_page(req_event):
         return redirect("routine-detail", routine_id=routine.pk)
 
     if not unmatched_names:
-        lookup = build_exercise_lookup(req_event.user)
-        name_to_exercise = build_import_name_to_exercise(parsed_lines, lookup)
+        name_to_exercise = resolve_import_exercises(
+            req_event.user,
+            unmatched_names,
+            parsed_lines,
+        )
         routine = import_routine_from_parsed(
             req_event.user,
             routine_name,

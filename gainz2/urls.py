@@ -24,6 +24,13 @@ from routines.views import (
     routine_detail_page,
     routines_list_page,
 )
+from exercises.views import exercise_list_page
+from programs.views import (
+    import_program_page,
+    new_program_page,
+    program_detail_page,
+    programs_list_page,
+)
 from workouts.views import new_workout_page, workout_detail_page, workouts_list_page
 
 urlpatterns = [
@@ -33,9 +40,14 @@ urlpatterns = [
     path("register/", register_page, name="register"),
     path("logout/", logout_page, name="logout"),
     path("admin/", admin.site.urls),
+    path("exercises/", exercise_list_page, name="exercises-list"),
     path("workouts/", workouts_list_page, name="workouts-list"),
     path("workouts/new/", new_workout_page, name="new-workout"),
     path("workouts/<int:workout_id>/", workout_detail_page, name="workout-detail"),
+    path("programs/", programs_list_page, name="programs-list"),
+    path("programs/import/", import_program_page, name="program-import"),
+    path("programs/new/", new_program_page, name="new-program"),
+    path("programs/<int:program_id>/", program_detail_page, name="program-detail"),
     path("routines/", routines_list_page, name="routines-list"),
     path("routines/import/", import_routine_page, name="routine-import"),
     path("routines/new/", new_routine_page, name="new-routine"),

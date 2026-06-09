@@ -240,11 +240,42 @@ def reorder_routine_exercises(user, routine_id, ordered_exercise_ids):
         routine_exercise.save(update_fields=["order"])
 
 
-def update_routine_set(set_id, weight, reps, is_warmup):
+def apply_smartchange(
+    routine_exercise,
+    edited_set_id,
+    weight_delta,
+    reps_delta,
+    is_warmup,
+    smartchange_warmup,
+):
+    siblings = RoutineSet.objects.filter(
+        routine_exercise=routine_exercise
+    ).exclude(pk=edited_set_id)
+    if not smartchange_warmup:
+        siblings = siblings.filter(is_warmup=is_warmup)
+    updated_count = 0
+    for sibling in siblings:
+        new_weight = sibling.weight + weight_delta
+        if new_weight < 0:
+            new_weight = Decimal("0")
+        else:
+            new_weight = quantize_weight(new_weight)
+        new_reps = max(1, sibling.reps + reps_delta)
+        if new_weight != sibling.weight or new_reps != sibling.reps:
+            sibling.weight = new_weight
+            sibling.reps = new_reps
+            sibling.save(update_fields=["weight", "reps"])
+            updated_count += 1
+    return updated_count
+
+
+def update_routine_set(set_id, weight, reps, is_warmup, *, user=None, smartchange=False):
     routine_set = RoutineSet.objects.select_related("routine_exercise").get(
         pk=set_id
     )
     routine_exercise = routine_set.routine_exercise
+    old_weight = routine_set.weight
+    old_reps = routine_set.reps
     old_is_warmup = routine_set.is_warmup
     routine_set.weight = quantize_weight(weight)
     routine_set.reps = reps
@@ -255,7 +286,21 @@ def update_routine_set(set_id, weight, reps, is_warmup):
         reorder_sets_for_routine_exercise(routine_exercise)
         routine_set.refresh_from_db()
         routine_exercise = get_routine_exercise(routine_exercise.pk)
-    return routine_set, routine_exercise, warmup_changed
+    weight_delta = routine_set.weight - old_weight
+    reps_delta = routine_set.reps - old_reps
+    siblings_updated_count = 0
+    if smartchange and user and (weight_delta != 0 or reps_delta != 0):
+        siblings_updated_count = apply_smartchange(
+            routine_exercise,
+            routine_set.pk,
+            weight_delta,
+            reps_delta,
+            routine_set.is_warmup,
+            user.settings.smartchange_warmup,
+        )
+        if siblings_updated_count:
+            routine_exercise = get_routine_exercise(routine_exercise.pk)
+    return routine_set, routine_exercise, warmup_changed, siblings_updated_count
 
 
 def get_add_set_defaults(user, routine_exercise_id):
@@ -454,6 +499,13 @@ def build_import_name_to_exercise(parsed_lines, lookup):
         exercise = find_exercise_for_import(parsed["exercise_name"], lookup)
         name_to_exercise[key] = exercise
     return name_to_exercise
+
+
+def resolve_import_exercises(user, unmatched_names, parsed_lines):
+    for name in unmatched_names:
+        create_custom_exercise_for_import(user, name)
+    lookup = build_exercise_lookup(user)
+    return build_import_name_to_exercise(parsed_lines, lookup)
 
 
 def import_routine_from_parsed(user, routine_name, parsed_lines, name_to_exercise):

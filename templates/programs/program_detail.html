@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/programs.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <header class="stack-sm mb-4">
+        <a href="{% url 'programs-list' %}" class="text-sm">Back to programs</a>
+        <h1 class="title-lg m-0">{{ program.name }}</h1>
+    </header>
+
+    {{ routines_catalog|json_script:"routines-catalog" }}
+
+    <form id="program-edit-form" class="stack-sm">
+        <section class="panel stack-sm mb-4">
+            <div class="form-stack">
+                <label for="program-name">Name</label>
+                <input
+                    type="text"
+                    id="program-name"
+                    name="name"
+                    class="form-control"
+                    value="{{ program.name }}"
+                    autocomplete="off"
+                >
+
+                <label for="program-description">Description</label>
+                <textarea
+                    id="program-description"
+                    name="description"
+                    class="form-control"
+                    rows="3"
+                >{{ program.description }}</textarea>
+
+                <label class="row-center gap-sm">
+                    <input
+                        type="checkbox"
+                        id="program-is-active"
+                        name="is_active"
+                        {% if program.is_active %}checked{% endif %}
+                    >
+                    Active program
+                </label>
+
+                <fieldset class="stack-xs" style="border:none;padding:0;margin:0;">
+                    <legend class="text-sm text-muted">Cross-routine weight carryover</legend>
+                    <label class="row-center gap-sm">
+                        <input type="checkbox" name="primary_carryover" {% if program.primary_carryover %}checked{% endif %}>
+                        Primary exercises
+                    </label>
+                    <label class="row-center gap-sm">
+                        <input type="checkbox" name="secondary_carryover" {% if program.secondary_carryover %}checked{% endif %}>
+                        Secondary exercises
+                    </label>
+                    <label class="row-center gap-sm">
+                        <input type="checkbox" name="accessory_carryover" {% if program.accessory_carryover %}checked{% endif %}>
+                        Accessory exercises
+                    </label>
+                </fieldset>
+            </div>
+        </section>
+
+        <section class="stack-sm mb-4">
+            <h2 class="title-sm m-0">Routines</h2>
+            <div id="program-routines-sortable" class="stack-sm">
+                {% for program_routine in program.program_routines.all %}
+                {% include "programs/program_routine_row.html" with routine=program_routine.routine %}
+                {% endfor %}
+            </div>
+            <template id="program-routine-row-template">
+                {% include "programs/program_routine_row.html" with routine=template_routine %}
+            </template>
+            <select
+                id="program-add-routine"
+                class="form-control btn-full"
+                data-function="change->addProgramRoutine"
+            >
+                <option value="">Add routine...</option>
+                {% for routine in available_routines %}
+                <option value="{{ routine.pk }}">{{ routine.name }}</option>
+                {% endfor %}
+            </select>
+        </section>
+
+        <div class="row-center gap-sm">
+            <a href="{% url 'program-detail' program.pk %}" class="btn btn-outline">Cancel</a>
+            <button
+                type="button"
+                class="btn btn-primary"
+                data-function="click->saveProgram"
+                data-program-id="{{ program.pk }}"
+            >
+                Save
+            </button>
+        </div>
+    </form>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'js/sortable.min.js' %}"></script>
+<script defer src="{% static 'js/programs.js' %}"></script>
+{% endblock %}

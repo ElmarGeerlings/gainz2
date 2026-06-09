@@ -1,0 +1,23 @@
+{% if grouped_exercises %}
+    {% for section_name, exercises_in_section in grouped_exercises %}
+    <section class="stack-sm mb-4">
+        <h2 class="title-sm m-0">{{ section_name }}</h2>
+        <div class="exercise-library-grid">
+            {% for exercise in exercises_in_section %}
+            <div
+                class="panel stack-xs p-3 clickable{% if exercise.is_custom %} surface-soft{% endif %}"
+                data-function="click->MorphingModal"
+                data-modal-name="exercise-modal"
+                data-routing="exercises/exercise_form"
+                data-exercise-id="{{ exercise.pk }}"
+            >
+                <p class="text-sm fw-700 m-0">{{ exercise.name }}</p>
+                <p class="text-xs text-muted m-0">{{ exercise.get_exercise_type_display }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+{% else %}
+    <p class="text-muted text-center m-0">No exercises found.</p>
+{% endif %}

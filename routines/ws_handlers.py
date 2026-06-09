@@ -67,6 +67,7 @@ def handle_set_edit_modal_form(user, attributes):
             "weight": routine_set.weight,
             "reps": routine_set.reps,
             "is_warmup": routine_set.is_warmup,
+            "smartchange_enabled": user.settings.smartchange_enabled,
             "uses_wheel": True,
             "reps_range": range(100),
             "is_routine": True,
@@ -293,10 +294,13 @@ def handle_update_set(user, attributes):
     weight = Decimal(attributes["weight"])
     reps = int(float(attributes["reps"]))
     is_warmup = attributes.get("is_warmup", False)
-    routine_set, routine_exercise, warmup_changed = update_routine_set(
-        set_id, weight, reps, bool(is_warmup)
+    smartchange = bool(attributes.get("smartchange", False))
+    routine_set, routine_exercise, warmup_changed, siblings_updated_count = update_routine_set(
+        set_id, weight, reps, bool(is_warmup), user=user, smartchange=smartchange
     )
-    if warmup_changed:
+    user.settings.smartchange_enabled = smartchange
+    user.settings.save(update_fields=["smartchange_enabled"])
+    if warmup_changed or siblings_updated_count > 0:
         html = render_to_string(
             "workouts/exercise_sets_block.html",
             {
@@ -317,9 +321,13 @@ def handle_update_set(user, attributes):
             },
         )
         target = f'[data-set-id="{routine_set.pk}"]'
-    message = (
-        f"Set updated to {weight_display(routine_set.weight)} kg x {routine_set.reps}"
-    )
+    if siblings_updated_count > 0:
+        total_updated = siblings_updated_count + 1
+        message = f"{total_updated} sets updated"
+    else:
+        message = (
+            f"Set updated to {weight_display(routine_set.weight)} kg x {routine_set.reps}"
+        )
     toast_html = render_toast(message, variant="success")
     delay_ms = 2500
     return {

@@ -8,6 +8,13 @@ class Workout(models.Model):
     date = models.DateTimeField(default=timezone.now)
     name = models.CharField(max_length=200)
     notes = models.TextField(blank=True)
+    routine = models.ForeignKey(
+        "routines.Routine",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="workouts",
+    )
 
     def __str__(self):
         return self.name

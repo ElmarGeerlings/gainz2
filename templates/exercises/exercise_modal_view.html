@@ -1,0 +1,23 @@
+<div class="form-stack">
+    <h2 class="title-md m-0 mb-3">{{ exercise.name }}</h2>
+
+    <div>
+        <span class="form-label fw-700">Description</span>
+        <p class="text-sm m-0">{% if exercise.description %}{{ exercise.description }}{% else %}—{% endif %}</p>
+    </div>
+
+    <div>
+        <span class="form-label fw-700">Primary Bodypart</span>
+        <p class="text-sm m-0">{{ exercise.get_primary_bodypart_display }}</p>
+    </div>
+
+    <div>
+        <span class="form-label fw-700">Secondary Bodypart</span>
+        <p class="text-sm m-0">{% if exercise.secondary_bodypart %}{{ exercise.get_secondary_bodypart_display }}{% else %}None{% endif %}</p>
+    </div>
+
+    <div>
+        <span class="form-label fw-700">Exercise Type</span>
+        <p class="text-sm m-0">{{ exercise.get_exercise_type_display }}</p>
+    </div>
+</div>

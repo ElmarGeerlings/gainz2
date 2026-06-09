@@ -1,0 +1,66 @@
+{% load formatting %}
+<article class="panel stack-sm{% if program.is_active %} program-card-active{% endif %}" data-program-id="{{ program.pk }}">
+    <div class="row-between gap-md">
+        <h2 class="title-md m-0">
+            <a href="{% url 'program-detail' program.pk %}">{{ program.name }}</a>
+        </h2>
+        <div class="row-center gap-sm">
+            {% if program.is_active %}
+            <button
+                type="button"
+                class="btn btn-outline"
+                data-endpoint="click->programs/deactivate_program"
+                data-program-id="{{ program.pk }}"
+            >
+                Deactivate
+            </button>
+            {% else %}
+            <button
+                type="button"
+                class="btn btn-primary"
+                data-endpoint="click->programs/activate_program"
+                data-program-id="{{ program.pk }}"
+            >
+                Activate
+            </button>
+            {% endif %}
+            <button
+                type="button"
+                class="btn btn-danger-outline"
+                data-function="click->show_confirm_toast"
+                data-text="Delete program &quot;{{ program.name }}&quot;? This cannot be undone."
+                data-endpoint="programs/delete_program"
+                data-program-id="{{ program.pk }}"
+                data-confirm-label="Delete"
+                aria-label="Delete program"
+            >
+                Delete
+            </button>
+        </div>
+    </div>
+    <p class="text-muted text-sm m-0 font-italic">{{ program.updated_at|list_datetime_format }}</p>
+    {% if program.program_routines.all %}
+    <div class="panel surface-soft p-2">
+        <table class="table table-compact program-routines-table m-0">
+            <tbody>
+                {% for program_routine in program.program_routines.all %}
+                <tr>
+                    <td>
+                        <a href="{% url 'routine-detail' program_routine.routine.pk %}">{{ program_routine.routine.name }}</a>
+                    </td>
+                    <td class="text-muted">
+                        {% if program_routine.routine.exercise_count %}
+                        {{ program_routine.routine.exercise_count }} exercises
+                        {% else %}
+                        no exercises
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted text-sm m-0">No routines in this program yet.</p>
+    {% endif %}
+</article>

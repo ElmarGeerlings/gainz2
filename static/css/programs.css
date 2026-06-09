@@ -1,0 +1,16 @@
+.program-card-active {
+    background: var(--tint-feedback-bg);
+    border-color: var(--tint-feedback-border);
+}
+
+.program-routines-table td {
+    padding: 0.3rem 0.25rem;
+}
+
+.program-routines-table tr:last-child td {
+    border-bottom: none;
+}
+
+.program-routine-row {
+    cursor: grab;
+}

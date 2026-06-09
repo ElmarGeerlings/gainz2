@@ -92,7 +92,7 @@ function ws_request(event, endpoint) {
     if (response.status === 200 && closeModalSelector) {
       const modal = document.querySelector(closeModalSelector);
       if (modal) {
-        modal.style.display = 'none';
+        hideGainzModal(modal);
       }
     }
     if (response.status === 200 && response.json_content?.toast_html) {
@@ -173,7 +173,7 @@ document.addEventListener('keydown', (event) => {
   }
   document.querySelectorAll('.gainz-modal').forEach((modal) => {
     if (modal.style.display === 'flex') {
-      modal.style.display = 'none';
+      hideGainzModal(modal);
     }
   });
 });
@@ -237,6 +237,23 @@ document.querySelectorAll('[data-endpoint], [data-function]').forEach((element) 
 // New functions under here
 ////////////////////////////////////////////////////////////////////////
 
+function resetModalContent(modal) {
+  if (modal.hasAttribute('data-modal-persist')) {
+    return;
+  }
+  const resetFn = modal.getAttribute('data-reset-function');
+  if (resetFn && typeof window[resetFn] === 'function') {
+    window[resetFn](modal);
+    return;
+  }
+  modal.querySelectorAll('form').forEach((form) => form.reset());
+}
+
+function hideGainzModal(modal) {
+  resetModalContent(modal);
+  modal.style.display = 'none';
+}
+
 function ShowModal(event) {
   const trigger = event.currentTarget;
   const modalName = trigger.getAttribute('data-modal-name');
@@ -260,13 +277,39 @@ function MorphingModal(event) {
   const modalName = trigger.getAttribute('data-modal-name');
   const endpoint = trigger.getAttribute('data-routing');
   const modal = document.getElementById(modalName);
-  if (modal) {
-    modal.style.display = 'flex';
-  }
+  const contentEl = document.getElementById(`${modalName}-content`);
+  const focusId = trigger.getAttribute('data-focus');
   sendWsRequest(endpoint, trigger).then((response) => {
-    const contentEl = document.getElementById(`${modalName}-content`);
     contentEl.innerHTML = response.json_content.html;
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+    if (focusId) {
+      setTimeout(() => {
+        const el = document.getElementById(focusId);
+        if (el) {
+          el.focus();
+        }
+      }, 100);
+    }
   });
+}
+
+function toggleGainzDropdown(req_event) {
+    const btn = req_event.currentTarget;
+    const menu = btn.nextElementSibling;
+    const isOpen = !menu.hidden;
+    document.querySelectorAll(".gainz-dropdown-menu").forEach((m) => { m.hidden = true; });
+    if (!isOpen) {
+        menu.hidden = false;
+        const close = (e) => {
+            if (!btn.closest(".gainz-dropdown").contains(e.target)) {
+                menu.hidden = true;
+                document.removeEventListener("click", close);
+            }
+        };
+        setTimeout(() => document.addEventListener("click", close), 0);
+    }
 }
 
 function CloseModal(event) {
@@ -280,7 +323,7 @@ function CloseModal(event) {
       (!event.target.closest('.gainz-modal-content') ||
         event.target.closest('.gainz-modal-close'))
     ) {
-      modal.style.display = 'none';
+      hideGainzModal(modal);
     }
   }
 }

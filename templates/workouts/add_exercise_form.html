@@ -1,0 +1,50 @@
+<section class="panel stack-sm mt-5">
+    <h3 class="title-sm">{{ section_title }}</h3>
+    <form class="form-stack">
+        {% if session_kind == "workout" %}
+        <input type="hidden" name="workout_id" value="{{ session_pk }}">
+        {% else %}
+        <input type="hidden" name="routine_id" value="{{ session_pk }}">
+        {% endif %}
+
+        <span class="form-label">Exercise</span>
+        <select
+            id="bodypart-select-{{ session_pk }}"
+            name="primary_bodypart"
+            class="form-control"
+            aria-label="Bodypart"
+            data-session-id="{{ session_pk }}"
+            data-endpoint="change->{{ endpoint_ns }}/refresh_add_exercise_options"
+        >
+            <option value="" selected>All bodyparts</option>
+            {% for code, label in bodypart_choices %}
+            <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+        <div id="add-exercise-select-wrap" class="form-stack">
+            {% include "workouts/add_exercise_select.html" %}
+        </div>
+
+        <label for="exercise-type-{{ session_pk }}" class="form-label">Type (Optional)</label>
+        <select id="exercise-type-{{ session_pk }}" name="exercise_type" class="form-control">
+            <option value="">Default</option>
+            {% for type in exercise_type_choices %}
+            <option value="{{ type.value }}">{{ type.label }}</option>
+            {% endfor %}
+        </select>
+
+        <button
+            type="button"
+            class="btn btn-primary btn-full"
+            data-function="click->addExercise"
+            data-ws-add-exercise="{{ endpoint_ns }}/add_exercise"
+            {% if session_kind == "workout" %}
+            data-workout-id="{{ session_pk }}"
+            {% else %}
+            data-routine-id="{{ session_pk }}"
+            {% endif %}
+        >
+            Add Exercise
+        </button>
+    </form>
+</section>

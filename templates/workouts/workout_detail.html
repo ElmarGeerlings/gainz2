@@ -16,31 +16,7 @@
 
     {% include "workouts/workout_exercise_ui.html" with session=workout endpoint_ns="workouts" active_exercise_index=0 %}
 
-    <section class="panel stack-sm mt-5">
-        <h3 class="title-sm">Add Exercise to This Workout</h3>
-        <form class="form-stack">
-            <input type="hidden" name="workout_id" value="{{ workout.pk }}">
-            <label for="exercise-select-{{ workout.pk }}" class="form-label">Exercise</label>
-            <select id="exercise-select-{{ workout.pk }}" name="exercise" class="form-control">
-                <option value="" selected disabled>Choose an exercise...</option>
-                {% for ex in add_exercise_options %}
-                <option value="{{ ex.pk }}">{{ ex.name }}</option>
-                {% endfor %}
-            </select>
-
-            <label for="exercise-type-{{ workout.pk }}" class="form-label">Type (Optional)</label>
-            <select id="exercise-type-{{ workout.pk }}" name="exercise_type" class="form-control">
-                <option value="">Default</option>
-                {% for type in exercise_type_choices %}
-                <option value="{{ type.value }}">{{ type.label }}</option>
-                {% endfor %}
-            </select>
-
-            <button type="button" class="btn btn-primary btn-full" data-function="click->addExercise" data-ws-add-exercise="workouts/add_exercise" data-workout-id="{{ workout.pk }}">
-                Add Exercise
-            </button>
-        </form>
-    </section>
+    {% include "workouts/add_exercise_form.html" with session_pk=workout.pk session_kind="workout" endpoint_ns="workouts" section_title="Add Exercise to This Workout" add_exercise_options=add_exercise_options bodypart_choices=bodypart_choices exercise_type_choices=exercise_type_choices %}
 </main>
 
 <div id="set-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">

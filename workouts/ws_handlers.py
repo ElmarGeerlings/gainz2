@@ -21,15 +21,53 @@ from workouts.services import (
     delete_exercise_set,
     delete_workout,
     delete_workout_exercise,
+    get_active_program,
     get_add_set_defaults,
+    get_next_routine_for_program,
     get_workout,
     get_workout_exercise,
+    list_add_exercise_options,
+    new_workout,
+    new_workout_from_routine,
     reorder_workout_exercises,
     set_workout_exercise_feedback,
     toggle_exercise_set_completed,
     update_exercise_set,
     update_workout,
 )
+
+
+def handle_start_workout(user, attributes):
+    program = get_active_program(user)
+    routine = get_next_routine_for_program(program) if program else None
+    if routine:
+        workout = new_workout_from_routine(user, routine)
+        program.last_used_routine = routine
+        program.save(update_fields=["last_used_routine"])
+    else:
+        workout = new_workout(user)
+    return {
+        "status": 302,
+        "headers": [["Location", f"/workouts/{workout.pk}/"]],
+        "json_content": {},
+    }
+
+
+def handle_start_routine_workout(user, attributes):
+    from programs.models import ProgramRoutine
+    from routines.models import Routine
+    routine_id = int(attributes["data-routine-id"])
+    routine = Routine.objects.get(pk=routine_id, user=user)
+    workout = new_workout_from_routine(user, routine)
+    program = get_active_program(user)
+    if program and ProgramRoutine.objects.filter(program=program, routine=routine).exists():
+        program.last_used_routine = routine
+        program.save(update_fields=["last_used_routine"])
+    return {
+        "status": 302,
+        "headers": [["Location", f"/workouts/{workout.pk}/"]],
+        "json_content": {},
+    }
 
 
 def handle_set_modal_form(user, attributes):
@@ -67,6 +105,7 @@ def handle_set_edit_modal_form(user, attributes):
             "weight": exercise_set.weight,
             "reps": exercise_set.reps,
             "is_warmup": exercise_set.is_warmup,
+            "smartchange_enabled": user.settings.smartchange_enabled,
             "uses_wheel": True,
             "reps_range": range(100),
             "endpoint_ns": "workouts",
@@ -140,6 +179,26 @@ def handle_toggle_set_done(user, attributes):
         "headers": [],
         "json_content": {
             "target": target,
+            "html": html,
+        },
+    }
+
+
+def handle_refresh_add_exercise_options(user, attributes):
+    primary_bodypart = attributes.get("primary_bodypart") or None
+    session_pk = attributes["data-session-id"]
+    html = render_to_string(
+        "workouts/add_exercise_select.html",
+        {
+            "add_exercise_options": list_add_exercise_options(primary_bodypart),
+            "session_pk": session_pk,
+        },
+    )
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {
+            "target": "#add-exercise-select-wrap",
             "html": html,
         },
     }
@@ -330,10 +389,13 @@ def handle_update_set(user, attributes):
     weight = Decimal(attributes["weight"])
     reps = int(float(attributes["reps"]))
     is_warmup = attributes.get("is_warmup", False)
-    exercise_set, workout_exercise, warmup_changed = update_exercise_set(
-        set_id, weight, reps, bool(is_warmup)
+    smartchange = bool(attributes.get("smartchange", False))
+    exercise_set, workout_exercise, warmup_changed, siblings_updated_count = update_exercise_set(
+        set_id, weight, reps, bool(is_warmup), user=user, smartchange=smartchange
     )
-    if warmup_changed:
+    user.settings.smartchange_enabled = smartchange
+    user.settings.save(update_fields=["smartchange_enabled"])
+    if warmup_changed or siblings_updated_count > 0:
         html = render_to_string(
             "workouts/exercise_sets_block.html",
             {
@@ -352,9 +414,13 @@ def handle_update_set(user, attributes):
             },
         )
         target = f'[data-set-id="{exercise_set.pk}"]'
-    message = (
-        f"Set updated to {weight_display(exercise_set.weight)} kg x {exercise_set.reps}"
-    )
+    if siblings_updated_count > 0:
+        total_updated = siblings_updated_count + 1
+        message = f"{total_updated} sets updated"
+    else:
+        message = (
+            f"Set updated to {weight_display(exercise_set.weight)} kg x {exercise_set.reps}"
+        )
     toast_html = render_toast(message, variant="success")
     delay_ms = 2500
     return {

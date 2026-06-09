@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/programs.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <header class="stack-sm mb-4">
+        <h1 class="title-lg m-0">My Programs</h1>
+        <div class="row-center gap-sm">
+            <button type="button" class="btn btn-outline" disabled>AI</button>
+            <a href="{% url 'new-program' %}" class="btn btn-primary">New</a>
+            <a href="{% url 'program-import' %}" class="btn btn-outline">Import</a>
+        </div>
+    </header>
+
+    <div class="stack-sm">
+        {% for program in programs %}
+        {% include "programs/program_list_card.html" %}
+        {% empty %}
+        <p class="text-muted text-center m-0">You haven't created any programs yet.</p>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}

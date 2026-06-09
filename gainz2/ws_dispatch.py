@@ -9,6 +9,17 @@ Handlers are sync callables: (user, attributes) -> response dict matching app.js
 
 from typing import Any, Callable
 
+from programs.ws_handlers import (
+    handle_activate_program,
+    handle_deactivate_program,
+    handle_delete_program,
+    handle_update_program,
+)
+from exercises.ws_handlers import (
+    handle_create_exercise,
+    handle_exercise_form,
+    handle_update_exercise,
+)
 from routines.ws_handlers import (
     handle_add_exercise as handle_routine_add_exercise,
     handle_create_set as handle_routine_create_set,
@@ -29,10 +40,13 @@ from workouts.ws_handlers import (
     handle_create_set,
     handle_delete_set,
     handle_reorder_exercises,
+    handle_refresh_add_exercise_options,
     handle_refresh_exercise_view,
     handle_set_edit_modal_form,
     handle_set_modal_form,
     handle_set_performance_feedback,
+    handle_start_routine_workout,
+    handle_start_workout,
     handle_toggle_set_done,
     handle_update_set,
     handle_update_workout,
@@ -52,6 +66,9 @@ def handle_ping(user, attributes):
 
 WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "ping": handle_ping,
+    "exercises/exercise_form": handle_exercise_form,
+    "exercises/create_exercise": handle_create_exercise,
+    "exercises/update_exercise": handle_update_exercise,
     "workouts/set_modal_form": handle_set_modal_form,
     "workouts/set_edit_modal_form": handle_set_edit_modal_form,
     "workouts/create_set": handle_create_set,
@@ -63,8 +80,11 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "workouts/delete_exercise": handle_delete_exercise,
     "workouts/delete_workout": handle_delete_workout,
     "workouts/add_exercise": handle_add_exercise,
+    "workouts/refresh_add_exercise_options": handle_refresh_add_exercise_options,
     "workouts/refresh_exercise_view": handle_refresh_exercise_view,
     "workouts/reorder_exercises": handle_reorder_exercises,
+    "workouts/start_workout": handle_start_workout,
+    "workouts/start_routine_workout": handle_start_routine_workout,
     "routines/delete_routine": handle_delete_routine,
     "routines/set_modal_form": handle_routine_set_modal_form,
     "routines/set_edit_modal_form": handle_routine_set_edit_modal_form,
@@ -72,10 +92,15 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "routines/update_set": handle_routine_update_set,
     "routines/delete_set": handle_routine_delete_set,
     "routines/add_exercise": handle_routine_add_exercise,
+    "routines/refresh_add_exercise_options": handle_refresh_add_exercise_options,
     "routines/delete_exercise": handle_routine_delete_exercise,
     "routines/update_routine": handle_update_routine,
     "routines/refresh_exercise_view": handle_routine_refresh_exercise_view,
     "routines/reorder_exercises": handle_routine_reorder_exercises,
+    "programs/activate_program": handle_activate_program,
+    "programs/deactivate_program": handle_deactivate_program,
+    "programs/delete_program": handle_delete_program,
+    "programs/update_program": handle_update_program,
 }
 
 

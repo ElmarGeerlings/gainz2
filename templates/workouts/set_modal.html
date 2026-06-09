@@ -36,16 +36,51 @@
         <input type="number" id="set-modal-reps" name="reps" class="form-control" min="0" step="1" inputmode="numeric" autocomplete="off" aria-label="Reps" value="{{ reps }}">
     </div>
     {% endif %}
-    <div class="set-modal-actions mt-4">
-        <button
-            type="button"
-            class="btn btn-primary set-modal-confirm"
-            data-endpoint="click->{% if is_add %}{{ endpoint_ns }}/create_set{% else %}{{ endpoint_ns }}/update_set{% endif %}"
-            data-close-modal="#set-modal"
-        >Confirm</button>
-        <label class="set-modal-warmup-label">
-            <input type="checkbox" id="set-modal-warmup" name="is_warmup"{% if is_warmup %} checked{% endif %}>
-            Warmup
-        </label>
+    <div class="stack-sm mt-4">
+        {% if not is_add %}
+        <div class="row-between gap-sm">
+            <button
+                type="button"
+                class="btn{% if is_warmup %} btn-primary{% else %} btn-outline{% endif %}"
+                data-function="click->toggleSetModalOption"
+                data-set-modal-option="is_warmup"
+                data-label-on="Warmup"
+                data-label-off="No Warmup"
+                aria-pressed="{% if is_warmup %}true{% else %}false{% endif %}"
+            >{% if is_warmup %}Warmup{% else %}No Warmup{% endif %}</button>
+            <input type="hidden" name="smartchange" id="set-modal-smartchange-input" value="{% if smartchange_enabled %}on{% endif %}">
+            <button
+                type="button"
+                class="btn{% if smartchange_enabled %} btn-primary{% else %} btn-outline{% endif %}"
+                data-function="click->toggleSetModalOption"
+                data-set-modal-option="smartchange"
+                data-label-on="Smart change"
+                data-label-off="No Smart change"
+                aria-pressed="{% if smartchange_enabled %}true{% else %}false{% endif %}"
+            >{% if smartchange_enabled %}Smart change{% else %}No Smart change{% endif %}</button>
+            <input type="hidden" name="is_warmup" id="set-modal-is_warmup-input" value="{% if is_warmup %}on{% endif %}">
+        </div>
+        {% else %}
+        <div class="row-center gap-sm">
+            <input type="hidden" name="is_warmup" id="set-modal-is_warmup-input" value="{% if is_warmup %}on{% endif %}">
+            <button
+                type="button"
+                class="btn{% if is_warmup %} btn-primary{% else %} btn-outline{% endif %}"
+                data-function="click->toggleSetModalOption"
+                data-set-modal-option="is_warmup"
+                data-label-on="Warmup"
+                data-label-off="No Warmup"
+                aria-pressed="{% if is_warmup %}true{% else %}false{% endif %}"
+            >{% if is_warmup %}Warmup{% else %}No Warmup{% endif %}</button>
+        </div>
+        {% endif %}
+        <div class="set-modal-actions">
+            <button
+                type="button"
+                class="btn btn-primary set-modal-confirm"
+                data-endpoint="click->{% if is_add %}{{ endpoint_ns }}/create_set{% else %}{{ endpoint_ns }}/update_set{% endif %}"
+                data-close-modal="#set-modal"
+            >Confirm</button>
+        </div>
     </div>
 </form>

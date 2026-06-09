@@ -12,6 +12,12 @@ def datetime_format(value):
     return local.strftime("%A, %B %d, %Y, %H:%M")
 
 
+@register.filter(name="list_datetime_format")
+def list_datetime_format(value):
+    local = timezone.localtime(value)
+    return local.strftime("%B %d, %Y, %H:%M")
+
+
 @register.filter(name="weight_display")
 def weight_display(value):
     d = Decimal(value).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)

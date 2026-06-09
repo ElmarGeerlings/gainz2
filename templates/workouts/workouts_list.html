@@ -8,16 +8,43 @@
     <header class="stack-sm mb-4">
         <h1 class="title-lg m-0">My Workouts</h1>
         <div class="row-center gap-sm">
-            <button type="button" class="btn btn-primary" disabled>Start</button>
-            <a href="{% url 'new-workout' %}" class="btn btn-outline">Empty</a>
             <button
                 type="button"
-                class="btn btn-outline"
-                data-function="click->ShowModal"
-                data-modal-name="choose-workout-modal"
-            >
-                Choose
-            </button>
+                class="btn btn-primary"
+                data-endpoint="click->workouts/start_workout"
+            >Start</button>
+            <a href="{% url 'new-workout' %}" class="btn btn-outline">Empty</a>
+            <div class="gainz-dropdown">
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    data-function="click->toggleGainzDropdown"
+                >Choose</button>
+                <div class="gainz-dropdown-menu" hidden>
+                    {% for routine in program_routines %}
+                    <button
+                        type="button"
+                        class="gainz-dropdown-item"
+                        data-endpoint="click->workouts/start_routine_workout"
+                        data-routine-id="{{ routine.pk }}"
+                    >{{ routine.name }}</button>
+                    {% endfor %}
+                    {% if program_routines and other_routines %}
+                    <div class="gainz-dropdown-divider"></div>
+                    {% endif %}
+                    {% for routine in other_routines %}
+                    <button
+                        type="button"
+                        class="gainz-dropdown-item"
+                        data-endpoint="click->workouts/start_routine_workout"
+                        data-routine-id="{{ routine.pk }}"
+                    >{{ routine.name }}</button>
+                    {% endfor %}
+                    {% if not program_routines and not other_routines %}
+                    <p class="gainz-dropdown-empty">No routines yet</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </header>
 
@@ -29,16 +56,4 @@
         {% endfor %}
     </div>
 </main>
-
-<div id="choose-workout-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
-    <div class="gainz-modal-content">
-        <span class="gainz-modal-close" aria-hidden="true">&times;</span>
-        <h2 class="title-md m-0 mb-3">Choose Workout</h2>
-        <p class="text-sm m-0">You don't have any routines yet.</p>
-        <div class="row-center gap-sm mt-4">
-            <button type="button" class="btn btn-outline gainz-modal-close">Cancel</button>
-            <button type="button" class="btn btn-primary" disabled>Start</button>
-        </div>
-    </div>
-</div>
 {% endblock %}

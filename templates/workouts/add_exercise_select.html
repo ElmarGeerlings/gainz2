@@ -1,0 +1,6 @@
+<select id="exercise-select-{{ session_pk }}" name="exercise" class="form-control" aria-label="Choose an exercise">
+    <option value="" selected disabled>Choose an exercise...</option>
+    {% for ex in add_exercise_options %}
+    <option value="{{ ex.pk }}">{{ ex.name }}</option>
+    {% endfor %}
+</select>

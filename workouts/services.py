@@ -8,6 +8,118 @@ from exercises.models import Exercise
 from workouts.models import Workout, WorkoutExercise, ExerciseSet
 
 
+def get_active_program(user):
+    from programs.models import Program
+    return Program.objects.filter(user=user, is_active=True).first()
+
+
+def get_next_routine_for_program(program):
+    from programs.models import ProgramRoutine
+    program_routines = list(
+        ProgramRoutine.objects.filter(program=program)
+        .select_related("routine")
+        .order_by("order")
+    )
+    if not program_routines:
+        return None
+    last = program.last_used_routine
+    if last is None:
+        return program_routines[0].routine
+    current_ids = [pr.routine_id for pr in program_routines]
+    if last.pk not in current_ids:
+        return program_routines[0].routine
+    next_index = (current_ids.index(last.pk) + 1) % len(program_routines)
+    return program_routines[next_index].routine
+
+
+def get_prior_workout_exercise(user, workout, workout_exercise):
+    from programs.models import ProgramRoutine
+    exercise_type = workout_exercise.effective_exercise_type()
+    program = get_active_program(user)
+    carryover = False
+    if program:
+        if exercise_type == "primary":
+            carryover = program.primary_carryover
+        elif exercise_type == "secondary":
+            carryover = program.secondary_carryover
+        else:
+            carryover = program.accessory_carryover
+
+    if carryover and program:
+        routine_ids = ProgramRoutine.objects.filter(program=program).values_list("routine_id", flat=True)
+        return (
+            WorkoutExercise.objects.filter(
+                workout__user=user,
+                exercise=workout_exercise.exercise,
+                workout__routine_id__in=routine_ids,
+            )
+            .exclude(workout=workout)
+            .order_by("-workout__date", "-workout__pk")
+            .prefetch_related("sets")
+            .first()
+        )
+    return (
+        WorkoutExercise.objects.filter(
+            workout__user=user,
+            exercise=workout_exercise.exercise,
+            workout__routine=workout.routine,
+        )
+        .exclude(workout=workout)
+        .order_by("-workout__date", "-workout__pk")
+        .prefetch_related("sets")
+        .first()
+    )
+
+
+def new_workout_from_routine(user, routine):
+    workout = Workout.objects.create(user=user, name=routine.name, routine=routine)
+    for routine_exercise in routine.exercises.prefetch_related("sets", "exercise").order_by("order"):
+        we = WorkoutExercise.objects.create(
+            workout=workout,
+            exercise=routine_exercise.exercise,
+            order=routine_exercise.order,
+            exercise_type=routine_exercise.effective_exercise_type(),
+        )
+        prior = get_prior_workout_exercise(user, workout, we)
+        prior_sets = list(prior.sets.order_by("set_number")) if prior else []
+        for i, rs in enumerate(routine_exercise.sets.order_by("set_number")):
+            if prior_sets:
+                source = prior_sets[i] if i < len(prior_sets) else prior_sets[-1]
+                weight, reps = source.weight, source.reps
+            else:
+                weight, reps = rs.weight, rs.reps
+            ExerciseSet.objects.create(
+                workout_exercise=we,
+                set_number=rs.set_number,
+                weight=weight,
+                reps=reps,
+                is_warmup=rs.is_warmup,
+            )
+    return workout
+
+
+def list_routines_for_choose(user):
+    from routines.services import list_routines
+    from programs.models import ProgramRoutine
+    program = get_active_program(user)
+    program_routine_ids = []
+    program_routines = []
+    if program:
+        prs = list(
+            ProgramRoutine.objects.filter(program=program)
+            .select_related("routine")
+            .order_by("order")
+        )
+        program_routines = [pr.routine for pr in prs]
+        program_routine_ids = [r.pk for r in program_routines]
+    other_routines = list(
+        list_routines(user)
+        .exclude(pk__in=program_routine_ids)
+        .order_by("name")
+    )
+    return program_routines, other_routines
+
+
 def quantize_weight(weight):
     half_steps = (Decimal(weight) * 2).quantize(Decimal("1"))
     return half_steps / Decimal("2")
@@ -99,8 +211,11 @@ def set_workout_exercise_feedback(user, workout_exercise_id, feedback):
     return workout_exercise
 
 
-def list_add_exercise_options():
-    return Exercise.objects.filter(user__isnull=True).order_by("name")
+def list_add_exercise_options(primary_bodypart=None):
+    exercises = Exercise.objects.filter(user__isnull=True)
+    if primary_bodypart:
+        exercises = exercises.filter(primary_bodypart=primary_bodypart)
+    return exercises.order_by("name")
 
 
 TYPE_PRIORITY = {
@@ -272,11 +387,43 @@ def reorder_workout_exercises(user, workout_id, ordered_exercise_ids):
         workout_exercise.save(update_fields=["order"])
 
 
-def update_exercise_set(set_id, weight, reps, is_warmup):
+def apply_smartchange(
+    workout_exercise,
+    edited_set_id,
+    weight_delta,
+    reps_delta,
+    is_warmup,
+    smartchange_warmup,
+):
+    siblings = ExerciseSet.objects.filter(
+        workout_exercise=workout_exercise
+    ).exclude(pk=edited_set_id)
+    siblings = siblings.filter(is_completed=False)
+    if not smartchange_warmup:
+        siblings = siblings.filter(is_warmup=is_warmup)
+    updated_count = 0
+    for sibling in siblings:
+        new_weight = sibling.weight + weight_delta
+        if new_weight < 0:
+            new_weight = Decimal("0")
+        else:
+            new_weight = quantize_weight(new_weight)
+        new_reps = max(1, sibling.reps + reps_delta)
+        if new_weight != sibling.weight or new_reps != sibling.reps:
+            sibling.weight = new_weight
+            sibling.reps = new_reps
+            sibling.save(update_fields=["weight", "reps"])
+            updated_count += 1
+    return updated_count
+
+
+def update_exercise_set(set_id, weight, reps, is_warmup, *, user=None, smartchange=False):
     exercise_set = ExerciseSet.objects.select_related("workout_exercise").get(
         pk=set_id
     )
     workout_exercise = exercise_set.workout_exercise
+    old_weight = exercise_set.weight
+    old_reps = exercise_set.reps
     old_is_warmup = exercise_set.is_warmup
     exercise_set.weight = quantize_weight(weight)
     exercise_set.reps = reps
@@ -287,7 +434,21 @@ def update_exercise_set(set_id, weight, reps, is_warmup):
         reorder_sets_for_workout_exercise(workout_exercise)
         exercise_set.refresh_from_db()
         workout_exercise = get_workout_exercise(workout_exercise.pk)
-    return exercise_set, workout_exercise, warmup_changed
+    weight_delta = exercise_set.weight - old_weight
+    reps_delta = exercise_set.reps - old_reps
+    siblings_updated_count = 0
+    if smartchange and user and (weight_delta != 0 or reps_delta != 0):
+        siblings_updated_count = apply_smartchange(
+            workout_exercise,
+            exercise_set.pk,
+            weight_delta,
+            reps_delta,
+            exercise_set.is_warmup,
+            user.settings.smartchange_warmup,
+        )
+        if siblings_updated_count:
+            workout_exercise = get_workout_exercise(workout_exercise.pk)
+    return exercise_set, workout_exercise, warmup_changed, siblings_updated_count
 
 
 def get_add_set_defaults(user, workout_exercise_id):

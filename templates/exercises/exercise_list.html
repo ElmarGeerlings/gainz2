@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/exercises.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <header class="row-between mb-4">
+        <h1 class="title-lg m-0">Exercises</h1>
+        <button
+            type="button"
+            class="btn btn-primary"
+            data-function="click->MorphingModal"
+            data-modal-name="exercise-modal"
+            data-routing="exercises/exercise_form"
+            data-focus="exercise-modal-name"
+        >Add</button>
+    </header>
+
+    <form
+        id="exercise-filter-form"
+        class="stack-sm mb-4"
+        method="get"
+        action="{% url 'exercises-list' %}"
+        data-function="submit->preventExerciseFilterSubmit"
+    >
+        <input
+            type="search"
+            id="exercise-search"
+            name="search_query"
+            class="form-control"
+            placeholder="Search exercises..."
+            autocomplete="off"
+            aria-label="Search exercises"
+            data-function="input->debouncedFetchExercises"
+        >
+
+        <div class="grid-3">
+            <div>
+                <select
+                    name="custom_filter"
+                    id="custom-filter"
+                    class="form-control"
+                    aria-label="Exercise source"
+                    data-function="change->fetchAndUpdateExerciseList"
+                >
+                    <option value="">All</option>
+                    <option value="custom">Custom</option>
+                    <option value="non_custom">Built-in</option>
+                </select>
+            </div>
+
+            <div>
+                <select
+                    name="exercise_type"
+                    id="exercise-type-filter"
+                    class="form-control"
+                    aria-label="Exercise type"
+                    data-function="change->fetchAndUpdateExerciseList"
+                >
+                    <option value="">Types</option>
+                    {% for code, name in exercise_type_choices %}
+                    <option value="{{ code }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <select
+                    name="primary_bodypart"
+                    id="bodypart-filter"
+                    class="form-control"
+                    aria-label="Bodypart"
+                    data-function="change->fetchAndUpdateExerciseList"
+                >
+                    <option value="">Bodyparts</option>
+                    {% for code, name in bodypart_choices %}
+                    <option value="{{ code }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <div id="exercise-list-container">
+        {% include "exercises/exercise_list_items.html" %}
+    </div>
+</main>
+
+<div
+    id="exercise-modal"
+    class="gainz-modal"
+    style="display: none;"
+    data-function="click->CloseModal"
+>
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true">&times;</span>
+        <div id="exercise-modal-content"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'js/exercises.js' %}"></script>
+{% endblock %}
