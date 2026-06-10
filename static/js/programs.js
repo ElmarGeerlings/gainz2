@@ -121,4 +121,21 @@ function saveProgram(req_event) {
     });
 }
 
+function toggleProgramActive(req_event) {
+    const btn = req_event.currentTarget;
+    const row = btn.closest('.program-active-row');
+    const hidden = row.querySelector('input[name="is_active"]');
+    const isOn = hidden.value === 'on';
+    hidden.value = isOn ? '' : 'on';
+    if (isOn) {
+        btn.textContent = 'Activate';
+        btn.classList.remove('btn-outline');
+        btn.classList.add('btn-primary');
+    } else {
+        btn.textContent = 'Deactivate';
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline');
+    }
+}
+
 document.addEventListener("DOMContentLoaded", initProgramRoutinesSortable);

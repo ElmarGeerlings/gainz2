@@ -3,17 +3,17 @@
         <button
             type="button"
             class="btn btn-primary exercise-view-toggle-btn"
+            aria-label="Detail"
             data-function="click->setExerciseView"
             data-view="detail"
-            data-ws-refresh-view="{{ endpoint_ns }}/refresh_exercise_view"
-        >Detail</button>
+        ><i class="fas fa-maximize" aria-hidden="true"></i></button>
         <button
             type="button"
             class="btn btn-outline exercise-view-toggle-btn"
+            aria-label="Overview"
             data-function="click->setExerciseView"
             data-view="overview"
-            data-ws-refresh-view="{{ endpoint_ns }}/refresh_exercise_view"
-        >Overview</button>
+        ><i class="fas fa-list" aria-hidden="true"></i></button>
     </div>
 
     <div id="exercise-detail-view">

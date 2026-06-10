@@ -1,0 +1,68 @@
+.home-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.home-hero {
+    text-align: center;
+    padding: var(--space-6) var(--space-4);
+}
+
+.home-section {
+    margin-top: var(--space-6);
+}
+
+.home-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.home-feature-card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.home-feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    margin-bottom: var(--space-3);
+    border-radius: 50%;
+    background: #e7edfc;
+    border: 1px solid #c9d4f5;
+    color: var(--primary);
+    font-size: 1.5rem;
+}
+
+.home-roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.home-roadmap-grid .home-feature-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    max-width: calc((100% - var(--space-4)) / 2);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 599px) {
+    .home-roadmap-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .home-roadmap-grid .home-feature-card:last-child:nth-child(odd) {
+        grid-column: auto;
+        max-width: none;
+        margin-left: 0;
+        margin-right: 0;
+    }
+}

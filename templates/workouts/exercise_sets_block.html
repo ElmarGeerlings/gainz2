@@ -24,4 +24,4 @@
 {% else %}
 <p class="text-muted text-sm m-0">{% if is_routine %}No sets for this exercise.{% else %}No sets recorded for this exercise.{% endif %}</p>
 {% endif %}
-<button type="button" class="btn btn-outline btn-full" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="{{ endpoint_ns }}/set_modal_form" data-exercise-id="{{ we.pk }}">Add Set</button>
+<button type="button" class="btn btn-outline btn-full" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="{{ endpoint_ns }}/set_modal_form" data-exercise-id="{{ we.pk }}"><i class="fas fa-plus" aria-hidden="true"></i></button>

@@ -332,6 +332,40 @@ def reorder_sets_for_workout_exercise(workout_exercise):
         exercise_set.save(update_fields=["set_number"])
 
 
+def workout_exercise_has_incomplete_sets(workout_exercise):
+    sets = list(workout_exercise.sets.all())
+    if not sets:
+        return False
+    return any(not exercise_set.is_completed for exercise_set in sets)
+
+
+def workout_exercise_all_sets_complete(workout_exercise):
+    sets = list(workout_exercise.sets.all())
+    return bool(sets) and all(exercise_set.is_completed for exercise_set in sets)
+
+
+def find_next_exercise_with_incomplete_sets(workout_id, current_workout_exercise_id):
+    exercises = list(
+        WorkoutExercise.objects.filter(workout_id=workout_id)
+        .prefetch_related("sets")
+        .order_by("order")
+    )
+    current_index = None
+    for index, workout_exercise in enumerate(exercises):
+        if workout_exercise.pk == current_workout_exercise_id:
+            current_index = index
+            break
+    if current_index is None:
+        return None
+    for index in range(current_index + 1, len(exercises)):
+        if workout_exercise_has_incomplete_sets(exercises[index]):
+            return index
+    for index in range(0, current_index):
+        if workout_exercise_has_incomplete_sets(exercises[index]):
+            return index
+    return None
+
+
 def toggle_exercise_set_completed(set_id):
     exercise_set = ExerciseSet.objects.select_related("workout_exercise").get(
         pk=set_id

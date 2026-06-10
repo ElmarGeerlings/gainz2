@@ -559,9 +559,23 @@ function setWorkoutExerciseFeedback(req_event) {
     sendWsRequest("workouts/set_performance_feedback", trigger);
 }
 
+function toggleSetDone(req_event) {
+    const trigger = req_event.currentTarget;
+    sendWsRequest("workouts/toggle_set_done", trigger).then((response) => {
+        if (response.json_content?.target && response.json_content?.html) {
+            document.querySelector(response.json_content.target).innerHTML =
+                response.json_content.html;
+        }
+        if (response.json_content?.active_exercise_index != null) {
+            setWorkoutCardIndex(Number(response.json_content.active_exercise_index));
+        }
+    });
+}
+
 function removeExercise(req_event) {
     const trigger = req_event.currentTarget;
-    const endpoint = trigger.getAttribute("data-ws-remove-exercise");
+    const exerciseUi = document.getElementById("workout-exercise-ui");
+    const endpoint = `${exerciseUi.dataset.endpointNs}/delete_exercise`;
     trigger.setAttribute(
         "data-current-exercise-index",
         String(workoutCurrentCardIndex)
@@ -580,7 +594,8 @@ function removeExercise(req_event) {
 
 function addExercise(req_event) {
     const trigger = req_event.currentTarget;
-    const endpoint = trigger.getAttribute("data-ws-add-exercise");
+    const exerciseUi = document.getElementById("workout-exercise-ui");
+    const endpoint = `${exerciseUi.dataset.endpointNs}/add_exercise`;
     const currentCard = workoutCards[workoutCurrentCardIndex];
     if (currentCard?.dataset.exerciseId) {
         trigger.setAttribute("data-current-exercise-id", currentCard.dataset.exerciseId);
@@ -597,6 +612,24 @@ function addExercise(req_event) {
             setWorkoutCardIndex(Number(response.json_content.new_exercise_index));
         }
     });
+}
+
+function selectExerciseType(req_event) {
+    const item = req_event.currentTarget;
+    const value = item.getAttribute('data-value');
+    const label = item.getAttribute('data-label') || 'Default';
+    const dropdown = item.closest('.gainz-dropdown');
+    const hidden = dropdown.querySelector('input[name="exercise_type"]');
+    const slot = dropdown.querySelector('[data-slot="exercise-type-label"]');
+    const menu = dropdown.querySelector('.gainz-dropdown-menu');
+
+    hidden.value = value;
+    if (value) {
+        slot.innerHTML = item.innerHTML;
+    } else {
+        slot.textContent = 'Default';
+    }
+    menu.hidden = true;
 }
 
 /* ── Init ────────────────────────────────────── */

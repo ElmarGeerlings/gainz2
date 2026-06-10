@@ -1,0 +1,5 @@
+.routines-list-actions .form-control {
+    flex: 0 1 40%;
+    max-width: 40%;
+    min-width: 0;
+}

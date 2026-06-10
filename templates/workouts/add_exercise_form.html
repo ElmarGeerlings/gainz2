@@ -25,24 +25,36 @@
             {% include "workouts/add_exercise_select.html" %}
         </div>
 
-        <label for="exercise-type-{{ session_pk }}" class="form-label">Type (Optional)</label>
-        <select id="exercise-type-{{ session_pk }}" name="exercise_type" class="form-control">
-            <option value="">Default</option>
-            {% for type in exercise_type_choices %}
-            <option value="{{ type.value }}">{{ type.label }}</option>
-            {% endfor %}
-        </select>
+        <span class="form-label">Type (Optional)</span>
+        <div class="gainz-dropdown gainz-dropdown-full">
+            <button
+                type="button"
+                class="form-control row-between"
+                data-function="click->toggleGainzDropdown"
+                aria-haspopup="listbox"
+                aria-label="Exercise type"
+            >
+                <span data-slot="exercise-type-label">Default</span>
+                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="gainz-dropdown-menu" hidden role="listbox">
+                <button type="button" class="gainz-dropdown-item" data-function="click->selectExerciseType" data-value="">
+                    Default
+                </button>
+                {% for type in exercise_type_choices %}
+                <button type="button" class="gainz-dropdown-item row-center gap-sm" data-function="click->selectExerciseType" data-value="{{ type.value }}" data-label="{{ type.label }}">
+                    {% include "components/exercise_type_badge.html" with exercise_type=type.value %} {{ type.label }}
+                </button>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="exercise_type" value="">
+        </div>
 
         <button
             type="button"
             class="btn btn-primary btn-full"
             data-function="click->addExercise"
-            data-ws-add-exercise="{{ endpoint_ns }}/add_exercise"
-            {% if session_kind == "workout" %}
-            data-workout-id="{{ session_pk }}"
-            {% else %}
-            data-routine-id="{{ session_pk }}"
-            {% endif %}
+            data-session-id="{{ session_pk }}"
         >
             Add Exercise
         </button>

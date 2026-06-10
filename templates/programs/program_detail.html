@@ -10,7 +10,6 @@
 {% block content %}
 <main class="page page-narrow">
     <header class="stack-sm mb-4">
-        <a href="{% url 'programs-list' %}" class="text-sm">Back to programs</a>
         <h1 class="title-lg m-0">{{ program.name }}</h1>
     </header>
 
@@ -31,36 +30,74 @@
 
                 <label for="program-description">Description</label>
                 <textarea
-                    id="program-description"
-                    name="description"
-                    class="form-control"
-                    rows="3"
+                id="program-description"
+                name="description"
+                class="form-control"
+                rows="3"
                 >{{ program.description }}</textarea>
+                
+                <div class="stack-sm">
+                    <label for="program-active">Activate program</label>
+                    <div class="row-between gap-sm carryover-row program-active-row">
+                        {% if program.is_active %}
+                        <button type="button"
+                                class="btn btn-outline"
+                                data-function="click->toggleProgramActive">Deactivate</button>
+                        {% else %}
+                        <button type="button"
+                                class="btn btn-primary"
+                                data-function="click->toggleProgramActive">Activate</button>
+                        {% endif %}
+                        <input type="hidden" name="is_active" value="{% if program.is_active %}on{% endif %}">
+                    </div>
+                </div>
 
-                <label class="row-center gap-sm">
-                    <input
-                        type="checkbox"
-                        id="program-is-active"
-                        name="is_active"
-                        {% if program.is_active %}checked{% endif %}
-                    >
-                    Active program
-                </label>
-
-                <fieldset class="stack-xs" style="border:none;padding:0;margin:0;">
-                    <legend class="text-sm text-muted">Cross-routine weight carryover</legend>
-                    <label class="row-center gap-sm">
-                        <input type="checkbox" name="primary_carryover" {% if program.primary_carryover %}checked{% endif %}>
-                        Primary exercises
-                    </label>
-                    <label class="row-center gap-sm">
-                        <input type="checkbox" name="secondary_carryover" {% if program.secondary_carryover %}checked{% endif %}>
-                        Secondary exercises
-                    </label>
-                    <label class="row-center gap-sm">
-                        <input type="checkbox" name="accessory_carryover" {% if program.accessory_carryover %}checked{% endif %}>
-                        Accessory exercises
-                    </label>
+                <fieldset style="border:none;padding:0;margin:0;">
+                    <legend class="text-sm text-muted mb-2">Cross-routine weight carryover</legend>
+                    <div class="stack-sm">
+                        <div class="row-between gap-sm carryover-row">
+                            <span class="row-center gap-sm text-sm">
+                                {% include "components/exercise_type_badge.html" with exercise_type="primary" %}
+                                Primary
+                            </span>
+                            <label class="gainz-toggle-switch">
+                                <input type="checkbox"
+                                       class="gainz-toggle-input"
+                                       id="primary_carryover"
+                                       name="primary_carryover"
+                                       {% if program.primary_carryover %}checked{% endif %}>
+                                <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                            </label>
+                        </div>
+                        <div class="row-between gap-sm carryover-row">
+                            <span class="row-center gap-sm text-sm">
+                                {% include "components/exercise_type_badge.html" with exercise_type="secondary" %}
+                                Secondary
+                            </span>
+                            <label class="gainz-toggle-switch">
+                                <input type="checkbox"
+                                       class="gainz-toggle-input"
+                                       id="secondary_carryover"
+                                       name="secondary_carryover"
+                                       {% if program.secondary_carryover %}checked{% endif %}>
+                                <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                            </label>
+                        </div>
+                        <div class="row-between gap-sm carryover-row">
+                            <span class="row-center gap-sm text-sm">
+                                {% include "components/exercise_type_badge.html" with exercise_type="accessory" %}
+                                Accessory
+                            </span>
+                            <label class="gainz-toggle-switch">
+                                <input type="checkbox"
+                                       class="gainz-toggle-input"
+                                       id="accessory_carryover"
+                                       name="accessory_carryover"
+                                       {% if program.accessory_carryover %}checked{% endif %}>
+                                <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                            </label>
+                        </div>
+                    </div>
                 </fieldset>
             </div>
         </section>
@@ -88,15 +125,16 @@
         </section>
 
         <div class="row-center gap-sm">
-            <a href="{% url 'program-detail' program.pk %}" class="btn btn-outline">Cancel</a>
             <button
-                type="button"
-                class="btn btn-primary"
-                data-function="click->saveProgram"
-                data-program-id="{{ program.pk }}"
+            type="button"
+            class="btn btn-primary"
+            data-function="click->saveProgram"
+            data-program-id="{{ program.pk }}"
+            aria-label="Save"
             >
-                Save
-            </button>
+            <i class="fas fa-floppy-disk" aria-hidden="true"></i>
+        </button>
+        <a href="{% url 'program-detail' program.pk %}" class="btn btn-outline" aria-label="Cancel"><i class="fas fa-xmark" aria-hidden="true"></i></a>
         </div>
     </form>
 </main>

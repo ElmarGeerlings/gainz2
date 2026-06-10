@@ -295,6 +295,24 @@ function MorphingModal(event) {
   });
 }
 
+function toggleSiteNav(req_event) {
+    const btn = req_event.currentTarget;
+    const menu = document.getElementById('site-nav-menu');
+    const isOpen = !menu.hidden;
+    menu.hidden = isOpen;
+    btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+    if (!isOpen) {
+        const close = (e) => {
+            if (!btn.closest('.site-nav').contains(e.target)) {
+                menu.hidden = true;
+                btn.setAttribute('aria-expanded', 'false');
+                document.removeEventListener('click', close);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', close), 0);
+    }
+}
+
 function toggleGainzDropdown(req_event) {
     const btn = req_event.currentTarget;
     const menu = btn.nextElementSibling;

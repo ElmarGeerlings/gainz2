@@ -390,6 +390,75 @@ textarea.form-control {
     padding-block: 0.65rem;
 }
 
+.gainz-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 2.75rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.gainz-toggle-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.gainz-toggle-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background-color: var(--border);
+    transition: background-color 0.15s ease;
+}
+
+.gainz-toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 1.15rem;
+    height: 1.15rem;
+    left: 0.175rem;
+    bottom: 0.175rem;
+    border-radius: 50%;
+    background-color: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.15s ease;
+}
+
+.gainz-toggle-input:checked + .gainz-toggle-slider {
+    background-color: var(--primary);
+}
+
+.gainz-toggle-input:checked + .gainz-toggle-slider::before {
+    transform: translateX(1.25rem);
+}
+
+.gainz-toggle-input:focus-visible + .gainz-toggle-slider {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ── Exercise type badge ─────────────────────── */
+
+.exercise-type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.exercise-type-badge--primary   { background: #c9a227; }
+.exercise-type-badge--secondary { background: #9e9e9e; }
+.exercise-type-badge--accessory { background: var(--muted); }
+
 /* ── Dropdown ────────────────────────────────── */
 
 .gainz-dropdown {
@@ -436,6 +505,15 @@ textarea.form-control {
     font-size: 0.9rem;
     color: var(--muted);
     margin: 0;
+}
+
+.gainz-dropdown-full {
+    display: block;
+    width: 100%;
+}
+
+.gainz-dropdown-full .gainz-dropdown-menu {
+    min-width: 100%;
 }
 
 /* ── Modal ───────────────────────────────────── */
@@ -559,6 +637,142 @@ textarea.form-control {
 .gainz-toast-actions {
     display: flex;
     justify-content: flex-end;
+}
+
+/* ── Site nav ────────────────────────────────── */
+
+.site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.site-nav-inner {
+    flex-wrap: wrap;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.site-nav-brand {
+    font-size: 1.35rem;
+}
+
+.site-nav-brand i {
+    font-size: 1.2rem;
+}
+
+.site-nav-brand:hover {
+    text-decoration: none;
+}
+
+.site-nav-toggle {
+    margin-left: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.25rem;
+}
+
+.site-nav-toggle:hover {
+    border-color: var(--muted);
+}
+
+.site-nav-menu {
+    flex-basis: 100%;
+}
+
+.site-nav-menu[hidden] {
+    display: none;
+}
+
+.site-nav-list {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-2) 0 0;
+}
+
+.site-nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 10px;
+}
+
+.site-nav-link:hover {
+    background: var(--bg);
+    text-decoration: none;
+}
+
+.site-nav-link.is-active {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.site-nav-link i {
+    width: 1.25rem;
+    text-align: center;
+    color: var(--muted);
+}
+
+.site-nav-link.is-active i {
+    color: var(--primary);
+}
+
+.site-nav-link-btn {
+    width: 100%;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+@media (min-width: 768px) {
+    .site-nav-inner {
+        flex-wrap: nowrap;
+    }
+
+    .site-nav-toggle {
+        display: none;
+    }
+
+    .site-nav-menu {
+        flex-basis: auto;
+        margin-left: auto;
+    }
+
+    .site-nav-menu[hidden] {
+        display: block;
+    }
+
+    .site-nav-list {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: 0;
+    }
+
+    .site-nav-link {
+        display: inline-flex;
+        min-height: auto;
+        white-space: nowrap;
+    }
+
+    .site-nav-link-btn {
+        width: auto;
+    }
 }
 
 /* ── Visibility ──────────────────────────────── */

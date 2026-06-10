@@ -5,7 +5,7 @@
 >
     <div class="row-between gap-sm">
         <p class="title-sm m-0">{{ we.exercise.name }}</p>
-        <span class="text-muted text-sm">{{ we.effective_exercise_type }}</span>
+        {% include "components/exercise_type_badge.html" with exercise_type=we.effective_exercise_type %}
     </div>
     <p class="text-muted text-sm m-0">
         {% if we.total_set_count == 0 %}

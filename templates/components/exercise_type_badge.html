@@ -1,0 +1,7 @@
+{% if exercise_type == 'primary' %}
+<span class="exercise-type-badge exercise-type-badge--primary" aria-label="Primary">1</span>
+{% elif exercise_type == 'secondary' %}
+<span class="exercise-type-badge exercise-type-badge--secondary" aria-label="Secondary">2</span>
+{% else %}
+<span class="exercise-type-badge exercise-type-badge--accessory" aria-label="Accessory">A</span>
+{% endif %}

@@ -8,9 +8,9 @@
         data-exercise-type="{{ we.effective_exercise_type }}"
     >
         <header class="row-between gap-sm">
-            <h2 class="title-md">{{ we.exercise.name }} <span class="text-muted">({{ we.effective_exercise_type }})</span></h2>
-            <button type="button" class="icon-btn" data-function="click->removeExercise" data-ws-remove-exercise="{{ endpoint_ns }}/delete_exercise" data-exercise-id="{{ we.pk }}" aria-label="Remove exercise">
-                X
+            <h2 class="title-md row-center gap-sm">{{ we.exercise.name }} {% include "components/exercise_type_badge.html" with exercise_type=we.effective_exercise_type %}</h2>
+            <button type="button" class="icon-btn" data-function="click->removeExercise" data-exercise-id="{{ we.pk }}" aria-label="Remove exercise">
+                <i class="fas fa-trash" aria-hidden="true"></i>
             </button>
         </header>
 
@@ -18,9 +18,9 @@
         <div class="panel surface-soft p-3">
             <div class="fs-xl fw-700 text-center mb-3">0:00</div>
             <div class="grid-3">
-                <button type="button" class="btn btn-success">Start</button>
-                <button type="button" class="btn btn-warning">Pause</button>
-                <button type="button" class="btn btn-danger">Stop</button>
+                <button type="button" class="btn btn-success" aria-label="Start"><i class="fas fa-play" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-warning" aria-label="Pause"><i class="fas fa-pause" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-danger" aria-label="Stop"><i class="fas fa-stop" aria-hidden="true"></i></button>
             </div>
         </div>
 
@@ -32,7 +32,7 @@
                 data-exercise-id="{{ we.pk }}"
                 data-feedback="increase"
                 aria-label="Increase next time"
-            >+</button>
+            ><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
             <button
                 type="button"
                 class="btn{% if we.performance_feedback == 'stay' %} feedback-selected{% else %} btn-outline{% endif %}"
@@ -40,7 +40,7 @@
                 data-exercise-id="{{ we.pk }}"
                 data-feedback="stay"
                 aria-label="Stay the same"
-            >=</button>
+            ><i class="fas fa-minus" aria-hidden="true"></i></button>
             <button
                 type="button"
                 class="btn{% if we.performance_feedback == 'decrease' %} feedback-selected{% else %} btn-outline{% endif %}"
@@ -48,7 +48,7 @@
                 data-exercise-id="{{ we.pk }}"
                 data-feedback="decrease"
                 aria-label="Decrease next time"
-            >-</button>
+            ><i class="fas fa-arrow-down" aria-hidden="true"></i></button>
         </div>
         {% endif %}
 

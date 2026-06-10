@@ -29,9 +29,11 @@ from workouts.services import (
     list_add_exercise_options,
     new_workout,
     new_workout_from_routine,
+    find_next_exercise_with_incomplete_sets,
     reorder_workout_exercises,
     set_workout_exercise_feedback,
     toggle_exercise_set_completed,
+    workout_exercise_all_sets_complete,
     update_exercise_set,
     update_workout,
 )
@@ -174,13 +176,21 @@ def handle_toggle_set_done(user, attributes):
         },
     )
     target = f'[data-set-id="{exercise_set.pk}"]'
+    json_content = {
+        "target": target,
+        "html": html,
+    }
+    if is_completed and workout_exercise_all_sets_complete(workout_exercise):
+        next_index = find_next_exercise_with_incomplete_sets(
+            workout_exercise.workout_id,
+            workout_exercise.pk,
+        )
+        if next_index is not None:
+            json_content["active_exercise_index"] = next_index
     return {
         "status": 200,
         "headers": [],
-        "json_content": {
-            "target": target,
-            "html": html,
-        },
+        "json_content": json_content,
     }
 
 
@@ -205,7 +215,7 @@ def handle_refresh_add_exercise_options(user, attributes):
 
 
 def handle_add_exercise(user, attributes):
-    workout_id = int(attributes["data-workout-id"])
+    workout_id = int(attributes["data-session-id"])
     exercise_id = int(attributes["exercise"])
     exercise_type = attributes.get("exercise_type") or None
     current_workout_exercise_id = attributes.get("data-current-exercise-id")

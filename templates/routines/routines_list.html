@@ -1,26 +1,35 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/routines.css' %}">
+{% endblock %}
 
 {% block content %}
 <main class="page page-narrow">
     <header class="stack-sm mb-4">
         <h1 class="title-lg m-0">My Routines</h1>
-        <div class="row-center gap-sm">
-            <select class="form-control" disabled aria-label="Filter by program">
-                <option selected>All Routines</option>
+        <div class="row-center gap-sm routines-list-actions">
+            <select
+                name="program_id"
+                class="form-control"
+                aria-label="Filter by program"
+                data-endpoint="change->routines/filter_routines"
+            >
+                <option value="" selected>All Routines</option>
+                {% for program in programs %}
+                <option value="{{ program.pk }}">{{ program.name }}{% if program.is_active %} (active){% endif %}</option>
+                {% endfor %}
             </select>
-            <a href="{% url 'routine-import' %}" class="btn btn-outline">Import</a>
-            <a href="{% url 'new-routine' %}" class="btn btn-primary">New</a>
+            <a href="{% url 'routine-import' %}" class="btn btn-outline"><i class="fas fa-file-import" aria-hidden="true"></i> Import</a>
+            <a href="{% url 'new-routine' %}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> New</a>
         </div>
     </header>
 
-    <div class="stack-sm">
-        {% for routine in routines %}
-        {% include "workouts/workout_list_card.html" with entity="routine" item=routine %}
-        {% empty %}
-        <p class="text-muted text-center m-0">You haven't created any routines yet.</p>
-        {% endfor %}
+    <div id="routines-list-container" class="stack-sm">
+        {% include "routines/routines_list_items.html" %}
     </div>
 </main>
 {% endblock %}

@@ -12,14 +12,14 @@
                 type="button"
                 class="btn btn-primary"
                 data-endpoint="click->workouts/start_workout"
-            >Start</button>
-            <a href="{% url 'new-workout' %}" class="btn btn-outline">Empty</a>
+            ><i class="fas fa-play" aria-hidden="true"></i> Start</button>
+            <a href="{% url 'new-workout' %}" class="btn btn-outline"><i class="fas fa-file" aria-hidden="true"></i> Empty</a>
             <div class="gainz-dropdown">
                 <button
                     type="button"
                     class="btn btn-outline"
                     data-function="click->toggleGainzDropdown"
-                >Choose</button>
+                ><i class="fas fa-list-check" aria-hidden="true"></i> Choose</button>
                 <div class="gainz-dropdown-menu" hidden>
                     {% for routine in program_routines %}
                     <button

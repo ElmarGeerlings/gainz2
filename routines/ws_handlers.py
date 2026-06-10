@@ -14,6 +14,7 @@ from routines.services import (
     get_add_set_defaults,
     get_routine,
     get_routine_exercise,
+    list_routines_for_program,
     reorder_routine_exercises,
     update_routine,
     update_routine_set,
@@ -28,6 +29,30 @@ def handle_delete_routine(user, attributes):
         "status": 302,
         "headers": [["Location", "/routines/"]],
         "json_content": {},
+    }
+
+
+def handle_filter_routines(user, attributes):
+    program_id = attributes.get("program_id") or attributes.get("value") or ""
+    if program_id:
+        program_id = int(program_id)
+    else:
+        program_id = None
+    routines = list_routines_for_program(user, program_id)
+    html = render_to_string(
+        "routines/routines_list_items.html",
+        {
+            "routines": routines,
+            "filtered_by_program": program_id is not None,
+        },
+    )
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {
+            "target": "#routines-list-container",
+            "html": html,
+        },
     }
 
 
@@ -116,7 +141,7 @@ def handle_create_set(user, attributes):
 
 
 def handle_add_exercise(user, attributes):
-    routine_id = int(attributes["data-routine-id"])
+    routine_id = int(attributes["data-session-id"])
     exercise_id = int(attributes["exercise"])
     exercise_type = attributes.get("exercise_type") or None
     current_routine_exercise_id = attributes.get("data-current-exercise-id")

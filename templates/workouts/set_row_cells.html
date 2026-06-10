@@ -10,11 +10,11 @@
     <button
         type="button"
         class="btn{% if set.is_completed %} btn-success text-white{% else %} btn-outline{% endif %}"
-        data-endpoint="click->workouts/toggle_set_done"
+        data-function="click->toggleSetDone"
         data-set-id="{{ set.pk }}"
         data-exercise-id="{{ we.pk }}"
         aria-label="Set done"
-    >✓</button>
+    ><i class="fas fa-check" aria-hidden="true"></i></button>
 </td>
 {% endif %}
 <td>
@@ -25,5 +25,5 @@
         data-set-id="{{ set.pk }}"
         data-exercise-id="{{ we.pk }}"
         aria-label="Delete set"
-    >X</button>
+    ><i class="fas fa-trash" aria-hidden="true"></i></button>
 </td>

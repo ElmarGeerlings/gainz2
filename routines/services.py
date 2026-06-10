@@ -2,7 +2,7 @@ import re
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Count, F, Max, Prefetch, Q
+from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Q, When
 from django.utils import timezone
 
 from exercises.models import Exercise
@@ -18,6 +18,33 @@ def list_routines(user):
             set_count=Count("exercises__sets", distinct=True),
         )
         .order_by("-updated_at")
+    )
+
+
+def list_routines_for_program(user, program_id):
+    if not program_id:
+        return list_routines(user)
+    from programs.models import Program, ProgramRoutine
+
+    program = Program.objects.get(pk=program_id, user=user)
+    routine_ids = list(
+        ProgramRoutine.objects.filter(program=program)
+        .order_by("order", "assigned_day")
+        .values_list("routine_id", flat=True)
+    )
+    if not routine_ids:
+        return Routine.objects.none()
+    preserved = Case(
+        *[When(pk=pk, then=pos) for pos, pk in enumerate(routine_ids)],
+        output_field=IntegerField(),
+    )
+    return (
+        Routine.objects.filter(user=user, pk__in=routine_ids)
+        .annotate(
+            exercise_count=Count("exercises", distinct=True),
+            set_count=Count("exercises__sets", distinct=True),
+        )
+        .order_by(preserved)
     )
 
 

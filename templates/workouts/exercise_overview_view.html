@@ -2,7 +2,7 @@
 {% for type_label in type_groups %}
 {% if type_label.grouper == "primary" %}
 <section class="exercise-overview-section stack-sm">
-    <h3 class="title-sm m-0">Primary</h3>
+    <h3 class="title-sm m-0 row-center gap-sm">{% include "components/exercise_type_badge.html" with exercise_type="primary" %} Primary</h3>
     <div class="stack-sm exercise-overview-sortable" data-exercise-type="primary">
         {% for we in type_label.list %}
         {% for all_we in session.exercises.all %}
@@ -18,7 +18,7 @@
 {% for type_label in type_groups %}
 {% if type_label.grouper == "secondary" %}
 <section class="exercise-overview-section stack-sm">
-    <h3 class="title-sm m-0">Secondary</h3>
+    <h3 class="title-sm m-0 row-center gap-sm">{% include "components/exercise_type_badge.html" with exercise_type="secondary" %} Secondary</h3>
     <div class="stack-sm exercise-overview-sortable" data-exercise-type="secondary">
         {% for we in type_label.list %}
         {% for all_we in session.exercises.all %}
@@ -34,7 +34,7 @@
 {% for type_label in type_groups %}
 {% if type_label.grouper == "accessory" %}
 <section class="exercise-overview-section stack-sm">
-    <h3 class="title-sm m-0">Accessory</h3>
+    <h3 class="title-sm m-0 row-center gap-sm">{% include "components/exercise_type_badge.html" with exercise_type="accessory" %} Accessory</h3>
     <div class="stack-sm exercise-overview-sortable" data-exercise-type="accessory">
         {% for we in type_label.list %}
         {% for all_we in session.exercises.all %}

@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from exercises.models import Exercise
 from routines.models import Routine, RoutineExercise
+from programs.services import list_programs_for_filter
 from routines.services import (
     get_routine,
     import_routine_from_parsed,
@@ -34,6 +35,7 @@ def render_import_routine_page(req_event, context):
 def routines_list_page(req_event):
     response = {
         "title": "My Routines",
+        "programs": list_programs_for_filter(req_event.user),
         "routines": list_routines(req_event.user),
     }
     return render(req_event, "routines/routines_list.html", response)

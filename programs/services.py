@@ -19,8 +19,9 @@ def program_routine_prefetch():
     return Prefetch(
         "program_routines",
         queryset=(
-            ProgramRoutine.objects.select_related("routine")
-            .prefetch_related(Prefetch("routine", queryset=routine_qs))
+            ProgramRoutine.objects.prefetch_related(
+                Prefetch("routine", queryset=routine_qs)
+            )
             .order_by("order", "assigned_day")
         ),
     )
@@ -32,6 +33,10 @@ def list_programs(user):
         .prefetch_related(program_routine_prefetch())
         .order_by("-is_active", "name")
     )
+
+
+def list_programs_for_filter(user):
+    return Program.objects.filter(user=user).order_by("-is_active", "name")
 
 
 def new_program(user):

@@ -1,0 +1,9 @@
+{% for routine in routines %}
+{% include "workouts/workout_list_card.html" with entity="routine" item=routine %}
+{% empty %}
+{% if filtered_by_program %}
+<p class="text-muted text-center m-0">No routines in this program.</p>
+{% else %}
+<p class="text-muted text-center m-0">You haven't created any routines yet.</p>
+{% endif %}
+{% endfor %}
