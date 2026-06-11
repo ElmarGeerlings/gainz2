@@ -70,6 +70,7 @@ LOGIN_EXEMPT_URLS = [
     r'^/$',
     r'^/login/?$',
     r'^/register/?$',
+    r'^/demo/?$',
     r'^/admin/login/?$',
 ]
 

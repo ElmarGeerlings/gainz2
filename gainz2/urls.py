@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from accounts.views import design_page, home_page, login_page, logout_page, register_page
+from accounts.views import demo_page, design_page, home_page, login_page, logout_page, register_page
 from routines.views import (
     import_routine_page,
     new_routine_page,
@@ -38,6 +38,7 @@ urlpatterns = [
     path("design/", design_page, name="design"),
     path("login/", login_page, name="login"),
     path("register/", register_page, name="register"),
+    path("demo/", demo_page, name="demo"),
     path("logout/", logout_page, name="logout"),
     path("admin/", admin.site.urls),
     path("exercises/", exercise_list_page, name="exercises-list"),

@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from accounts.services import register_user
+from accounts.services import create_demo_user, register_user, seed_demo_user
 
 
 def redirect_after_auth(req_event):
@@ -67,6 +67,14 @@ def register_page(req_event):
         "accounts/register.html",
         {"title": "Register", "next": next_url},
     )
+
+
+def demo_page(req_event):
+    user = create_demo_user()
+    seed_demo_user(user)
+    login(req_event, user)
+    messages.success(req_event, "Welcome to your demo account!")
+    return redirect("home")
 
 
 def logout_page(req_event):

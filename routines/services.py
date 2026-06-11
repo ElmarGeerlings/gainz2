@@ -6,8 +6,8 @@ from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Q, Whe
 from django.utils import timezone
 
 from exercises.models import Exercise
+from gainz2.utils import quantize_weight
 from routines.models import Routine, RoutineExercise, RoutineSet
-from workouts.services import quantize_weight
 
 
 def list_routines(user):

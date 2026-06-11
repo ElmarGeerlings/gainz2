@@ -1,20 +1,20 @@
 from datetime import datetime
 from decimal import Decimal
 
-from django.db.models import Count, F, Max, Prefetch
+from django.db.models import Count, F, Max, Prefetch, Q
 from django.utils import timezone
 
 from exercises.models import Exercise
+from gainz2.utils import quantize_weight
+from programs.models import Program, ProgramRoutine
+from routines.services import list_routines
 from workouts.models import Workout, WorkoutExercise, ExerciseSet
 
-
 def get_active_program(user):
-    from programs.models import Program
     return Program.objects.filter(user=user, is_active=True).first()
 
 
 def get_next_routine_for_program(program):
-    from programs.models import ProgramRoutine
     program_routines = list(
         ProgramRoutine.objects.filter(program=program)
         .select_related("routine")
@@ -32,8 +32,52 @@ def get_next_routine_for_program(program):
     return program_routines[next_index].routine
 
 
+def find_prior_workout_exercise(user, workout, exercise_id, exercise_type):
+    base_qs = (
+        WorkoutExercise.objects.filter(
+            workout__user=user,
+            exercise_id=exercise_id,
+        )
+        .filter(
+            Q(exercise_type=exercise_type)
+            | Q(exercise_type__isnull=True, exercise__exercise_type=exercise_type)
+        )
+        .select_related("exercise")
+        .exclude(workout=workout)
+        .order_by("-workout__date", "-workout__pk")
+        .prefetch_related("sets")
+    )
+
+    if workout.routine_id:
+        prior = base_qs.filter(workout__routine_id=workout.routine_id).first()
+        if prior:
+            return prior
+
+    program = get_active_program(user)
+    if program:
+        routine_ids = ProgramRoutine.objects.filter(program=program).values_list(
+            "routine_id", flat=True
+        )
+        prior = base_qs.filter(workout__routine_id__in=routine_ids).first()
+        if prior:
+            return prior
+
+    return base_qs.first()
+
+
+def copy_sets_from_prior_workout_exercise(target_we, source_we):
+    for source_set in source_we.sets.order_by("set_number"):
+        ExerciseSet.objects.create(
+            workout_exercise=target_we,
+            set_number=source_set.set_number,
+            weight=source_set.weight,
+            reps=source_set.reps,
+            is_warmup=source_set.is_warmup,
+            is_completed=False,
+        )
+
+
 def get_prior_workout_exercise(user, workout, workout_exercise):
-    from programs.models import ProgramRoutine
     exercise_type = workout_exercise.effective_exercise_type()
     program = get_active_program(user)
     carryover = False
@@ -45,30 +89,27 @@ def get_prior_workout_exercise(user, workout, workout_exercise):
         else:
             carryover = program.accessory_carryover
 
-    if carryover and program:
-        routine_ids = ProgramRoutine.objects.filter(program=program).values_list("routine_id", flat=True)
-        return (
-            WorkoutExercise.objects.filter(
-                workout__user=user,
-                exercise=workout_exercise.exercise,
-                workout__routine_id__in=routine_ids,
-            )
-            .exclude(workout=workout)
-            .order_by("-workout__date", "-workout__pk")
-            .prefetch_related("sets")
-            .first()
-        )
-    return (
+    base_qs = (
         WorkoutExercise.objects.filter(
             workout__user=user,
             exercise=workout_exercise.exercise,
-            workout__routine=workout.routine,
         )
+        .filter(
+            Q(exercise_type=exercise_type)
+            | Q(exercise_type__isnull=True, exercise__exercise_type=exercise_type)
+        )
+        .select_related("exercise")
         .exclude(workout=workout)
         .order_by("-workout__date", "-workout__pk")
         .prefetch_related("sets")
-        .first()
     )
+
+    if carryover and program:
+        routine_ids = ProgramRoutine.objects.filter(program=program).values_list(
+            "routine_id", flat=True
+        )
+        return base_qs.filter(workout__routine_id__in=routine_ids).first()
+    return base_qs.filter(workout__routine=workout.routine).first()
 
 
 def new_workout_from_routine(user, routine):
@@ -99,8 +140,6 @@ def new_workout_from_routine(user, routine):
 
 
 def list_routines_for_choose(user):
-    from routines.services import list_routines
-    from programs.models import ProgramRoutine
     program = get_active_program(user)
     program_routine_ids = []
     program_routines = []
@@ -118,11 +157,6 @@ def list_routines_for_choose(user):
         .order_by("name")
     )
     return program_routines, other_routines
-
-
-def quantize_weight(weight):
-    half_steps = (Decimal(weight) * 2).quantize(Decimal("1"))
-    return half_steps / Decimal("2")
 
 
 def list_workouts(user):
@@ -282,6 +316,7 @@ def compute_add_exercise_insert_index(existing_list, new_type, current_workout_e
 
 
 def add_exercise_to_workout(
+    user,
     workout_id,
     exercise_id,
     current_workout_exercise_id=None,
@@ -312,6 +347,14 @@ def add_exercise_to_workout(
         exercise_type=new_type,
         order=new_order,
     )
+
+    if user.settings.set_carryover:
+        workout_for_lookup = Workout.objects.get(pk=workout_id)
+        prior = find_prior_workout_exercise(
+            user, workout_for_lookup, exercise_id, new_type
+        )
+        if prior and prior.sets.exists():
+            copy_sets_from_prior_workout_exercise(new_workout_exercise, prior)
 
     new_exercise_index = insert_index
     workout = get_workout(workout_id)
@@ -493,19 +536,22 @@ def get_add_set_defaults(user, workout_exercise_id):
     if last_in_session:
         return last_in_session.weight, last_in_session.reps
 
-    prior_we = (
-        WorkoutExercise.objects.filter(
-            workout__user=user,
-            exercise_id=we.exercise_id,
+    if user.settings.set_carryover:
+        prior_we = find_prior_workout_exercise(
+            user, we.workout, we.exercise_id, we.effective_exercise_type()
         )
-        .exclude(workout_id=we.workout_id)
-        .order_by("-workout__date", "-workout_id")
-        .first()
-    )
-    if prior_we:
-        last_historical = get_workout_exercise_last_set(prior_we)
-        if last_historical:
-            return last_historical.weight, last_historical.reps
+        if prior_we:
+            prior_sets = list(prior_we.sets.order_by("set_number"))
+            if prior_sets:
+                current_set_count = ExerciseSet.objects.filter(
+                    workout_exercise=we
+                ).count()
+                source = (
+                    prior_sets[current_set_count]
+                    if current_set_count < len(prior_sets)
+                    else prior_sets[-1]
+                )
+                return source.weight, source.reps
 
     return Decimal("10"), 10
 

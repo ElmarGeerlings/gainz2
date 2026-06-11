@@ -224,6 +224,7 @@ def handle_add_exercise(user, attributes):
     else:
         current_workout_exercise_id = None
     workout, new_workout_exercise, new_exercise_index = add_exercise_to_workout(
+        user,
         workout_id,
         exercise_id,
         current_workout_exercise_id,

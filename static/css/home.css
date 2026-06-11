@@ -8,6 +8,30 @@
     padding: var(--space-6) var(--space-4);
 }
 
+.home-demo-card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: var(--space-4);
+    padding: var(--space-5) var(--space-4);
+    background: #e7edfc;
+    border: 2px solid #a8b8f0;
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(59, 87, 232, 0.15);
+}
+
+.home-demo-form {
+    width: 100%;
+    max-width: 280px;
+}
+
+.home-demo-btn {
+    font-size: 1.05rem;
+    min-height: 48px;
+    font-weight: 600;
+}
+
 .home-section {
     margin-top: var(--space-6);
 }
