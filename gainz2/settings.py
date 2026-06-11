@@ -23,12 +23,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-4n*ttb=fd)_5tz0c#2rl*idv737^vg434a=u9szlo_!o$!^*%@'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-4n*ttb=fd)_5tz0c#2rl*idv737^vg434a=u9szlo_!o$!^*%@')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+CSRF_TRUSTED_ORIGINS = [origin for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 
 # Application definition
@@ -106,11 +112,11 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'gainz2',        # database name in pgAdmin
-        'USER': 'gainz2',        # login role name in pgAdmin
+        'NAME': os.getenv('DB_NAME', 'gainz2'),        # database name in pgAdmin
+        'USER': os.getenv('DB_USER', 'gainz2'),        # login role name in pgAdmin
         'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': 'localhost',
-        'PORT': '5432',          # or '5433' if that is your Postgres port
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),          # or '5433' if that is your Postgres port
     }
 }
 

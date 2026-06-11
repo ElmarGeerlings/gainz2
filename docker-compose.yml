@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    network_mode: host
+    command: daphne -b 127.0.0.1 -p 8000 gainz2.asgi:application
+    env_file: .env
+    volumes:
+      - ./staticfiles:/app/staticfiles
+    restart: unless-stopped

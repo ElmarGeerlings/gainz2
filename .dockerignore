@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+*$py.class
+staticfiles
+.env
+db.sqlite3
+commands.txt
+*.md
