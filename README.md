@@ -30,12 +30,11 @@ This is phase one. The plan is a fair bit bigger, and some of it is already sket
 
 It's a Django app, but deliberately not a typical request/response CRUD one. The interesting part is how the client and server talk.
 
-- **Backend:** Django 6 with Channels for WebSockets, running on Daphne (ASGI). PostgreSQL for data, Redis available for caching and a job queue.
+- **Backend:** Django 6 with Channels for WebSockets, running on Daphne (ASGI). PostgreSQL for data. Redis and django-rq for background and periodic tasks (scheduled jobs, cleanup, etc.) as the feature set grows.
 - **Frontend:** server-rendered Django templates with a mostly vanilla Javascript layer.
 - **Interaction model:** mutations and partial updates go over a **single WebSocket** instead of REST endpoints. The client sends a message with an `endpoint` name and the relevant form/data attributes; the server runs the operation and sends back a small envelope describing what to do; morph one element's HTML, show a toast, redirect, or reload. HTTP is left to do what it's good at: first paint, auth, and normal GETs.
 - **Structure:** business logic lives in plain Python service functions. HTTP views and WebSocket handlers stay thin — they parse input, call a service, and shape the response. This keeps the same logic reusable whether it's hit over HTTP or the socket.
 - **Frontend conventions:** behavior is driven by `data-*` attributes (`data-endpoint` for the generic WebSocket pipeline, `data-function` for client-side steps), so most new features are wired up in the template rather than in bespoke JS.
 
 ### Running it
-
-The app is containerized and deployed on a [Hetzner] VPS, with [Caddy] sitting in front as the HTTPS edge and serving static files, proxying everything else (including the WebSocket) to the app container.
+The app runs in Docker (managed with `docker compose`) and is deployed on a Hetzner VPS, with Caddy sitting in front as the HTTPS edge and serving static files, proxying everything else (including the WebSocket) to the app container.
