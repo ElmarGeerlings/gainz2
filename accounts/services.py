@@ -82,9 +82,9 @@ def create_workout_from_routine(user, routine, workout_date, name):
 def seed_demo_user(user):
     bench_press = Exercise.objects.get(name="Bench Press", user=None)
     overhead_press = Exercise.objects.get(name="Overhead Press", user=None)
-    lateral_raise = Exercise.objects.get(name="Lateral Raise", user=None)
+    lateral_raise = Exercise.objects.get(name="Lateral Raises", user=None)
     deadlift = Exercise.objects.get(name="Deadlift", user=None)
-    pull_up = Exercise.objects.get(name="Pull-Up", user=None)
+    pull_up = Exercise.objects.get(name="Pull-Ups", user=None)
     squat = Exercise.objects.get(name="Squat", user=None)
 
     push_day = Routine.objects.create(
