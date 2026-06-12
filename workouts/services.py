@@ -5,7 +5,7 @@ from django.db.models import Count, F, Max, Prefetch, Q
 from django.utils import timezone
 
 from exercises.models import Exercise
-from gainz2.utils import quantize_weight
+from gainz2.utils import next_numbered_name, quantize_weight
 from programs.models import Program, ProgramRoutine
 from routines.services import list_routines
 from workouts.models import Workout, WorkoutExercise, ExerciseSet
@@ -113,7 +113,11 @@ def get_prior_workout_exercise(user, workout, workout_exercise):
 
 
 def new_workout_from_routine(user, routine):
-    workout = Workout.objects.create(user=user, name=routine.name, routine=routine)
+    names = Workout.objects.filter(user=user, routine=routine).values_list(
+        "name", flat=True
+    )
+    name = next_numbered_name(routine.name, names)
+    workout = Workout.objects.create(user=user, name=name, routine=routine)
     for routine_exercise in routine.exercises.prefetch_related("sets", "exercise").order_by("order"):
         we = WorkoutExercise.objects.create(
             workout=workout,
@@ -171,10 +175,10 @@ def list_workouts(user):
 
 
 def new_workout(user):
-    workout_count = Workout.objects.filter(user=user).count()
+    names = Workout.objects.filter(user=user).values_list("name", flat=True)
     return Workout.objects.create(
         user=user,
-        name=f"Workout #{workout_count + 1}",
+        name=next_numbered_name("Workout", names),
         notes="",
     )
 

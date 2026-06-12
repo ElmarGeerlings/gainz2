@@ -146,17 +146,17 @@ def seed_demo_user(user):
         user,
         push_day,
         now - timezone.timedelta(days=8),
-        "Push Day",
+        "Push Day #1",
     )
     create_workout_from_routine(
         user,
         pull_day,
         now - timezone.timedelta(days=5),
-        "Pull Day",
+        "Pull Day #1",
     )
     create_workout_from_routine(
         user,
         push_day,
         now - timezone.timedelta(days=2),
-        "Push Day",
+        "Push Day #2",
     )

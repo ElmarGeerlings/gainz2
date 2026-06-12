@@ -2,38 +2,60 @@ const port = window.location.port ? `:${window.location.port}` : '';
 const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
 const wsUrl = `${wsProtocol}://${window.location.hostname}${port}/ws/`;
 
-const ws = new WebSocket(wsUrl);
+let ws;
+let wsRetryDelay = 1000;
+const WS_RETRY_MAX = 30000;
+const sendQueue = [];
 
 const requestMap = new Map();
 
 function showLoading() {}
 function hideLoading() {}
 
-ws.onopen = () => {
-  console.log('WebSocket connected');
-};
+function connectWs() {
+  ws = new WebSocket(wsUrl);
 
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  if (data.request_id != null && requestMap.has(data.request_id)) {
-    const resolve = requestMap.get(data.request_id);
-    resolve(data);
-    requestMap.delete(data.request_id);
-    if (requestMap.size === 0) {
-      hideLoading();
+  ws.onopen = () => {
+    console.log('WebSocket connected');
+    wsRetryDelay = 1000;
+    while (sendQueue.length > 0) {
+      ws.send(sendQueue.shift());
     }
-    return;
+  };
+
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.request_id != null && requestMap.has(data.request_id)) {
+      const resolve = requestMap.get(data.request_id);
+      resolve(data);
+      requestMap.delete(data.request_id);
+      if (requestMap.size === 0) {
+        hideLoading();
+      }
+      return;
+    }
+    console.log('WS message (no request_id handler):', data);
+  };
+
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
+
+  ws.onclose = () => {
+    console.log(`WebSocket disconnected, retrying in ${wsRetryDelay}ms`);
+    setTimeout(connectWs, wsRetryDelay);
+    wsRetryDelay = Math.min(wsRetryDelay * 2, WS_RETRY_MAX);
+  };
+}
+
+connectWs();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && ws.readyState !== WebSocket.OPEN) {
+    wsRetryDelay = 1000;
+    connectWs();
   }
-  console.log('WS message (no request_id handler):', data);
-};
-
-ws.onerror = (error) => {
-  console.error('WebSocket error:', error);
-};
-
-ws.onclose = () => {
-  console.log('WebSocket disconnected');
-};
+});
 
 function sendWsRequest(endpoint, element) {
   return new Promise((resolve) => {
@@ -62,7 +84,11 @@ function sendWsRequest(endpoint, element) {
     });
     showLoading();
     requestMap.set(requestId, resolve);
-    ws.send(message);
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(message);
+    } else {
+      sendQueue.push(message);
+    }
   });
 }
 

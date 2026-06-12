@@ -6,7 +6,7 @@ from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Q, Whe
 from django.utils import timezone
 
 from exercises.models import Exercise
-from gainz2.utils import quantize_weight
+from gainz2.utils import next_numbered_name, quantize_weight
 from routines.models import Routine, RoutineExercise, RoutineSet
 
 
@@ -49,10 +49,10 @@ def list_routines_for_program(user, program_id):
 
 
 def new_routine(user):
-    count = Routine.objects.filter(user=user).count()
+    names = Routine.objects.filter(user=user).values_list("name", flat=True)
     return Routine.objects.create(
         user=user,
-        name=f"Routine #{count + 1}",
+        name=next_numbered_name("Routine", names),
         notes="",
     )
 

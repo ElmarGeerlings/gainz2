@@ -2,6 +2,7 @@ from django.db import transaction
 from django.db.models import Count, Prefetch
 from django.utils import timezone
 
+from gainz2.utils import next_numbered_name
 from programs.models import Program, ProgramRoutine
 from routines.models import Routine
 from routines.services import (
@@ -40,10 +41,10 @@ def list_programs_for_filter(user):
 
 
 def new_program(user):
-    count = Program.objects.filter(user=user).count()
+    names = Program.objects.filter(user=user).values_list("name", flat=True)
     return Program.objects.create(
         user=user,
-        name=f"Program #{count + 1}",
+        name=next_numbered_name("Program", names),
         description="",
     )
 
