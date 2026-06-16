@@ -305,13 +305,18 @@ a:hover {
 }
 
 .icon-btn {
-    border: 1px solid var(--danger-border);
-    color: var(--danger);
+    border: 1px solid var(--border);
+    color: var(--text);
     background: var(--surface);
     border-radius: 8px;
     min-width: 36px;
     min-height: 36px;
     cursor: pointer;
+}
+
+.icon-btn-danger {
+    border-color: var(--danger-border);
+    color: var(--danger);
 }
 
 .link-btn {

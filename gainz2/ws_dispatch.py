@@ -32,6 +32,7 @@ from routines.ws_handlers import (
     handle_set_edit_modal_form as handle_routine_set_edit_modal_form,
     handle_set_modal_form as handle_routine_set_modal_form,
     handle_update_routine,
+    handle_update_exercise_notes as handle_routine_update_exercise_notes,
     handle_update_set as handle_routine_update_set,
 )
 from workouts.ws_handlers import (
@@ -51,6 +52,7 @@ from workouts.ws_handlers import (
     handle_toggle_set_done,
     handle_update_set,
     handle_update_workout,
+    handle_update_exercise_notes as handle_workout_update_exercise_notes,
 )
 
 Handler = Callable[[Any, dict], dict]
@@ -77,6 +79,7 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "workouts/update_workout": handle_update_workout,
     "workouts/toggle_set_done": handle_toggle_set_done,
     "workouts/set_performance_feedback": handle_set_performance_feedback,
+    "workouts/update_exercise_notes": handle_workout_update_exercise_notes,
     "workouts/delete_set": handle_delete_set,
     "workouts/delete_exercise": handle_delete_exercise,
     "workouts/delete_workout": handle_delete_workout,
@@ -97,6 +100,7 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "routines/refresh_add_exercise_options": handle_refresh_add_exercise_options,
     "routines/delete_exercise": handle_routine_delete_exercise,
     "routines/update_routine": handle_update_routine,
+    "routines/update_exercise_notes": handle_routine_update_exercise_notes,
     "routines/refresh_exercise_view": handle_routine_refresh_exercise_view,
     "routines/reorder_exercises": handle_routine_reorder_exercises,
     "programs/activate_program": handle_activate_program,

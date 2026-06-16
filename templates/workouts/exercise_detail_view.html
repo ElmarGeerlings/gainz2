@@ -9,10 +9,44 @@
     >
         <header class="row-between gap-sm">
             <h2 class="title-md row-center gap-sm">{{ we.exercise.name }} {% include "components/exercise_type_badge.html" with exercise_type=we.effective_exercise_type %}</h2>
-            <button type="button" class="icon-btn" data-function="click->removeExercise" data-exercise-id="{{ we.pk }}" aria-label="Remove exercise">
-                <i class="fas fa-trash" aria-hidden="true"></i>
-            </button>
+            <div class="row-center gap-sm">
+                <button
+                    type="button"
+                    class="icon-btn"
+                    data-function="click->toggleReveal"
+                    data-reveal-target="#exercise-notes-{{ we.pk }}"
+                    aria-expanded="false"
+                    aria-controls="exercise-notes-{{ we.pk }}"
+                    aria-label="Exercise notes"
+                >
+                    <i class="fas fa-note-sticky" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="icon-btn icon-btn-danger" data-function="click->removeExercise" data-exercise-id="{{ we.pk }}" aria-label="Remove exercise">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
+                </button>
+            </div>
         </header>
+
+        <div id="exercise-notes-{{ we.pk }}" class="exercise-notes-panel mt-2" hidden>
+            <div
+                class="inline-edit"
+                data-inline-edit
+            >
+                <div
+                    class="inline-edit-display text-sm{% if not we.notes %} font-italic{% endif %}"
+                    data-function="click->startInlineEdit"
+                    data-placeholder="Add notes…"
+                >{% if we.notes %}{{ we.notes }}{% else %}Add notes…{% endif %}</div>
+                <textarea
+                    class="inline-edit-input form-control hidden"
+                    rows="2"
+                    data-function="blur->saveInlineEdit"
+                    data-routing="{{ endpoint_ns }}/update_exercise_notes"
+                    data-exercise-id="{{ we.pk }}"
+                    data-placeholder="Add notes…"
+                ></textarea>
+            </div>
+        </div>
 
         {% if not is_routine %}
         <div class="panel surface-soft p-3">

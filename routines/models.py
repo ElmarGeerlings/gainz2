@@ -29,6 +29,7 @@ class RoutineExercise(models.Model):
         null=True,
         blank=True,
     )
+    notes = models.TextField(blank=True)
 
     class Meta:
         ordering = ['order']

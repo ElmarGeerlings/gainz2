@@ -103,6 +103,16 @@ def get_routine_exercise_last_set(routine_exercise):
     )
 
 
+def update_routine_exercise_notes(user, routine_exercise_id, notes):
+    routine_exercise = RoutineExercise.objects.get(
+        pk=routine_exercise_id,
+        routine__user=user,
+    )
+    routine_exercise.notes = notes
+    routine_exercise.save(update_fields=["notes"])
+    return routine_exercise
+
+
 TYPE_PRIORITY = {
     "primary": 3,
     "secondary": 2,

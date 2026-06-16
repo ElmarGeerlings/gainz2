@@ -119,13 +119,15 @@ def new_workout_from_routine(user, routine):
     name = next_numbered_name(routine.name, names)
     workout = Workout.objects.create(user=user, name=name, routine=routine)
     for routine_exercise in routine.exercises.prefetch_related("sets", "exercise").order_by("order"):
+        prior = get_prior_workout_exercise(user, workout, routine_exercise)
+        notes = routine_exercise.notes or (prior.notes if prior else "")
         we = WorkoutExercise.objects.create(
             workout=workout,
             exercise=routine_exercise.exercise,
             order=routine_exercise.order,
             exercise_type=routine_exercise.effective_exercise_type(),
+            notes=notes,
         )
-        prior = get_prior_workout_exercise(user, workout, we)
         prior_sets = list(prior.sets.order_by("set_number")) if prior else []
         for i, rs in enumerate(routine_exercise.sets.order_by("set_number")):
             if prior_sets:
@@ -249,6 +251,16 @@ def set_workout_exercise_feedback(user, workout_exercise_id, feedback):
     return workout_exercise
 
 
+def update_workout_exercise_notes(user, workout_exercise_id, notes):
+    workout_exercise = WorkoutExercise.objects.get(
+        pk=workout_exercise_id,
+        workout__user=user,
+    )
+    workout_exercise.notes = notes
+    workout_exercise.save(update_fields=["notes"])
+    return workout_exercise
+
+
 def list_add_exercise_options(primary_bodypart=None):
     exercises = Exercise.objects.filter(user__isnull=True)
     if primary_bodypart:
@@ -345,20 +357,26 @@ def add_exercise_to_workout(
         order__gte=new_order,
     ).update(order=F("order") + 1)
 
-    new_workout_exercise = WorkoutExercise.objects.create(
-        workout_id=workout_id,
-        exercise_id=exercise_id,
-        exercise_type=new_type,
-        order=new_order,
-    )
-
+    notes = ""
+    prior = None
     if user.settings.set_carryover:
         workout_for_lookup = Workout.objects.get(pk=workout_id)
         prior = find_prior_workout_exercise(
             user, workout_for_lookup, exercise_id, new_type
         )
-        if prior and prior.sets.exists():
-            copy_sets_from_prior_workout_exercise(new_workout_exercise, prior)
+        if prior:
+            notes = prior.notes
+
+    new_workout_exercise = WorkoutExercise.objects.create(
+        workout_id=workout_id,
+        exercise_id=exercise_id,
+        exercise_type=new_type,
+        order=new_order,
+        notes=notes,
+    )
+
+    if prior and prior.sets.exists():
+        copy_sets_from_prior_workout_exercise(new_workout_exercise, prior)
 
     new_exercise_index = insert_index
     workout = get_workout(workout_id)

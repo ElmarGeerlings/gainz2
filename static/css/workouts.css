@@ -74,6 +74,18 @@
     color: inherit;
 }
 
+
+.inline-edit-display {
+    cursor: pointer;
+    white-space: pre-wrap;
+}
+
+.inline-edit-input {
+    min-height: 3.5rem;
+    resize: vertical;
+}
+
+
 /* ── Sets table (workout-sets-table) ────────── */
 
 .workout-sets-table .table-cell-trigger {

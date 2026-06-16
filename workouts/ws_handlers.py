@@ -33,6 +33,7 @@ from workouts.services import (
     reorder_workout_exercises,
     set_workout_exercise_feedback,
     toggle_exercise_set_completed,
+    update_workout_exercise_notes,
     workout_exercise_all_sets_complete,
     update_exercise_set,
     update_workout,
@@ -157,6 +158,17 @@ def handle_set_performance_feedback(user, attributes):
     workout_exercise_id = int(attributes["data-exercise-id"])
     feedback = attributes["data-feedback"]
     set_workout_exercise_feedback(user, workout_exercise_id, feedback)
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {},
+    }
+
+
+def handle_update_exercise_notes(user, attributes):
+    workout_exercise_id = int(attributes["data-exercise-id"])
+    notes = attributes.get("data-notes", "")
+    update_workout_exercise_notes(user, workout_exercise_id, notes)
     return {
         "status": 200,
         "headers": [],

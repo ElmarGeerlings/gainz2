@@ -356,6 +356,70 @@ function toggleGainzDropdown(req_event) {
     }
 }
 
+function toggleReveal(req_event) {
+    const trigger = req_event.currentTarget;
+    const target = document.querySelector(trigger.getAttribute("data-reveal-target"));
+    if (!target) {
+        return;
+    }
+    const isOpen = !target.hidden;
+    target.hidden = isOpen;
+    trigger.setAttribute("aria-expanded", isOpen ? "false" : "true");
+}
+
+function startInlineEdit(req_event) {
+    const display = req_event.currentTarget;
+    const root = display.closest("[data-inline-edit]");
+    const input = root.querySelector(".inline-edit-input");
+    const placeholder = display.dataset.placeholder || "";
+    const text = display.textContent.trim();
+    input.value = (!text || text === placeholder) ? "" : text;
+    display.classList.add("hidden");
+    input.classList.remove("hidden");
+    input.focus();
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            input.blur();
+        }
+    }, { once: true });
+}
+
+function saveInlineEdit(req_event) {
+    const input = req_event.currentTarget;
+    const root = input.closest("[data-inline-edit]");
+    const display = root.querySelector(".inline-edit-display");
+    const endpoint = input.getAttribute("data-routing");
+    const placeholder = display.dataset.placeholder || input.dataset.placeholder || "";
+    const displayText = display.textContent.trim();
+    const savedValue = (!displayText || displayText === placeholder) ? "" : displayText;
+    const newValue = input.value.trim();
+
+    const finishEdit = () => {
+        display.classList.remove("hidden");
+        input.classList.add("hidden");
+    };
+
+    if (newValue === savedValue) {
+        finishEdit();
+        return;
+    }
+
+    input.setAttribute("data-notes", newValue);
+    sendWsRequest(endpoint, input).then((response) => {
+        if (response.status === 200) {
+            if (newValue) {
+                display.textContent = newValue;
+                display.classList.remove("font-italic");
+            } else {
+                display.textContent = placeholder;
+                display.classList.add("font-italic");
+            }
+            finishEdit();
+        }
+    });
+}
+
 function CloseModal(event) {
   if (
     event.target.classList.contains('gainz-modal') ||

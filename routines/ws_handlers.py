@@ -17,6 +17,7 @@ from routines.services import (
     list_routines_for_program,
     reorder_routine_exercises,
     update_routine,
+    update_routine_exercise_notes,
     update_routine_set,
 )
 from utils.templatetags.formatting import weight_display
@@ -240,6 +241,17 @@ def handle_update_routine(user, attributes):
             "target": "#routine-header",
             "html": html,
         },
+    }
+
+
+def handle_update_exercise_notes(user, attributes):
+    routine_exercise_id = int(attributes["data-exercise-id"])
+    notes = attributes.get("data-notes", "")
+    update_routine_exercise_notes(user, routine_exercise_id, notes)
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {},
     }
 
 

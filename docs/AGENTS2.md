@@ -106,19 +106,24 @@ project_root/
 
 | Attribute | Meaning |
 |-----------|--------|
-| `data-endpoint="click->workouts/update_set"` | **`ws_request`**: `sendWsRequest` + standard response handling (§7). |
-| `data-function="click->openSetEditModal"` | **`window[funcName](event)`** — top-level functions in `app.js` or `workouts.js`. |
+| `data-endpoint="click->workouts/update_set"` | **`ws_request`**: `sendWsRequest` + standard response handling (§7). Use when one WS round-trip and generic morph/reload/toast is enough. |
+| `data-function="click->openSetModal"` | **`window[funcName](event)`** — top-level functions in `app.js` or `workouts.js`. |
+| `data-routing="workouts/set_edit_modal_form"` | **WS route for a reusable `data-function`**. The function reads `data-routing` and calls `sendWsRequest` with custom client-side handling (e.g. morph into a modal, inline edit save). Same JS, different endpoints from the template — often `{{ endpoint_ns }}/...` for workout vs routine. |
 | `data-close-modal="#set-modal"` | On **200**, hide modal (used with `data-endpoint` on Confirm). |
 | `data-refresh` | Full page reload on response. |
 | `data-target` | Fallback morph selector if server omits `json_content.target`. |
-| `data-routing` | **Legacy** — only `MorphingModal` in `app.js`. **New features use `data-endpoint`**, not `data-routing`. |
 
 **Bundles**
 
 - **`static/js/app.js`** — WebSocket, `sendWsRequest`, `ws_request`, `appendToast`, `dismissToast`, modal helpers, `MutationObserver` for `data-endpoint` / `data-function`.
-- **`static/js/workouts.js`** — workout detail: carousel, `openSetEditModal`, placeholders. Loaded via `extra_js` on that page.
+- **`static/js/workouts.js`** — workout detail: carousel, `openSetModal`, placeholders. Loaded via `extra_js` on that page.
 
-Prefer **`data-endpoint`** when one WS round-trip + standard side effects is enough. Use **`data-function`** for client-only UI or multi-step flows (open modal, then save via endpoint on another element).
+**Choosing an attribute**
+
+- **`data-endpoint`** — generic pipeline only; no bespoke JS.
+- **`data-routing` + `data-function`** — reusable handler that needs its own WS flow or DOM updates beyond `ws_request` (e.g. `MorphingModal`, `openSetModal`, inline edit save).
+- **Hardcoded endpoint in JS** — handler is tied to a single route (e.g. `toggleSetDone` → `workouts/toggle_set_done`).
+- **`data-endpoint-ns` on a shell element** — build the route in JS when the handler is shared across workout/routine pages but buttons do not carry a per-action route (e.g. add/remove exercise, refresh exercise view).
 
 ### `ws_request` behavior (implemented)
 
