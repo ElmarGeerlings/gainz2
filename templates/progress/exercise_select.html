@@ -1,0 +1,12 @@
+<select
+    id="progress-exercise"
+    name="exercise"
+    class="form-control"
+    aria-label="Exercise"
+    data-function="change->drawProgressChart"
+>
+    <option value="">Select an exercise</option>
+    {% for exercise in exercises %}
+    <option value="{{ exercise.pk }}"{% if selected_exercise_id|stringformat:"s" == exercise.pk|stringformat:"s" %} selected{% endif %}>{{ exercise.name }}</option>
+    {% endfor %}
+</select>

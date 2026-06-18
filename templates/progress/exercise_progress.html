@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css">
+<link rel="stylesheet" href="{% static 'css/progress.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page progress-page">
+    <form id="progress-form" class="stack-lg">
+        <h1 class="title-lg m-0">Progress</h1>
+
+        <div class="progress-period-row form-stack">
+            <span class="form-label">Period</span>
+            <select
+                id="progress-period"
+                name="period"
+                class="form-control"
+                data-function="change->drawProgressChart"
+            >
+                {% for days in period_choices %}
+                <option value="{{ days }}"{% if period_days == days %} selected{% endif %}>Last {{ days }} days</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <section class="panel progress-chart-card stack-md">
+            <div class="progress-card-header">
+                <h2 class="title-md m-0">Exercise progress</h2>
+                <div class="progress-metric-toggle" role="group">
+                    <button type="button" class="btn btn-sm {% if chart_type == '1rm' %}btn-primary{% else %}btn-outline{% endif %} progress-metric-btn" data-metric="1rm"
+                            data-function="click->switchProgressMetric">1RM</button>
+                    <button type="button" class="btn btn-sm {% if chart_type == 'volume' %}btn-primary{% else %}btn-outline{% endif %} progress-metric-btn" data-metric="volume"
+                            data-function="click->switchProgressMetric">Volume</button>
+                </div>
+            </div>
+            <input type="hidden" id="progress-chart-type" name="chart_type" value="{{ chart_type }}">
+
+            <div class="form-stack">
+                <span class="form-label">Exercise</span>
+                <select
+                    id="progress-bodypart"
+                    name="primary_bodypart"
+                    class="form-control"
+                    aria-label="Bodypart"
+                    data-endpoint="change->progress/refresh_exercise_options"
+                    data-selected-exercise-id="{{ selected_exercise_id|default_if_none:'' }}"
+                >
+                    <option value=""{% if not selected_bodypart %} selected{% endif %}>All bodyparts</option>
+                    {% for code, label in bodypart_choices %}
+                    <option value="{{ code }}"{% if selected_bodypart == code %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <div id="progress-exercise-select-wrap">
+                    {% include "progress/exercise_select.html" %}
+                </div>
+            </div>
+
+            <div id="progress-rep-range-wrap" class="form-stack" hidden>
+                <span class="form-label">Rep range: <span id="rep-range-display">All</span></span>
+                <div id="progress-rep-slider"></div>
+                <input type="hidden" id="progress-min-reps" name="min_reps">
+                <input type="hidden" id="progress-max-reps" name="max_reps">
+            </div>
+
+            <div class="progress-chart-panel">
+                <canvas id="progress-chart" class="progress-chart-canvas" hidden aria-label="Exercise progress chart"></canvas>
+                <p id="progress-chart-empty" class="progress-chart-empty text-muted text-center m-0">Select an exercise to see your progress.</p>
+            </div>
+
+            <div id="progress-sets-detail" class="progress-sets-detail"></div>
+        </section>
+    </form>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js" defer></script>
+<script defer src="{% static 'js/progress.js' %}"></script>
+{% endblock %}

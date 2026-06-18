@@ -31,6 +31,7 @@ from programs.views import (
     program_detail_page,
     programs_list_page,
 )
+from progress.views import progress_page
 from workouts.views import new_workout_page, workout_detail_page, workouts_list_page
 
 urlpatterns = [
@@ -41,6 +42,7 @@ urlpatterns = [
     path("demo/", demo_page, name="demo"),
     path("logout/", logout_page, name="logout"),
     path("admin/", admin.site.urls),
+    path("progress/", progress_page, name="progress"),
     path("exercises/", exercise_list_page, name="exercises-list"),
     path("workouts/", workouts_list_page, name="workouts-list"),
     path("workouts/new/", new_workout_page, name="new-workout"),

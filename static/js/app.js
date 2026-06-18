@@ -356,6 +356,13 @@ function toggleGainzDropdown(req_event) {
     }
 }
 
+function submitParentForm(event) {
+    const form = event.currentTarget.closest("form");
+    if (form) {
+        form.requestSubmit();
+    }
+}
+
 function toggleReveal(req_event) {
     const trigger = req_event.currentTarget;
     const target = document.querySelector(trigger.getAttribute("data-reveal-target"));

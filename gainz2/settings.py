@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'routines',
     'utils',
     'programs',
+    'progress',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

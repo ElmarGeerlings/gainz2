@@ -35,6 +35,11 @@ from routines.ws_handlers import (
     handle_update_exercise_notes as handle_routine_update_exercise_notes,
     handle_update_set as handle_routine_update_set,
 )
+from progress.ws_handlers import (
+    handle_progress_chart_data,
+    handle_progress_workout_sets,
+    handle_refresh_progress_exercise_options,
+)
 from workouts.ws_handlers import (
     handle_add_exercise,
     handle_delete_exercise,
@@ -107,6 +112,9 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "programs/deactivate_program": handle_deactivate_program,
     "programs/delete_program": handle_delete_program,
     "programs/update_program": handle_update_program,
+    "progress/refresh_exercise_options": handle_refresh_progress_exercise_options,
+    "progress/chart_data": handle_progress_chart_data,
+    "progress/workout_sets": handle_progress_workout_sets,
 }
 
 
