@@ -61,28 +61,28 @@
         <div class="grid-3 mt-3" data-feedback-for="{{ we.pk }}">
             <button
                 type="button"
-                class="btn{% if we.performance_feedback == 'increase' %} feedback-selected{% else %} btn-outline{% endif %}"
+                class="btn feedback-btn feedback-btn-increase{% if we.performance_feedback == 'increase' %} feedback-selected{% else %} btn-outline{% endif %}"
                 data-function="click->setWorkoutExerciseFeedback"
                 data-exercise-id="{{ we.pk }}"
                 data-feedback="increase"
                 aria-label="Increase next time"
-            ><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+            ><i class="fas fa-thumbs-up" aria-hidden="true"></i></button>
             <button
                 type="button"
-                class="btn{% if we.performance_feedback == 'stay' %} feedback-selected{% else %} btn-outline{% endif %}"
+                class="btn feedback-btn feedback-btn-stay{% if we.performance_feedback == 'stay' %} feedback-selected{% else %} btn-outline{% endif %}"
                 data-function="click->setWorkoutExerciseFeedback"
                 data-exercise-id="{{ we.pk }}"
                 data-feedback="stay"
                 aria-label="Stay the same"
-            ><i class="fas fa-minus" aria-hidden="true"></i></button>
+            ><i class="fas fa-thumbs-up fa-rotate-270" aria-hidden="true"></i></button>
             <button
                 type="button"
-                class="btn{% if we.performance_feedback == 'decrease' %} feedback-selected{% else %} btn-outline{% endif %}"
+                class="btn feedback-btn feedback-btn-decrease{% if we.performance_feedback == 'decrease' %} feedback-selected{% else %} btn-outline{% endif %}"
                 data-function="click->setWorkoutExerciseFeedback"
                 data-exercise-id="{{ we.pk }}"
                 data-feedback="decrease"
                 aria-label="Decrease next time"
-            ><i class="fas fa-arrow-down" aria-hidden="true"></i></button>
+            ><i class="fas fa-thumbs-down" aria-hidden="true"></i></button>
         </div>
         {% endif %}
 

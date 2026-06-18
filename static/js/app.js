@@ -4,6 +4,7 @@ const wsUrl = `${wsProtocol}://${window.location.hostname}${port}/ws/`;
 
 let ws;
 let wsRetryDelay = 1000;
+let wsRetryTimer = null;
 const WS_RETRY_MAX = 30000;
 const sendQueue = [];
 
@@ -13,6 +14,11 @@ function showLoading() {}
 function hideLoading() {}
 
 function connectWs() {
+  if (ws && ws.readyState !== WebSocket.CLOSED) {
+    ws.onclose = null;
+    ws.close();
+  }
+
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
@@ -43,7 +49,7 @@ function connectWs() {
 
   ws.onclose = () => {
     console.log(`WebSocket disconnected, retrying in ${wsRetryDelay}ms`);
-    setTimeout(connectWs, wsRetryDelay);
+    wsRetryTimer = setTimeout(connectWs, wsRetryDelay);
     wsRetryDelay = Math.min(wsRetryDelay * 2, WS_RETRY_MAX);
   };
 }
@@ -52,6 +58,7 @@ connectWs();
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && ws.readyState !== WebSocket.OPEN) {
+    clearTimeout(wsRetryTimer);
     wsRetryDelay = 1000;
     connectWs();
   }

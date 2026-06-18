@@ -68,10 +68,34 @@
     background: var(--tint-warmup-bg);
 }
 
-.feedback-selected {
-    background: var(--tint-feedback-bg);
-    border-color: var(--tint-feedback-border);
-    color: inherit;
+.feedback-btn-increase:not(.feedback-selected) i {
+    color: var(--success);
+}
+
+.feedback-btn-stay:not(.feedback-selected) i {
+    color: var(--warning);
+}
+
+.feedback-btn-decrease:not(.feedback-selected) i {
+    color: var(--danger);
+}
+
+.feedback-btn-increase.feedback-selected {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+}
+
+.feedback-btn-stay.feedback-selected {
+    background: var(--warning);
+    border-color: var(--warning);
+    color: #fff;
+}
+
+.feedback-btn-decrease.feedback-selected {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
 }
 
 
@@ -99,6 +123,7 @@
     color: inherit;
     text-align: inherit;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .workout-sets-table td:nth-child(1) .table-cell-trigger,

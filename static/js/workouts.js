@@ -4,12 +4,11 @@ let workoutCurrentCardIndex = 0;
 let workoutCards = [];
 let workoutIndicators = [];
 let workoutTouchStartX = 0;
+let workoutTouchStartY = 0;
 let workoutTouchEndX = 0;
+let workoutTouchEndY = 0;
 let exerciseViewMode = "detail";
 let overviewSortables = [];
-let overviewLastTapTime = 0;
-let overviewLastTapRow = null;
-const OVERVIEW_DOUBLE_TAP_MS = 300;
 
 /* ── Exercise view mode (detail / overview) ──── */
 
@@ -182,11 +181,12 @@ function goToWorkoutCard(req_event) {
 }
 
 function handleWorkoutSwipe() {
-    const response = workoutTouchStartX - workoutTouchEndX;
-    if (Math.abs(response) < 45) {
+    const dx = workoutTouchStartX - workoutTouchEndX;
+    const dy = Math.abs(workoutTouchStartY - workoutTouchEndY);
+    if (Math.abs(dx) < 80 || dy > Math.abs(dx)) {
         return;
     }
-    if (response > 0) {
+    if (dx > 0) {
         showNextWorkoutCard();
         return;
     }
@@ -199,6 +199,7 @@ function bindWorkoutTouch(container) {
             return;
         }
         workoutTouchStartX = req_event.touches[0].clientX;
+        workoutTouchStartY = req_event.touches[0].clientY;
     }, { passive: true });
 
     container.addEventListener("touchend", (req_event) => {
@@ -206,11 +207,12 @@ function bindWorkoutTouch(container) {
             return;
         }
         workoutTouchEndX = req_event.changedTouches[0].clientX;
+        workoutTouchEndY = req_event.changedTouches[0].clientY;
         handleWorkoutSwipe();
     }, { passive: true });
 }
 
-/* ── Overview (sort, reorder, double-tap) ──── */
+/* ── Overview (sort, reorder, tap) ──── */
 
 function readOverviewExerciseIds() {
     const ids = [];
@@ -254,19 +256,23 @@ function initOverviewSortable() {
 
 function initOverviewDoubleTap() {
     document.querySelectorAll("#exercise-overview-view .exercise-overview-row").forEach((row) => {
-        row.addEventListener("click", (req_event) => {
-            if (!row) {
+        let tapStartX = 0;
+        let tapStartY = 0;
+        let tapEndX = 0;
+        let tapEndY = 0;
+        row.addEventListener("touchstart", (e) => {
+            tapStartX = e.touches[0].clientX;
+            tapStartY = e.touches[0].clientY;
+        }, { passive: true });
+        row.addEventListener("touchend", (e) => {
+            tapEndX = e.changedTouches[0].clientX;
+            tapEndY = e.changedTouches[0].clientY;
+        }, { passive: true });
+        row.addEventListener("click", () => {
+            if (Math.abs(tapEndX - tapStartX) > 8 || Math.abs(tapEndY - tapStartY) > 8) {
                 return;
             }
-            const now = Date.now();
-            if (overviewLastTapRow === row && now - overviewLastTapTime < OVERVIEW_DOUBLE_TAP_MS) {
-                overviewLastTapTime = 0;
-                overviewLastTapRow = null;
-                refreshExerciseView("detail", row.dataset.exerciseId);
-                return;
-            }
-            overviewLastTapTime = now;
-            overviewLastTapRow = row;
+            refreshExerciseView("detail", row.dataset.exerciseId);
         });
     });
 }
