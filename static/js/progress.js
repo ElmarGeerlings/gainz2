@@ -18,6 +18,22 @@ function loadWorkoutSets(date, exerciseId) {
     });
 }
 
+function refreshProgressPageStats() {
+    const periodSelect = document.getElementById('progress-period');
+    if (!periodSelect) return;
+    sendWsRequest('progress/page_stats', periodSelect).then((res) => {
+        const c = res.json_content;
+        if (c?.target && c?.html) {
+            document.querySelector(c.target).innerHTML = c.html;
+        }
+    });
+}
+
+function refreshProgressPage() {
+    refreshProgressPageStats();
+    drawProgressChart();
+}
+
 function renderChart(canvas, dataPoints, metric) {
     if (typeof Chart !== 'function') return;
 
@@ -215,11 +231,12 @@ function drawProgressChart() {
     });
 }
 
-function initProgressChart() {
+function initProgressPage() {
+    refreshProgressPageStats();
     const exerciseSelect = document.getElementById('progress-exercise');
     if (exerciseSelect && exerciseSelect.value) {
         drawProgressChart();
     }
 }
 
-document.addEventListener('DOMContentLoaded', initProgressChart);
+document.addEventListener('DOMContentLoaded', initProgressPage);

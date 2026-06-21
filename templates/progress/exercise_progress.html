@@ -9,17 +9,17 @@
 {% endblock %}
 
 {% block content %}
-<main class="page progress-page">
+<main class="page page-narrow">
     <form id="progress-form" class="stack-lg">
         <h1 class="title-lg m-0">Progress</h1>
 
-        <div class="progress-period-row form-stack">
+        <div class="form-stack">
             <span class="form-label">Period</span>
             <select
                 id="progress-period"
                 name="period"
                 class="form-control"
-                data-function="change->drawProgressChart"
+                data-function="change->refreshProgressPage"
             >
                 {% for days in period_choices %}
                 <option value="{{ days }}"{% if period_days == days %} selected{% endif %}>Last {{ days }} days</option>
@@ -27,8 +27,13 @@
             </select>
         </div>
 
-        <section class="panel progress-chart-card stack-md">
-            <div class="progress-card-header">
+        <section class="panel stack-md">
+            <h2 class="title-md m-0">Stats</h2>
+            <div id="progress-stats-wrap" class="stack-sm progress-stats-list"></div>
+        </section>
+
+        <section class="panel stack-md">
+            <div class="row-between gap-sm">
                 <h2 class="title-md m-0">Exercise progress</h2>
                 <div class="progress-metric-toggle" role="group">
                     <button type="button" class="btn btn-sm {% if chart_type == '1rm' %}btn-primary{% else %}btn-outline{% endif %} progress-metric-btn" data-metric="1rm"
@@ -71,7 +76,7 @@
                 <p id="progress-chart-empty" class="progress-chart-empty text-muted text-center m-0">Select an exercise to see your progress.</p>
             </div>
 
-            <div id="progress-sets-detail" class="progress-sets-detail"></div>
+            <div id="progress-sets-detail" class="mt-2"></div>
         </section>
     </form>
 </main>

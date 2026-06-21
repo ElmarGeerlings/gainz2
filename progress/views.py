@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from exercises.models import Exercise
-from progress.services import get_user_logged_exercises
+from progress.services import (
+    PERIOD_CHOICES,
+    get_progress_records,
+    get_user_logged_exercises,
+)
 
 
 def progress_page(req_event):
@@ -22,6 +26,18 @@ def progress_page(req_event):
         "bodypart_choices": Exercise.BODYPART_CHOICES,
         "period_days": period_days,
         "chart_type": chart_type,
-        "period_choices": [30, 90, 180, 365],
+        "period_choices": PERIOD_CHOICES,
     }
     return render(req_event, "progress/exercise_progress.html", response)
+
+
+def progress_records_page(req_event):
+    period_days = int(req_event.GET.get("period", 90))
+    records = get_progress_records(req_event.user, period_days)
+    response = {
+        "title": "Personal records",
+        "period_days": period_days,
+        "period_choices": PERIOD_CHOICES,
+        "records": records,
+    }
+    return render(req_event, "progress/records.html", response)

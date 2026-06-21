@@ -1,0 +1,21 @@
+<article class="panel stack-sm{% if exercise.is_period_pr %} progress-records-pr-highlight{% endif %}">
+    <h3 class="title-sm m-0">{{ exercise.name }}</h3>
+    <div class="row-between gap-sm">
+        <span class="text-sm text-muted">All-time</span>
+        <span class="text-sm text-right">
+            <span class="fw-700">{{ exercise.all_time.display }}</span>
+            <span class="text-muted"> · {{ exercise.all_time.date|date:"M j, Y" }}</span>
+        </span>
+    </div>
+    <div class="row-between gap-sm">
+        <span class="text-sm text-muted">Period</span>
+        <span class="text-sm text-right">
+            {% if exercise.period_best %}
+            <span class="fw-700">{{ exercise.period_best.display }}</span>
+            <span class="text-muted"> · {{ exercise.period_best.date|date:"M j, Y" }}</span>
+            {% else %}
+            <span class="fw-700">--</span>
+            {% endif %}
+        </span>
+    </div>
+</article>

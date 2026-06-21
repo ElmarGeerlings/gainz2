@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/progress.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <div class="stack-lg">
+        <div class="row-between gap-sm">
+            <h1 class="title-lg m-0">Personal records</h1>
+            <a href="{% url 'progress' %}" class="text-sm">Back to progress</a>
+        </div>
+        <form method="get" class="form-stack">
+            <span class="form-label">Period</span>
+            <select
+                id="progress-records-period"
+                name="period"
+                class="form-control"
+                onchange="this.form.submit()"
+            >
+                {% for days in period_choices %}
+                <option value="{{ days }}"{% if period_days == days %} selected{% endif %}>Last {{ days }} days</option>
+                {% endfor %}
+            </select>
+        </form>
+        <section class="stack-md">
+            <h2 class="title-md m-0">Summary</h2>
+            <div class="stack-sm">
+                <article class="panel stack-sm">
+                    <div class="row-between gap-sm">
+                        <span class="text-sm text-muted">Total PRs in period</span>
+                        <span class="fw-700">{{ records.total_prs }}</span>
+                    </div>
+                </article>
+                <article class="panel stack-sm">
+                    <div class="row-between gap-sm">
+                        <span class="text-sm text-muted">Most recent PR</span>
+                        <span class="text-sm text-right">
+                            {% if records.most_recent_pr %}
+                            <span class="fw-700">{{ records.most_recent_pr.exercise_name }}</span>
+                            <span class="text-muted"> · {{ records.most_recent_pr.display }} · {{ records.most_recent_pr.date|date:"M j, Y" }}</span>
+                            {% else %}
+                            <span class="fw-700">--</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </article>
+                <article class="panel stack-sm">
+                    <span class="text-sm text-muted">PRs by bodypart</span>
+                    {% if records.prs_by_bodypart %}
+                    <div class="stack-sm progress-stats-list">
+                        {% for row in records.prs_by_bodypart %}
+                        <div class="row-between gap-sm">
+                            <span class="text-sm">{{ row.label }}</span>
+                            <span class="fw-700">{{ row.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <span class="fw-700">--</span>
+                    {% endif %}
+                </article>
+            </div>
+        </section>
+        {% for group in records.groups %}
+        <section class="stack-sm">
+            <h2 class="title-sm m-0 row-center gap-sm">
+                {% include "components/exercise_type_badge.html" with exercise_type=group.type %}
+                {{ group.label }}
+            </h2>
+            <div class="stack-sm">
+                {% for exercise in group.exercises %}
+                {% include "progress/records_exercise_card.html" %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}

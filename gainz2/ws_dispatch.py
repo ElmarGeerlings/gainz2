@@ -37,6 +37,7 @@ from routines.ws_handlers import (
 )
 from progress.ws_handlers import (
     handle_progress_chart_data,
+    handle_progress_page_stats,
     handle_progress_workout_sets,
     handle_refresh_progress_exercise_options,
 )
@@ -114,6 +115,7 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "programs/update_program": handle_update_program,
     "progress/refresh_exercise_options": handle_refresh_progress_exercise_options,
     "progress/chart_data": handle_progress_chart_data,
+    "progress/page_stats": handle_progress_page_stats,
     "progress/workout_sets": handle_progress_workout_sets,
 }
 

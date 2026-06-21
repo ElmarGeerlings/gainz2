@@ -1,0 +1,16 @@
+<div class="row-between gap-sm">
+    <span class="text-sm text-muted">Total workouts</span>
+    <span class="fw-700">{{ stats.total_workouts }}</span>
+</div>
+<div class="row-between gap-sm">
+    <span class="text-sm text-muted">Total volume</span>
+    <span class="fw-700">{{ stats.total_volume|floatformat:0 }} kg</span>
+</div>
+<div class="row-between gap-sm">
+    <a href="{% url 'progress-records' %}" class="text-sm text-muted">Personal records</a>
+    <span class="fw-700">{{ stats.personal_records }}</span>
+</div>
+<div class="row-between gap-sm">
+    <span class="text-sm text-muted">Most trained bodypart</span>
+    <span class="fw-700">{% if stats.most_trained_bodypart %}{{ stats.most_trained_bodypart }}{% else %}--{% endif %}</span>
+</div>

@@ -1,28 +1,18 @@
-.progress-page {
-    max-width: 520px;
-    margin: 0 auto;
-}
-
-.progress-period-row {
-    display: grid;
-    gap: var(--space-2);
-}
-
-.progress-chart-card {
-    display: grid;
-    gap: var(--space-2);
-}
-
-.progress-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.progress-chart-card .form-control,
-#progress-exercise-select-wrap select {
+#progress-form .form-control {
     width: 100%;
+}
+
+.progress-stats-list > * + * {
+    border-top: 1px solid var(--border);
+}
+
+#progress-records-period {
+    width: 100%;
+}
+
+.progress-records-pr-highlight {
+    background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
 }
 
 #progress-rep-range-wrap[hidden] {
@@ -47,7 +37,7 @@
     justify-content: center;
 }
 
-.progress-chart-empty {
+.progress-chart-panel .progress-chart-empty {
     width: 100%;
 }
 
@@ -80,10 +70,6 @@
 
 .progress-metric-toggle .btn:last-child {
     border-radius: 0 10px 10px 0;
-}
-
-.progress-sets-detail {
-    margin-top: var(--space-2);
 }
 
 .progress-best-set td {

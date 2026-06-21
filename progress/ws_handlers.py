@@ -2,6 +2,7 @@ from django.template.loader import render_to_string
 from progress.services import (
     get_exercise_chart_data,
     get_exercise_sets_for_date,
+    get_progress_page_stats,
     get_user_logged_exercises,
 )
 
@@ -69,6 +70,23 @@ def handle_progress_workout_sets(user, attributes):
         "headers": [],
         "json_content": {
             "target": "#progress-sets-detail",
+            "html": html,
+        },
+    }
+
+
+def handle_progress_page_stats(user, attributes):
+    period_days = int(attributes.get("period") or 90)
+    stats = get_progress_page_stats(user, period_days)
+    html = render_to_string(
+        "progress/page_stats.html",
+        {"stats": stats, "period_days": period_days},
+    )
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {
+            "target": "#progress-stats-wrap",
             "html": html,
         },
     }
