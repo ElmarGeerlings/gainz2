@@ -36,13 +36,6 @@
     margin-top: var(--space-6);
 }
 
-.home-card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: var(--space-4);
-    margin-top: var(--space-4);
-}
-
 .home-feature-card {
     text-align: center;
     display: flex;
@@ -64,14 +57,14 @@
     font-size: 1.5rem;
 }
 
-.home-roadmap-grid {
+.home-card-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-4);
     margin-top: var(--space-4);
 }
 
-.home-roadmap-grid .home-feature-card:last-child:nth-child(odd) {
+.home-card-grid .home-feature-card:last-child:nth-child(odd) {
     grid-column: 1 / -1;
     max-width: calc((100% - var(--space-4)) / 2);
     margin-left: auto;
@@ -79,11 +72,11 @@
 }
 
 @media (max-width: 599px) {
-    .home-roadmap-grid {
+    .home-card-grid {
         grid-template-columns: 1fr;
     }
 
-    .home-roadmap-grid .home-feature-card:last-child:nth-child(odd) {
+    .home-card-grid .home-feature-card:last-child:nth-child(odd) {
         grid-column: auto;
         max-width: none;
         margin-left: 0;

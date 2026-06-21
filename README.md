@@ -7,19 +7,19 @@ Gainz is designed with a mobile-first approach, as that is the device that you u
 
 ## Try it
 
-Head to [elgainz.com](https://elgainz.com) and hit **"Try a demo!"** on the home page. It drops you straight into a demo account with no signup, so you can poke around the workout logging, routines, and programs without committing to anything.
+Head to [elgainz.com](https://elgainz.com) and hit **"Try a demo!"** on the home page. It drops you straight into a demo account with no signup, so you can poke around workout logging, routines, programs, and progress without committing to anything.
 
 ## What it does right now
 
 - **Workout logging** — track exercises, sets, reps, and weights, and edit them mid-session. The set editing happens over a live connection, so updates land instantly without full page reloads.
 - **Routines and programs** — build reusable templates and start a workout from a routine instead of setting everything up from scratch every time.
 - **Exercise library** — keep your exercises in one place and reuse them across routines.
+- **Progress** — period stats (workouts, volume, PR count, most trained bodypart), per-exercise charts (estimated 1RM or volume, with rep-range filters), and a personal records page grouped by exercise type with all-time and period bests.
 
 ## Where it's going
 
 This is phase one. The plan is a fair bit bigger, and some of it is already sketched out on the home page:
 
-- Progress tracking: charts, rep-range filters, and total volume over time
 - Smarter workouts: suggested loads across sessions, plus richer set types (tempo, bands, etc.)
 - A rest timer tied to your profile and routines
 - Sharing and discovering routines and programs from other lifters
