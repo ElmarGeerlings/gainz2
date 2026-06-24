@@ -25,19 +25,33 @@
 }
 
 #workout-exercise-ui .exercise-overview-row {
-    cursor: grab;
-}
-
-#workout-exercise-ui .exercise-overview-row:active {
-    cursor: grabbing;
+    cursor: pointer;
 }
 
 #workout-exercise-ui .sortable-ghost {
     opacity: 0.45;
+    animation: none;
+}
+
+#workout-exercise-ui .sortable-drag {
+    animation: none;
+}
+
+@keyframes overview-row-wiggle {
+    0%, 100% {
+        transform: rotate(-0.6deg);
+    }
+    50% {
+        transform: rotate(0.6deg);
+    }
 }
 
 #workout-exercise-ui .sortable-chosen {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+#workout-exercise-ui .exercise-overview-row.overview-row-armed:not(.sortable-ghost):not(.sortable-drag) {
+    animation: overview-row-wiggle 0.15s ease-in-out infinite;
 }
 
 /* ── Carousel ────────────────────────────────── */

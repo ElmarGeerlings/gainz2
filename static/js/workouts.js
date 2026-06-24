@@ -64,7 +64,7 @@ function refreshExerciseView(view, activeExerciseId) {
         } else {
             applyExerciseViewMode();
             initOverviewSortable();
-            initOverviewDoubleTap();
+            initOverviewRowTap();
         }
     });
 }
@@ -214,6 +214,19 @@ function bindWorkoutTouch(container) {
 
 /* ── Overview (sort, reorder, tap) ──── */
 
+const OVERVIEW_TAP_MOVE_THRESHOLD = 16;
+const OVERVIEW_DRAG_DELAY_MS = 300;
+
+let overviewSortEngagedThisGesture = false;
+let overviewTouchHandled = false;
+let overviewWiggleMoveListener = null;
+
+function clearAllOverviewRowArmed() {
+    document.querySelectorAll("#exercise-overview-view .overview-row-armed").forEach((el) => {
+        el.classList.remove("overview-row-armed");
+    });
+}
+
 function readOverviewExerciseIds() {
     const ids = [];
     document.querySelectorAll("#exercise-overview-view .exercise-overview-sortable").forEach((container) => {
@@ -236,6 +249,10 @@ function persistOverviewExerciseOrder() {
 }
 
 function initOverviewSortable() {
+    if (overviewWiggleMoveListener) {
+        document.removeEventListener("touchmove", overviewWiggleMoveListener);
+        overviewWiggleMoveListener = null;
+    }
     overviewSortables.forEach((instance) => instance.destroy());
     overviewSortables = [];
     document.querySelectorAll("#exercise-overview-view .exercise-overview-sortable").forEach((container) => {
@@ -243,7 +260,32 @@ function initOverviewSortable() {
             new Sortable(container, {
                 draggable: ".exercise-overview-row",
                 animation: 150,
+                delay: OVERVIEW_DRAG_DELAY_MS,
+                delayOnTouchOnly: true,
+                touchStartThreshold: 10,
+                onChoose(evt) {
+                    overviewSortEngagedThisGesture = true;
+                    const item = evt.item;
+                    item.classList.add("overview-row-armed");
+                    if (overviewWiggleMoveListener) {
+                        document.removeEventListener("touchmove", overviewWiggleMoveListener);
+                    }
+                    overviewWiggleMoveListener = () => {
+                        clearAllOverviewRowArmed();
+                        document.removeEventListener("touchmove", overviewWiggleMoveListener);
+                        overviewWiggleMoveListener = null;
+                    };
+                    document.addEventListener("touchmove", overviewWiggleMoveListener, { passive: true });
+                },
+                onStart() {
+                    clearAllOverviewRowArmed();
+                },
                 onEnd(evt) {
+                    clearAllOverviewRowArmed();
+                    if (overviewWiggleMoveListener) {
+                        document.removeEventListener("touchmove", overviewWiggleMoveListener);
+                        overviewWiggleMoveListener = null;
+                    }
                     if (evt.oldIndex === evt.newIndex) {
                         return;
                     }
@@ -254,25 +296,48 @@ function initOverviewSortable() {
     });
 }
 
-function initOverviewDoubleTap() {
+function overviewRowTapWithinThreshold(startX, startY, endX, endY) {
+    return (
+        Math.abs(endX - startX) <= OVERVIEW_TAP_MOVE_THRESHOLD &&
+        Math.abs(endY - startY) <= OVERVIEW_TAP_MOVE_THRESHOLD
+    );
+}
+
+function navigateOverviewRowToDetail(row) {
+    refreshExerciseView("detail", row.dataset.exerciseId);
+}
+
+function initOverviewRowTap() {
     document.querySelectorAll("#exercise-overview-view .exercise-overview-row").forEach((row) => {
         let tapStartX = 0;
         let tapStartY = 0;
-        let tapEndX = 0;
-        let tapEndY = 0;
         row.addEventListener("touchstart", (e) => {
+            overviewSortEngagedThisGesture = false;
             tapStartX = e.touches[0].clientX;
             tapStartY = e.touches[0].clientY;
         }, { passive: true });
         row.addEventListener("touchend", (e) => {
-            tapEndX = e.changedTouches[0].clientX;
-            tapEndY = e.changedTouches[0].clientY;
-        }, { passive: true });
-        row.addEventListener("click", () => {
-            if (Math.abs(tapEndX - tapStartX) > 8 || Math.abs(tapEndY - tapStartY) > 8) {
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            row.classList.remove("overview-row-armed");
+            if (overviewSortEngagedThisGesture) {
                 return;
             }
-            refreshExerciseView("detail", row.dataset.exerciseId);
+            if (!overviewRowTapWithinThreshold(tapStartX, tapStartY, endX, endY)) {
+                return;
+            }
+            overviewTouchHandled = true;
+            navigateOverviewRowToDetail(row);
+        }, { passive: true });
+        row.addEventListener("touchcancel", () => {
+            row.classList.remove("overview-row-armed");
+        }, { passive: true });
+        row.addEventListener("click", () => {
+            if (overviewTouchHandled) {
+                overviewTouchHandled = false;
+                return;
+            }
+            navigateOverviewRowToDetail(row);
         });
     });
 }
