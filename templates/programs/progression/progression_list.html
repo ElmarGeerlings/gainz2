@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static formatting %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/programs.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <header class="stack-sm mb-4">
+        <h1 class="title-lg m-0">Progression templates</h1>
+        <div class="row-center gap-sm">
+            <a href="{% url 'new-progression-template' %}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> New</a>
+            <a href="{% url 'programs-list' %}" class="btn btn-outline">Programs</a>
+        </div>
+    </header>
+
+    <div class="stack-sm">
+        {% for template in templates %}
+        <article class="panel stack-sm">
+            <div class="row-between gap-md">
+                <h2 class="title-md m-0">
+                    <a href="{% url 'progression-template-detail' template.pk %}">{{ template.name }}</a>
+                    {% if template.is_system %}
+                    <span class="text-xs text-muted">Built-in</span>
+                    {% endif %}
+                </h2>
+                <div class="row-center gap-sm">
+                    {% if template.is_system %}
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        data-endpoint="click->programs/duplicate_progression_template"
+                        data-template-id="{{ template.pk }}"
+                        aria-label="Copy template"
+                    ><i class="fas fa-copy" aria-hidden="true"></i></button>
+                    {% else %}
+                    <button
+                        type="button"
+                        class="btn btn-danger-outline"
+                        data-function="click->show_confirm_toast"
+                        data-text="Delete progression template &quot;{{ template.name }}&quot;? This cannot be undone."
+                        data-endpoint="programs/delete_progression_template"
+                        data-template-id="{{ template.pk }}"
+                        data-confirm-label="Delete"
+                        aria-label="Delete progression template"
+                    >
+                        <i class="fas fa-trash" aria-hidden="true"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% if not template.is_system %}
+            <p class="text-muted text-sm m-0 font-italic">{{ template.updated_at|list_datetime_format }}</p>
+            {% endif %}
+            {% if template.notes %}
+            <p class="text-sm m-0">{{ template.notes|truncatewords:15 }}</p>
+            {% endif %}
+            <p class="text-muted text-sm m-0">{{ template.step_count }} step{{ template.step_count|pluralize }}</p>
+        </article>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}

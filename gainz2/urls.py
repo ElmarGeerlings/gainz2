@@ -28,7 +28,10 @@ from exercises.views import exercise_list_page
 from programs.views import (
     import_program_page,
     new_program_page,
+    new_progression_template_page,
     program_detail_page,
+    progression_template_detail_page,
+    progression_templates_list_page,
     programs_list_page,
 )
 from progress.views import progress_page, progress_records_page
@@ -52,6 +55,9 @@ urlpatterns = [
     path("programs/import/", import_program_page, name="program-import"),
     path("programs/new/", new_program_page, name="new-program"),
     path("programs/<int:program_id>/", program_detail_page, name="program-detail"),
+    path("programs/progression/", progression_templates_list_page, name="progression-templates-list"),
+    path("programs/progression/new/", new_progression_template_page, name="new-progression-template"),
+    path("programs/progression/<int:template_id>/", progression_template_detail_page, name="progression-template-detail"),
     path("routines/", routines_list_page, name="routines-list"),
     path("routines/import/", import_routine_page, name="routine-import"),
     path("routines/new/", new_routine_page, name="new-routine"),

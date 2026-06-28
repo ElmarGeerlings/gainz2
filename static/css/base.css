@@ -247,6 +247,10 @@ a:hover {
     opacity: 0.5;
 }
 
+.w-100 {
+    width: 100%;
+}
+
 /* ── Buttons ─────────────────────────────────── */
 
 .btn {
@@ -298,10 +302,6 @@ a:hover {
     background: var(--danger);
     border-color: var(--danger);
     color: #fff;
-}
-
-.btn-full {
-    width: 100%;
 }
 
 .icon-btn {

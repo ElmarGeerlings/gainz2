@@ -11,9 +11,17 @@ from typing import Any, Callable
 
 from programs.ws_handlers import (
     handle_activate_program,
+    handle_create_progression_step,
     handle_deactivate_program,
     handle_delete_program,
+    handle_delete_progression_step,
+    handle_delete_progression_template,
+    handle_duplicate_progression_template,
+    handle_progression_step_modal_form,
+    handle_set_program_exercise_progression,
     handle_update_program,
+    handle_update_progression_step,
+    handle_update_progression_template,
 )
 from exercises.ws_handlers import (
     handle_create_exercise,
@@ -113,6 +121,14 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "programs/deactivate_program": handle_deactivate_program,
     "programs/delete_program": handle_delete_program,
     "programs/update_program": handle_update_program,
+    "programs/set_program_exercise_progression": handle_set_program_exercise_progression,
+    "programs/delete_progression_template": handle_delete_progression_template,
+    "programs/update_progression_template": handle_update_progression_template,
+    "programs/duplicate_progression_template": handle_duplicate_progression_template,
+    "programs/progression_step_modal_form": handle_progression_step_modal_form,
+    "programs/create_progression_step": handle_create_progression_step,
+    "programs/update_progression_step": handle_update_progression_step,
+    "programs/delete_progression_step": handle_delete_progression_step,
     "progress/refresh_exercise_options": handle_refresh_progress_exercise_options,
     "progress/chart_data": handle_progress_chart_data,
     "progress/page_stats": handle_progress_page_stats,

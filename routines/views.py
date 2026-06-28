@@ -1,6 +1,12 @@
 from django.shortcuts import get_object_or_404, redirect, render
 
 from exercises.models import Exercise
+from programs.services import (
+    get_program_in_routine_context,
+    list_programs_for_routine,
+    list_progression_templates,
+    resolve_exercise_progression_display,
+)
 from routines.models import Routine, RoutineExercise
 from programs.services import list_programs_for_filter
 from routines.services import (
@@ -49,9 +55,27 @@ def new_routine_page(req_event):
 def routine_detail_page(req_event, routine_id):
     get_object_or_404(Routine, pk=routine_id, user=req_event.user)
     routine = get_routine(routine_id)
+    program_id = req_event.GET.get("program")
+    if program_id and not program_id.isdigit():
+        program_id = None
+    programs_for_routine = list(list_programs_for_routine(req_event.user, routine))
+    selected_program = get_program_in_routine_context(
+        req_event.user,
+        routine,
+        program_id,
+    )
+    if selected_program:
+        for routine_exercise in routine.exercises.all():
+            routine_exercise.progression_display = resolve_exercise_progression_display(
+                selected_program,
+                routine_exercise,
+            )
     response = {
         "title": routine.name,
         "routine": routine,
+        "programs_for_routine": programs_for_routine,
+        "selected_program": selected_program,
+        "progression_templates": list_progression_templates(req_event.user),
         "add_exercise_options": list_add_exercise_options(),
         "bodypart_choices": Exercise.BODYPART_CHOICES,
         "exercise_type_choices": [

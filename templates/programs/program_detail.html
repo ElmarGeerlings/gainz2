@@ -15,7 +15,7 @@
 
     {{ routines_catalog|json_script:"routines-catalog" }}
 
-    <form id="program-edit-form" class="stack-sm">
+    <form id="program-edit-form" class="stack-sm" data-program-id="{{ program.pk }}">
         <section class="panel stack-sm mb-4">
             <div class="form-stack">
                 <label for="program-name">Name</label>
@@ -99,6 +99,48 @@
                         </div>
                     </div>
                 </fieldset>
+
+                <fieldset style="border:none;padding:0;margin:0;">
+                    <legend class="text-sm text-muted mb-2">Progression defaults</legend>
+                    <div class="stack-sm">
+                        <div class="row-between gap-sm carryover-row">
+                            <span class="row-center gap-sm text-sm">
+                                {% include "components/exercise_type_badge.html" with exercise_type="primary" %}
+                                Primary
+                            </span>
+                            <select id="primary_progression_template" name="primary_progression_template" class="form-control program-progression-select">
+                                <option value="">None</option>
+                                {% for template in progression_templates %}
+                                <option value="{{ template.pk }}"{% if program.primary_progression_template_id == template.pk %} selected{% endif %}>{{ template.name }}{% if template.is_system %} (Built-in){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row-between gap-sm carryover-row">
+                            <span class="row-center gap-sm text-sm">
+                                {% include "components/exercise_type_badge.html" with exercise_type="secondary" %}
+                                Secondary
+                            </span>
+                            <select id="secondary_progression_template" name="secondary_progression_template" class="form-control program-progression-select">
+                                <option value="">None</option>
+                                {% for template in progression_templates %}
+                                <option value="{{ template.pk }}"{% if program.secondary_progression_template_id == template.pk %} selected{% endif %}>{{ template.name }}{% if template.is_system %} (Built-in){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row-between gap-sm carryover-row">
+                            <span class="row-center gap-sm text-sm">
+                                {% include "components/exercise_type_badge.html" with exercise_type="accessory" %}
+                                Accessory
+                            </span>
+                            <select id="accessory_progression_template" name="accessory_progression_template" class="form-control program-progression-select">
+                                <option value="">None</option>
+                                {% for template in progression_templates %}
+                                <option value="{{ template.pk }}"{% if program.accessory_progression_template_id == template.pk %} selected{% endif %}>{{ template.name }}{% if template.is_system %} (Built-in){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
             </div>
         </section>
 
@@ -106,15 +148,15 @@
             <h2 class="title-sm m-0">Routines</h2>
             <div id="program-routines-sortable" class="stack-sm">
                 {% for program_routine in program.program_routines.all %}
-                {% include "programs/program_routine_row.html" with routine=program_routine.routine %}
+                {% include "programs/program_routine_row.html" with routine=program_routine.routine program=program %}
                 {% endfor %}
             </div>
             <template id="program-routine-row-template">
-                {% include "programs/program_routine_row.html" with routine=template_routine %}
+                {% include "programs/program_routine_row.html" with routine=template_routine program=program %}
             </template>
             <select
                 id="program-add-routine"
-                class="form-control btn-full"
+                class="form-control w-100"
                 data-function="change->addProgramRoutine"
             >
                 <option value="">Add routine...</option>

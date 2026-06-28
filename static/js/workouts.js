@@ -353,6 +353,10 @@ function getPickerHiddenInput(picker) {
     if (!form) {
         return null;
     }
+    const inputId = picker.getAttribute("data-input-id");
+    if (inputId) {
+        return form.querySelector(`#${inputId}`);
+    }
     const kind = picker.getAttribute("data-picker");
     if (kind === "weight") {
         return form.querySelector("#set-modal-weight");
@@ -386,10 +390,32 @@ function renderWeightPickerItems(picker, lowIndex, highIndex) {
 function buildWeightPickerItems(picker, centerIndex) {
     const minIndex = Number(picker.getAttribute("data-min")) * 2;
     const maxIndex = Number(picker.getAttribute("data-max")) * 2;
+    if (maxIndex - minIndex <= 80) {
+        renderWeightPickerItems(picker, minIndex, maxIndex);
+        return;
+    }
     const clamped = Math.min(maxIndex, Math.max(minIndex, centerIndex));
     const lowIndex = Math.max(minIndex, clamped - WEIGHT_WINDOW_HALF_STEPS);
     const highIndex = Math.min(maxIndex, clamped + WEIGHT_WINDOW_HALF_STEPS);
     renderWeightPickerItems(picker, lowIndex, highIndex);
+}
+
+function createRepsPickerItem(value) {
+    const item = document.createElement("li");
+    item.className = "value-picker-item";
+    item.dataset.value = String(value);
+    item.textContent = String(value);
+    return item;
+}
+
+function buildRepsPickerItems(picker) {
+    const min = Number(picker.getAttribute("data-min"));
+    const max = Number(picker.getAttribute("data-max"));
+    const list = picker.querySelector(".value-picker-list");
+    list.innerHTML = "";
+    for (let value = min; value <= max; value += 1) {
+        list.appendChild(createRepsPickerItem(value));
+    }
 }
 
 function extendPickerRange(picker, direction) {
@@ -520,8 +546,13 @@ function findPickerItem(picker, valueStr) {
 
 function setPickerValue(picker, valueStr) {
     let item = findPickerItem(picker, valueStr);
-    if (!item && picker.getAttribute("data-picker") === "weight") {
+    const kind = picker.getAttribute("data-picker");
+    if (!item && kind === "weight") {
         buildWeightPickerItems(picker, Number(valueStr) * 2);
+        item = findPickerItem(picker, valueStr);
+    }
+    if (!item && kind === "reps" && picker.hasAttribute("data-min")) {
+        buildRepsPickerItems(picker);
         item = findPickerItem(picker, valueStr);
     }
     if (item) {
@@ -539,6 +570,8 @@ function initValuePickers(root) {
         const initialValue = hidden && hidden.value !== "" ? hidden.value : "0";
         if (picker.getAttribute("data-picker") === "weight") {
             buildWeightPickerItems(picker, Number(initialValue) * 2);
+        } else if (picker.getAttribute("data-picker") === "reps" && picker.hasAttribute("data-min")) {
+            buildRepsPickerItems(picker);
         }
         const windowEl = picker.querySelector(".value-picker-window");
         windowEl.addEventListener("scroll", () => {
@@ -550,16 +583,12 @@ function initValuePickers(root) {
 }
 
 function syncPickersFromHidden(form) {
-    const weightPicker = form.querySelector('[data-picker="weight"]');
-    const repsPicker = form.querySelector('[data-picker="reps"]');
-    const weightInput = form.querySelector("#set-modal-weight");
-    const repsInput = form.querySelector("#set-modal-reps");
-    if (weightPicker && weightInput) {
-        setPickerValue(weightPicker, weightInput.value);
-    }
-    if (repsPicker && repsInput) {
-        setPickerValue(repsPicker, repsInput.value);
-    }
+    form.querySelectorAll(".value-picker").forEach((picker) => {
+        const hidden = getPickerHiddenInput(picker);
+        if (hidden) {
+            setPickerValue(picker, hidden.value);
+        }
+    });
 }
 
 /* ── Modals and exercise actions ─────────────── */

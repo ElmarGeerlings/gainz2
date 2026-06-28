@@ -30,7 +30,15 @@ function routineRowExists(routineId) {
 
 function fillRoutineRow(row, entry) {
     row.dataset.routineId = String(entry.id);
-    row.querySelector("[data-slot='routine-link']").href = `/routines/${entry.id}/`;
+    const form = document.getElementById("program-edit-form");
+    if (!form) {
+        return;
+    }
+    const programId = form.dataset.programId || "";
+    const href = programId
+        ? `/routines/${entry.id}/?program=${programId}`
+        : `/routines/${entry.id}/`;
+    row.querySelector("[data-slot='routine-link']").href = href;
     row.querySelector("[data-slot='routine-name']").textContent = entry.name;
     row.querySelector("[data-slot='exercise-count']").textContent = exerciseCountLabel(entry.exercise_count);
 }

@@ -1,0 +1,26 @@
+<form id="progression-step-modal-form">
+    {% if is_add %}
+    <input type="hidden" name="progression_template_id" value="{{ template.pk }}">
+    {% else %}
+    <input type="hidden" name="step_id" id="progression-step-id" value="{{ step.pk }}">
+    {% endif %}
+    <h2 class="title-md m-0 mb-3">{% if is_add %}Add step{% else %}Edit step{% endif %}</h2>
+    <div class="set-modal-fields-row">
+        <div class="value-picker" data-picker="weight" data-min="-20" data-max="20" data-unit="kg" data-input-id="progression-step-weight-delta" aria-label="Weight change">
+            <div class="value-picker-window">
+                <ul class="value-picker-list"></ul>
+            </div>
+        </div>
+        <span class="set-modal-times" aria-hidden="true">·</span>
+        <div class="value-picker" data-picker="reps" data-min="-10" data-max="10" data-input-id="progression-step-reps-delta" aria-label="Reps change">
+            <div class="value-picker-window">
+                <ul class="value-picker-list"></ul>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="weight_delta" id="progression-step-weight-delta" value="{{ weight_delta }}">
+    <input type="hidden" name="reps_delta" id="progression-step-reps-delta" value="{{ reps_delta }}">
+    <div class="set-modal-actions mt-4">
+        <button type="button" class="btn btn-primary set-modal-confirm" data-endpoint="click->{% if is_add %}programs/create_progression_step{% else %}programs/update_progression_step{% endif %}" data-close-modal="#progression-step-modal">Confirm</button>
+    </div>
+</form>

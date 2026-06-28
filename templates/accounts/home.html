@@ -35,7 +35,7 @@
         <p class="text-muted text-sm m-0">Jump in with a demo account - no signup required.</p>
         <form method="post" action="{% url 'demo' %}" class="home-demo-form">
             {% csrf_token %}
-            <button type="submit" class="btn btn-primary btn-full home-demo-btn">Try a demo!</button>
+            <button type="submit" class="btn btn-primary w-100 home-demo-btn">Try a demo!</button>
         </form>
     </section>
     {% endif %}

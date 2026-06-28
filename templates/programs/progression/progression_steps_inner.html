@@ -1,0 +1,28 @@
+{% load formatting %}
+<div class="panel progression-steps-panel">
+{% for step in template.steps.all %}
+<div
+    class="progression-step-row{% if not template.is_system %} clickable{% endif %}"
+    data-step-id="{{ step.pk }}"
+    {% if not template.is_system %}
+    data-function="click->openProgressionStepModal"
+    data-modal-name="progression-step-modal"
+    data-routing="programs/progression_step_modal_form"
+    data-template-id="{{ template.pk }}"
+    data-step-id="{{ step.pk }}"
+    {% endif %}
+>
+    <span class="text-muted text-sm">Step {{ step.order }}: </span>
+    <span class="row-center gap-md">
+        <span class="text-sm">{% if step.weight_delta >= 0 %}+{% endif %}{{ step.weight_delta|weight_display }} kg</span>
+        <span class="progression-step-divider" aria-hidden="true"></span>
+        <span class="text-sm">{% if step.reps_delta >= 0 %}+{% endif %}{{ step.reps_delta }} reps</span>
+    </span>
+    {% if not template.is_system %}
+    <button type="button" class="icon-btn icon-btn-danger" data-endpoint="click->programs/delete_progression_step" data-step-id="{{ step.pk }}" aria-label="Delete step"><i class="fas fa-trash" aria-hidden="true"></i></button>
+    {% endif %}
+</div>
+{% empty %}
+<p class="text-muted m-0 p-3">No steps yet.</p>
+{% endfor %}
+</div>

@@ -57,17 +57,17 @@ Markup below is the contract; see `/design/` for live examples.
 ### Layout utilities
 
 - **Use when:** Spacing and alignment without new CSS.
-- **Classes:** `stack-xs` … `stack-lg`, `gap-sm`, `gap-md`, `row-between`, `row-center`, `grid-3`, `mt-*`, `mb-*`, `p-*`, `m-0`, `text-center`.
+- **Classes:** `stack-xs` … `stack-lg`, `gap-sm`, `gap-md`, `row-between`, `row-center`, `grid-3`, `mt-*`, `mb-*`, `p-*`, `m-0`, `text-center`, `w-100`.
 
 ### Button
 
 - **Use when:** Actions, submits, icon dismiss.
 - **Base:** `btn`
-- **Variants:** `btn-primary`, `btn-outline`, `btn-success`, `btn-warning`, `btn-danger`, `btn-danger-outline`, `btn-full`, `icon-btn`, `link-btn`
+- **Variants:** `btn-primary`, `btn-outline`, `btn-success`, `btn-warning`, `btn-danger`, `btn-danger-outline`, `icon-btn`, `link-btn`
 - **State:** `disabled` attribute on `<button>`
 
 ```html
-<button type="button" class="btn btn-primary btn-full">Save</button>
+<button type="button" class="btn btn-primary w-100">Save</button>
 ```
 
 ### Form

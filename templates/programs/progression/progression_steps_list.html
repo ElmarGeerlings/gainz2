@@ -1,0 +1,6 @@
+<div id="progression-steps-list">
+    {% include "programs/progression/progression_steps_inner.html" %}
+</div>
+{% if not template.is_system %}
+<button type="button" class="btn btn-outline w-100 mt-3" data-function="click->openProgressionStepModal" data-modal-name="progression-step-modal" data-routing="programs/progression_step_modal_form" data-template-id="{{ template.pk }}" aria-label="Add step"><i class="fas fa-plus" aria-hidden="true"></i></button>
+{% endif %}

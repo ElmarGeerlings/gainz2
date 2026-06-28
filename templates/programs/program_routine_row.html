@@ -4,7 +4,7 @@
 >
     <div class="row-between gap-sm">
         <p class="title-sm m-0">
-            <a data-slot="routine-link" href="{% url 'routine-detail' routine.pk %}">
+            <a data-slot="routine-link" href="{% url 'routine-detail' routine.pk %}?program={{ program.pk }}">
                 <span data-slot="routine-name">{{ routine.name }}</span>
             </a><span class="text-muted text-sm"> - <span data-slot="exercise-count">{% if routine.exercise_count %}{{ routine.exercise_count }} exercises{% else %}no exercises{% endif %}</span></span>
         </p>

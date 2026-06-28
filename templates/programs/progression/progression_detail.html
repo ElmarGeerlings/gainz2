@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/workouts.css' %}">
+<link rel="stylesheet" href="{% static 'css/programs.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow" id="progression-detail">
+    <div id="progression-header">
+        {% include "programs/progression/progression_header.html" %}
+    </div>
+    {% include "programs/progression/progression_steps_list.html" %}
+</main>
+
+<div id="progression-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        {% include "programs/progression/progression_edit_modal.html" %}
+    </div>
+</div>
+
+<div id="progression-step-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div id="progression-step-modal-content" class="gainz-modal-content"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'js/workouts.js' %}"></script>
+<script defer src="{% static 'js/progression.js' %}"></script>
+{% endblock %}

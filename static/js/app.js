@@ -159,6 +159,15 @@ function dismissToast(event) {
   }
 }
 
+function navigateTo(req_event) {
+  const el = req_event.currentTarget;
+  let url = el.getAttribute('data-nav');
+  if (!url && el.tagName === 'SELECT') {
+    url = el.options[el.selectedIndex].getAttribute('data-nav');
+  }
+  window.location.href = url;
+}
+
 function show_confirm_toast(req_event) {
   const trigger = req_event.currentTarget;
   const text = trigger.getAttribute('data-text');

@@ -1,0 +1,11 @@
+<form id="progression-edit-form" class="form-stack">
+    <input type="hidden" name="template_id" id="progression-edit-id" value="">
+    <h2 class="title-md m-0 mb-3">Edit template</h2>
+    <label for="progression-edit-name" class="form-label">Name</label>
+    <input type="text" id="progression-edit-name" name="name" class="form-control" autocomplete="off">
+    <label for="progression-edit-notes" class="form-label">Notes</label>
+    <textarea id="progression-edit-notes" name="notes" class="form-control" rows="4"></textarea>
+    <div class="set-modal-actions mt-4">
+        <button type="button" class="btn btn-primary" data-endpoint="click->programs/update_progression_template" data-close-modal="#progression-modal">Save</button>
+    </div>
+</form>

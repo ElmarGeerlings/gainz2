@@ -1,0 +1,17 @@
+{% load formatting %}
+<section class="panel stack-sm mb-4" data-template-id="{{ template.pk }}">
+    <div class="row-between gap-md">
+        <h1 id="progression-name" class="title-lg m-0">{{ template.name }}</h1>
+        <div class="row-center gap-sm">
+            {% if template.is_system %}
+            <button type="button" class="btn btn-outline" data-endpoint="click->programs/duplicate_progression_template" data-template-id="{{ template.pk }}" aria-label="Copy template"><i class="fas fa-copy" aria-hidden="true"></i></button>
+            {% else %}
+            <button type="button" class="btn btn-outline" data-function="click->openProgressionEditModal" aria-label="Edit template"><i class="fas fa-pen" aria-hidden="true"></i></button>
+            <button type="button" class="btn btn-danger-outline" data-function="click->show_confirm_toast" data-text="Delete progression template &quot;{{ template.name }}&quot;? This cannot be undone." data-endpoint="programs/delete_progression_template" data-template-id="{{ template.pk }}" data-confirm-label="Delete" aria-label="Delete progression template"><i class="fas fa-trash" aria-hidden="true"></i></button>
+            {% endif %}
+        </div>
+    </div>
+    <p class="text-muted text-sm m-1 font-italic">Updated {{ template.updated_at|datetime_format }}</p>
+    <span id="progression-notes-text" hidden>{{ template.notes }}</span>
+    <p id="progression-notes-display" class="text-muted text-sm m-1{% if not template.notes %} hidden{% endif %}"><strong>Notes:</strong> <span id="progression-notes-visible">{{ template.notes }}</span></p>
+</section>

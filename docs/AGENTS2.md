@@ -222,7 +222,7 @@ Every handled message should include **`request_id`** (echoed from client) and *
 
 - **PostgreSQL** for all application data.
 - **Models** define entities, relationships, constraints, and useful indexes.
-- **Migrations** for every schema change.
+- **Migrations** for every schema change — **agents** add or change `models.py` only; do **not** commit `migrations/*.py`. The user runs `makemigrations` and `migrate`. Seed or fixture data: use **management commands** when needed, not agent-authored data migrations.
 
 **Redis** and a **job queue** (e.g. **django-rq**) are part of the stack **from the start**. Define what runs **inside** the HTTP/WS response and what is **enqueued** for workers; document at least one enqueue pattern for consistency.
 
@@ -243,6 +243,11 @@ Every handled message should include **`request_id`** (echoed from client) and *
 3. Wire **view** and/or **consumer** to services; build the response.  
 4. Update **templates** and **`data-*`**; extend **`app.js`** only when the generic pipeline is not enough.  
 5. Add or adjust **scoped CSS**; keep **`base.css`** for shared tokens.
+
+### 11.1 Agent code style
+
+- **Reuse** existing templates, partials, WS handlers, and `data-endpoint` / `data-routing` patterns before adding parallel HTML or JS.
+- **No trivial helpers** — do not extract a function used only once or that is a single trivial line in the same file; inline at the call site. Put genuinely shared logic in **services** or JS already loaded on multiple pages.
 
 ---
 
