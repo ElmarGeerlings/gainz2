@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/programs.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <header class="mb-4">
+        <h1 class="title-lg m-0">
+            <a href="{% url 'program-detail' program.pk %}">{{ program.name }}</a>
+            <span class="text-muted"> – </span>
+            <a href="{% url 'routine-detail' routine.pk %}">{{ routine.name }}</a>
+        </h1>
+    </header>
+
+    <section class="panel stack-sm">
+        {% for we in routine.exercises.all %}
+        <div class="row-between gap-sm program-routine-exercise-row carryover-row">
+            <span class="row-center gap-sm text-sm">
+                {% include "components/exercise_type_badge.html" with exercise_type=we.effective_exercise_type %}
+                {{ we.exercise.name }}
+            </span>
+            <select
+                id="progression-select-{{ we.pk }}"
+                class="form-control program-progression-select"
+                name="progression_template_id"
+                aria-label="Progression for {{ we.exercise.name }}"
+                data-endpoint="change->programs/set_program_exercise_progression"
+                data-program-id="{{ program.pk }}"
+                data-routine-exercise-id="{{ we.pk }}"
+            >
+                {% for template in progression_templates %}
+                <option value="{{ template.pk }}"{% if template.pk == we.effective_template_id %} selected{% endif %}>{{ template.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% empty %}
+        <p class="text-muted text-sm m-0">No exercises in this routine.</p>
+        {% endfor %}
+    </section>
+</main>
+{% endblock %}

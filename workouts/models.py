@@ -49,6 +49,7 @@ class WorkoutExercise(models.Model):
         null=True,
         blank=True
     )
+    progression_step = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True)
 
     class Meta:

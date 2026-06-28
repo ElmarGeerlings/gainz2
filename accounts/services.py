@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from accounts.models import User, UserSettings
 from exercises.models import Exercise
-from programs.models import Program, ProgramRoutine
+from programs.models import Program, ProgramRoutine, ProgressionTemplate
 from routines.models import Routine, RoutineExercise, RoutineSet
 from workouts.models import ExerciseSet, Workout, WorkoutExercise
 
@@ -137,6 +137,18 @@ def seed_demo_user(user):
         name="Push/Pull Program",
         description="A simple push and pull split.",
         is_active=True,
+        primary_progression_template=ProgressionTemplate.objects.get(
+            is_system=True,
+            name="No progression",
+        ),
+        secondary_progression_template=ProgressionTemplate.objects.get(
+            is_system=True,
+            name="No progression",
+        ),
+        accessory_progression_template=ProgressionTemplate.objects.get(
+            is_system=True,
+            name="No progression",
+        ),
     )
     ProgramRoutine.objects.create(program=program, routine=push_day, order=1)
     ProgramRoutine.objects.create(program=program, routine=pull_day, order=2)

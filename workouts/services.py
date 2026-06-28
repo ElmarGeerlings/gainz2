@@ -6,7 +6,8 @@ from django.utils import timezone
 
 from exercises.models import Exercise
 from gainz2.utils import next_numbered_name, quantize_weight
-from programs.models import Program, ProgramRoutine
+from programs.models import Program, ProgramExercise, ProgramRoutine, ProgressionStep, ProgressionTemplate
+from programs.services import get_program_type_progression_template
 from routines.services import list_routines
 from workouts.models import Workout, WorkoutExercise, ExerciseSet
 
@@ -32,7 +33,28 @@ def get_next_routine_for_program(program):
     return program_routines[next_index].routine
 
 
-def find_prior_workout_exercise(user, workout, exercise_id, exercise_type):
+def find_prior_workout_exercise(
+    user,
+    exercise,
+    exercise_type,
+    routine,
+    program=None,
+    exclude_workout=None,
+    global_fallback=False,
+):
+    exercise_id = exercise.pk if hasattr(exercise, "pk") else exercise
+    if program is None:
+        program = get_active_program(user)
+    if program:
+        if exercise_type == "primary":
+            carryover = program.primary_carryover
+        elif exercise_type == "secondary":
+            carryover = program.secondary_carryover
+        else:
+            carryover = program.accessory_carryover
+    else:
+        carryover = False
+
     base_qs = (
         WorkoutExercise.objects.filter(
             workout__user=user,
@@ -43,73 +65,27 @@ def find_prior_workout_exercise(user, workout, exercise_id, exercise_type):
             | Q(exercise_type__isnull=True, exercise__exercise_type=exercise_type)
         )
         .select_related("exercise")
-        .exclude(workout=workout)
         .order_by("-workout__date", "-workout__pk")
         .prefetch_related("sets")
     )
+    if exclude_workout:
+        base_qs = base_qs.exclude(workout=exclude_workout)
 
-    if workout.routine_id:
-        prior = base_qs.filter(workout__routine_id=workout.routine_id).first()
-        if prior:
-            return prior
-
-    program = get_active_program(user)
-    if program:
+    if carryover and program:
         routine_ids = ProgramRoutine.objects.filter(program=program).values_list(
             "routine_id", flat=True
         )
         prior = base_qs.filter(workout__routine_id__in=routine_ids).first()
         if prior:
             return prior
+    elif routine:
+        prior = base_qs.filter(workout__routine=routine).first()
+        if prior:
+            return prior
 
-    return base_qs.first()
-
-
-def copy_sets_from_prior_workout_exercise(target_we, source_we):
-    for source_set in source_we.sets.order_by("set_number"):
-        ExerciseSet.objects.create(
-            workout_exercise=target_we,
-            set_number=source_set.set_number,
-            weight=source_set.weight,
-            reps=source_set.reps,
-            is_warmup=source_set.is_warmup,
-            is_completed=False,
-        )
-
-
-def get_prior_workout_exercise(user, workout, workout_exercise):
-    exercise_type = workout_exercise.effective_exercise_type()
-    program = get_active_program(user)
-    carryover = False
-    if program:
-        if exercise_type == "primary":
-            carryover = program.primary_carryover
-        elif exercise_type == "secondary":
-            carryover = program.secondary_carryover
-        else:
-            carryover = program.accessory_carryover
-
-    base_qs = (
-        WorkoutExercise.objects.filter(
-            workout__user=user,
-            exercise=workout_exercise.exercise,
-        )
-        .filter(
-            Q(exercise_type=exercise_type)
-            | Q(exercise_type__isnull=True, exercise__exercise_type=exercise_type)
-        )
-        .select_related("exercise")
-        .exclude(workout=workout)
-        .order_by("-workout__date", "-workout__pk")
-        .prefetch_related("sets")
-    )
-
-    if carryover and program:
-        routine_ids = ProgramRoutine.objects.filter(program=program).values_list(
-            "routine_id", flat=True
-        )
-        return base_qs.filter(workout__routine_id__in=routine_ids).first()
-    return base_qs.filter(workout__routine=workout.routine).first()
+    if global_fallback:
+        return base_qs.first()
+    return None
 
 
 def new_workout_from_routine(user, routine):
@@ -118,29 +94,134 @@ def new_workout_from_routine(user, routine):
     )
     name = next_numbered_name(routine.name, names)
     workout = Workout.objects.create(user=user, name=name, routine=routine)
+    program = get_active_program(user)
+    program_includes_routine = (
+        program
+        and ProgramRoutine.objects.filter(program=program, routine=routine).exists()
+    )
     for routine_exercise in routine.exercises.prefetch_related("sets", "exercise").order_by("order"):
-        prior = get_prior_workout_exercise(user, workout, routine_exercise)
+        prior = find_prior_workout_exercise(
+            user,
+            routine_exercise.exercise,
+            routine_exercise.effective_exercise_type(),
+            workout.routine,
+            program=program,
+            exclude_workout=workout,
+        )
         notes = routine_exercise.notes or (prior.notes if prior else "")
+        if prior:
+            feedback = prior.performance_feedback or "stay"
+            prior_step = prior.progression_step
+        else:
+            feedback = "stay"
+            prior_step = 0
+
+        template = None
+        step_count = 0
+        if prior and program_includes_routine:
+            program_exercise = (
+                ProgramExercise.objects.filter(
+                    program=program,
+                    routine_exercise=routine_exercise,
+                )
+                .select_related("progression_template")
+                .first()
+            )
+            if program_exercise and program_exercise.progression_template_id:
+                template_pk = program_exercise.progression_template_id
+            else:
+                type_template = get_program_type_progression_template(
+                    program, routine_exercise.effective_exercise_type()
+                )
+                template_pk = type_template.pk if type_template else None
+            if template_pk:
+                template = (
+                    ProgressionTemplate.objects.filter(pk=template_pk)
+                    .prefetch_related(
+                        Prefetch(
+                            "steps",
+                            queryset=ProgressionStep.objects.order_by("order"),
+                        )
+                    )
+                    .first()
+                )
+                if template:
+                    step_count = template.steps.count()
+
+        step_to_apply = None
+        reverse = False
+        if prior and template and step_count:
+            if prior_step >= step_count:
+                if feedback == "increase":
+                    prior_step = 0
+                else:
+                    prior_step = step_count - 1
+            if feedback == "stay":
+                new_step = prior_step
+            elif feedback == "increase":
+                if prior_step == step_count - 1:
+                    step_to_apply = step_count
+                    new_step = 0
+                else:
+                    step_to_apply = prior_step + 1
+                    new_step = prior_step + 1
+            else:
+                if prior_step == 0:
+                    step_to_apply = step_count
+                    new_step = step_count - 1
+                else:
+                    step_to_apply = prior_step
+                    new_step = prior_step - 1
+                reverse = True
+        elif prior:
+            new_step = prior_step
+        else:
+            new_step = 0
+
         we = WorkoutExercise.objects.create(
             workout=workout,
             exercise=routine_exercise.exercise,
             order=routine_exercise.order,
             exercise_type=routine_exercise.effective_exercise_type(),
             notes=notes,
+            performance_feedback=feedback,
+            progression_step=new_step,
         )
         prior_sets = list(prior.sets.order_by("set_number")) if prior else []
+        set_values = []
         for i, rs in enumerate(routine_exercise.sets.order_by("set_number")):
             if prior_sets:
                 source = prior_sets[i] if i < len(prior_sets) else prior_sets[-1]
                 weight, reps = source.weight, source.reps
             else:
                 weight, reps = rs.weight, rs.reps
+            set_values.append((weight, reps, rs.is_warmup))
+
+        if step_to_apply is not None:
+            step = None
+            for template_step in template.steps.all():
+                if template_step.order == step_to_apply:
+                    step = template_step
+                    break
+            if step:
+                sign = -1 if reverse else 1
+                set_values = [
+                    (
+                        quantize_weight(max(0, weight + sign * step.weight_delta)),
+                        max(0, reps + sign * step.reps_delta),
+                        is_warmup,
+                    )
+                    for weight, reps, is_warmup in set_values
+                ]
+
+        for i, rs in enumerate(routine_exercise.sets.order_by("set_number")):
+            weight, reps, is_warmup = set_values[i]
             ExerciseSet.objects.create(
                 workout_exercise=we,
                 set_number=rs.set_number,
                 weight=weight,
                 reps=reps,
-                is_warmup=rs.is_warmup,
+                is_warmup=is_warmup,
             )
     return workout
 
@@ -362,7 +443,12 @@ def add_exercise_to_workout(
     if user.settings.set_carryover:
         workout_for_lookup = Workout.objects.get(pk=workout_id)
         prior = find_prior_workout_exercise(
-            user, workout_for_lookup, exercise_id, new_type
+            user,
+            exercise,
+            new_type,
+            workout_for_lookup.routine,
+            program=get_active_program(user),
+            exclude_workout=workout_for_lookup,
         )
         if prior:
             notes = prior.notes
@@ -376,7 +462,14 @@ def add_exercise_to_workout(
     )
 
     if prior and prior.sets.exists():
-        copy_sets_from_prior_workout_exercise(new_workout_exercise, prior)
+        for prior_set in prior.sets.order_by("set_number"):
+            new_set = ExerciseSet.objects.create(
+                workout_exercise=new_workout_exercise,
+                set_number=prior_set.set_number,
+                weight=prior_set.weight,
+                reps=prior_set.reps,
+                is_warmup=prior_set.is_warmup,
+            )
 
     new_exercise_index = insert_index
     workout = get_workout(workout_id)
@@ -560,7 +653,13 @@ def get_add_set_defaults(user, workout_exercise_id):
 
     if user.settings.set_carryover:
         prior_we = find_prior_workout_exercise(
-            user, we.workout, we.exercise_id, we.effective_exercise_type()
+            user,
+            we.exercise,
+            we.effective_exercise_type(),
+            we.workout.routine,
+            program=get_active_program(user),
+            exclude_workout=we.workout,
+            global_fallback=True,
         )
         if prior_we:
             prior_sets = list(prior_we.sets.order_by("set_number"))

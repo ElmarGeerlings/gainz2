@@ -1,8 +1,10 @@
 from types import SimpleNamespace
 
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
+from programs.models import ProgramExercise, ProgramRoutine
 from programs.services import (
     get_program,
+    get_program_type_progression_template,
     get_progression_template,
     import_program_from_parsed,
     list_addable_routines_for_program,
@@ -13,7 +15,8 @@ from programs.services import (
     prepare_program_import,
     routines_catalog,
 )
-from routines.services import resolve_import_exercises
+from routines.models import Routine
+from routines.services import get_routine, resolve_import_exercises
 
 SAMPLE_PROGRAM_IMPORT_FORMAT = """Bench 3x3 90
 Squat 2x4 100
@@ -136,6 +139,46 @@ def program_detail_page(req_event, program_id):
         "template_routine": SimpleNamespace(pk=0, name="", exercise_count=0),
     }
     return render(req_event, "programs/program_detail.html", response)
+
+
+def program_routine_page(req_event, program_id, routine_id):
+    program = get_program(req_event.user, program_id)
+    get_object_or_404(Routine, pk=routine_id, user=req_event.user)
+    routine = get_routine(routine_id)
+    program_routine = get_object_or_404(
+        ProgramRoutine,
+        program=program,
+        routine=routine,
+    )
+    program_exercises = {
+        program_exercise.routine_exercise_id: program_exercise
+        for program_exercise in ProgramExercise.objects.filter(
+            program=program,
+            routine_exercise__routine=routine,
+        ).select_related("progression_template")
+    }
+    for routine_exercise in routine.exercises.all():
+        program_exercise = program_exercises.get(routine_exercise.pk)
+        if program_exercise and program_exercise.progression_template_id:
+            routine_exercise.effective_template_id = (
+                program_exercise.progression_template_id
+            )
+        else:
+            type_template = get_program_type_progression_template(
+                program,
+                routine_exercise.effective_exercise_type(),
+            )
+            routine_exercise.effective_template_id = (
+                type_template.pk if type_template else None
+            )
+    response = {
+        "title": f"{program.name} – {routine.name}",
+        "program": program,
+        "routine": routine,
+        "program_routine": program_routine,
+        "progression_templates": list_progression_templates(req_event.user),
+    }
+    return render(req_event, "programs/program_routine_detail.html", response)
 
 
 def progression_templates_list_page(req_event):

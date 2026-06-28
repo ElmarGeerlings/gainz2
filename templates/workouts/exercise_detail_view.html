@@ -1,4 +1,4 @@
-<section id="exercise-card-container" class="exercise-card-container relative min-h-440" aria-live="polite">
+<section id="exercise-card-container" class="exercise-card-container relative" aria-live="polite">
     {% for we in session.exercises.all %}
     <article
         class="panel stack-md exercise-card carousel-item{% if forloop.counter0 != active_exercise_index %} hidden{% endif %}"
@@ -83,32 +83,6 @@
                 data-feedback="decrease"
                 aria-label="Decrease next time"
             ><i class="fas fa-thumbs-down" aria-hidden="true"></i></button>
-        </div>
-        {% endif %}
-
-        {% if is_routine and selected_program and we.progression_display %}
-        <div class="stack-sm">
-            <h3 class="title-sm">Progression</h3>
-            <select
-                id="progression-select-{{ we.pk }}"
-                class="form-control w-100"
-                name="progression_template_id"
-                aria-label="Progression"
-                data-endpoint="change->programs/set_program_exercise_progression"
-                data-program-id="{{ selected_program.pk }}"
-                data-routine-exercise-id="{{ we.pk }}"
-            >
-                {% if we.progression_display.is_explicit_override %}
-                <option value="">{% if we.progression_display.program_default_template %}{{ we.progression_display.program_default_template.name }}{% else %}Select progression{% endif %}</option>
-                {% elif we.progression_display.show_placeholder %}
-                <option value="" selected disabled>Select progression</option>
-                {% else %}
-                <option value="" selected>{{ we.progression_display.program_default_template.name }}</option>
-                {% endif %}
-                {% for template in progression_templates %}
-                <option value="{{ template.pk }}"{% if we.progression_display.is_explicit_override and we.progression_display.selected_template_id == template.pk %} selected{% endif %}>{{ template.name }}{% if template.is_system %} (Built-in){% endif %}</option>
-                {% endfor %}
-            </select>
         </div>
         {% endif %}
 

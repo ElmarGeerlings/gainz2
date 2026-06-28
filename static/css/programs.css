@@ -45,6 +45,28 @@
 }
 
 .program-progression-select {
-    max-width: 20rem;
-    width: 100%;
+    width: 10rem;
+    flex-shrink: 0;
+}
+
+.program-routine-exercise-row {
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.program-routine-exercise-row:last-child {
+    border-bottom: none;
+}
+
+.program-form-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+#program-edit-form .form-stack label[for="program-description"],
+#program-edit-form .program-form-section {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
 }

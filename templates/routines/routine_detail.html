@@ -6,7 +6,6 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/workouts.css' %}">
-<link rel="stylesheet" href="{% static 'css/programs.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -17,23 +16,16 @@
 
     {% if programs_for_routine %}
     <section class="panel stack-sm mb-3">
-        <div class="form-stack">
-            <label for="routine-program-context">Select program</label>
-            <select
-                id="routine-program-context"
-                class="form-control w-100"
-                data-function="change->navigateTo"
-            >
-                <option data-nav="{% url 'routine-detail' routine.pk %}"{% if not selected_program %} selected{% endif %}>Routine only</option>
-                {% for program in programs_for_routine %}
-                <option data-nav="{% url 'routine-detail' routine.pk %}?program={{ program.pk }}"{% if selected_program and selected_program.pk == program.pk %} selected{% endif %}>{{ program.name }}</option>
-                {% endfor %}
-            </select>
+        <p class="text-sm text-muted m-0">Part of program:</p>
+        <div class="stack-xs">
+            {% for program in programs_for_routine %}
+            <a href="{% url 'program-routine-detail' program.pk routine.pk %}">{{ program.name }}</a>
+            {% endfor %}
         </div>
     </section>
     {% endif %}
 
-    {% include "workouts/workout_exercise_ui.html" with session=routine is_routine=True endpoint_ns="routines" active_exercise_index=0 selected_program=selected_program progression_templates=progression_templates %}
+    {% include "workouts/workout_exercise_ui.html" with session=routine is_routine=True endpoint_ns="routines" active_exercise_index=0 %}
 
     {% include "workouts/add_exercise_form.html" with session_pk=routine.pk session_kind="routine" endpoint_ns="routines" section_title="Add Exercise to This Routine" add_exercise_options=add_exercise_options bodypart_choices=bodypart_choices exercise_type_choices=exercise_type_choices %}
 </main>

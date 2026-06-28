@@ -36,7 +36,7 @@ function fillRoutineRow(row, entry) {
     }
     const programId = form.dataset.programId || "";
     const href = programId
-        ? `/routines/${entry.id}/?program=${programId}`
+        ? `/programs/${programId}/routines/${entry.id}/`
         : `/routines/${entry.id}/`;
     row.querySelector("[data-slot='routine-link']").href = href;
     row.querySelector("[data-slot='routine-name']").textContent = entry.name;

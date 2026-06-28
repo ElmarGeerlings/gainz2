@@ -42,10 +42,17 @@ def list_programs_for_filter(user):
 
 def new_program(user):
     names = Program.objects.filter(user=user).values_list("name", flat=True)
+    no_progression = ProgressionTemplate.objects.get(
+        is_system=True,
+        name="No progression",
+    )
     return Program.objects.create(
         user=user,
         name=next_numbered_name("Program", names),
         description="",
+        primary_progression_template=no_progression,
+        secondary_progression_template=no_progression,
+        accessory_progression_template=no_progression,
     )
 
 
@@ -118,11 +125,18 @@ def prepare_program_import(user, text):
 
 
 def import_program_from_parsed(user, program_name, routine_groups, name_to_exercise):
+    no_progression = ProgressionTemplate.objects.get(
+        is_system=True,
+        name="No progression",
+    )
     with transaction.atomic():
         program = Program.objects.create(
             user=user,
             name=program_name,
             description=f"Imported from text on {timezone.now().strftime('%Y-%m-%d %H:%M')}",
+            primary_progression_template=no_progression,
+            secondary_progression_template=no_progression,
+            accessory_progression_template=no_progression,
         )
         for order, parsed_lines in enumerate(routine_groups, start=1):
             routine_name = routine_name_for_program_import(program_name, order - 1)
@@ -180,47 +194,6 @@ def get_program_in_routine_context(user, routine, program_id):
     )
 
 
-def resolve_exercise_progression_display(program, routine_exercise):
-    program_default = get_program_type_progression_template(
-        program, routine_exercise.effective_exercise_type()
-    )
-    program_exercise = (
-        ProgramExercise.objects.filter(
-            program=program,
-            routine_exercise=routine_exercise,
-        )
-        .select_related("progression_template")
-        .first()
-    )
-    if program_exercise and program_exercise.progression_template_id:
-        template = program_exercise.progression_template
-        return {
-            "selected_template_id": template.pk,
-            "selected_template_name": template.name,
-            "is_explicit_override": True,
-            "program_default_template": program_default,
-            "show_placeholder": False,
-            "inherit_value": "",
-        }
-    if program_default:
-        return {
-            "selected_template_id": None,
-            "selected_template_name": program_default.name,
-            "is_explicit_override": False,
-            "program_default_template": program_default,
-            "show_placeholder": False,
-            "inherit_value": "",
-        }
-    return {
-        "selected_template_id": None,
-        "selected_template_name": "",
-        "is_explicit_override": False,
-        "program_default_template": None,
-        "show_placeholder": True,
-        "inherit_value": "",
-    }
-
-
 def set_program_exercise_progression(user, program_id, routine_exercise_id, template_id):
     program = Program.objects.get(pk=program_id, user=user)
     routine_exercise = RoutineExercise.objects.select_related("routine").get(
@@ -228,18 +201,20 @@ def set_program_exercise_progression(user, program_id, routine_exercise_id, temp
         routine__user=user,
     )
     ProgramRoutine.objects.get(program=program, routine=routine_exercise.routine)
-    parsed_template_id = parse_progression_template_id(template_id)
-    if parsed_template_id is None:
-        ProgramExercise.objects.filter(
-            program=program,
-            routine_exercise=routine_exercise,
-        ).delete()
-        return
-    template = get_progression_template(user, parsed_template_id, mutable=False)
+    template = get_progression_template(
+        user, parse_progression_template_id(template_id), mutable=False
+    )
+    program_default = get_program_type_progression_template(
+        program, routine_exercise.effective_exercise_type()
+    )
+    if program_default and template.pk == program_default.pk:
+        progression_template = None
+    else:
+        progression_template = template
     ProgramExercise.objects.update_or_create(
         program=program,
         routine_exercise=routine_exercise,
-        defaults={"progression_template": template},
+        defaults={"progression_template": progression_template},
     )
 
 
@@ -290,7 +265,7 @@ def list_progression_templates(user):
         .annotate(step_count=Count("steps", distinct=True))
         .order_by(
             Case(When(is_system=True, then=0), default=1, output_field=IntegerField()),
-            "-updated_at",
+            "pk",
         )
     )
 

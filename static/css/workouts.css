@@ -70,11 +70,6 @@
     background: var(--primary);
 }
 
-/* ── Exercise card layout ────────────────────── */
-
-.min-h-440 {
-    min-height: 440px;
-}
 
 /* ── Set row states ──────────────────────────── */
 

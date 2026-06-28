@@ -42,7 +42,7 @@
                 {% for program_routine in program.program_routines.all %}
                 <tr>
                     <td>
-                        <a href="{% url 'routine-detail' program_routine.routine.pk %}">{{ program_routine.routine.name }}</a>
+                        <a href="{% url 'program-routine-detail' program.pk program_routine.routine.pk %}">{{ program_routine.routine.name }}</a>
                     </td>
                     <td class="text-muted">
                         {% if program_routine.routine.exercise_count %}
