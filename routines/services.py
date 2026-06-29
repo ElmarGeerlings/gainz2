@@ -10,6 +10,10 @@ from gainz2.utils import next_numbered_name, quantize_weight
 from routines.models import Routine, RoutineExercise, RoutineSet
 
 
+def mark_routine_recently_changed(routine_id):
+    Routine.objects.filter(pk=routine_id).update(recently_changed=True)
+
+
 def list_routines(user):
     return (
         Routine.objects.filter(user=user)
@@ -211,6 +215,7 @@ def add_exercise_to_routine(
         exercise_type=new_type,
         order=new_order,
     )
+    mark_routine_recently_changed(routine_id)
 
     new_exercise_index = insert_index
     routine = get_routine(routine_id)
@@ -238,6 +243,7 @@ def delete_routine_set(set_id):
     routine_exercise = routine_set.routine_exercise
     routine_set.delete()
     reorder_sets_for_routine_exercise(routine_exercise)
+    mark_routine_recently_changed(routine_exercise.routine_id)
     routine_exercise = get_routine_exercise(routine_exercise.pk)
     return routine_exercise
 
@@ -251,6 +257,7 @@ def delete_routine_exercise(routine_exercise_id, current_exercise_index):
         routine_id=routine_id,
         order__gt=current_exercise_index,
     ).update(order=F("order") - 1)
+    mark_routine_recently_changed(routine_id)
 
     remaining_count = RoutineExercise.objects.filter(routine_id=routine_id).count()
     if remaining_count == 0:
@@ -275,6 +282,7 @@ def reorder_routine_exercises(user, routine_id, ordered_exercise_ids):
         routine_exercise = exercises[exercise_id]
         routine_exercise.order = index
         routine_exercise.save(update_fields=["order"])
+    mark_routine_recently_changed(routine_id)
 
 
 def apply_smartchange(
@@ -337,6 +345,7 @@ def update_routine_set(set_id, weight, reps, is_warmup, *, user=None, smartchang
         )
         if siblings_updated_count:
             routine_exercise = get_routine_exercise(routine_exercise.pk)
+    mark_routine_recently_changed(routine_exercise.routine_id)
     return routine_set, routine_exercise, warmup_changed, siblings_updated_count
 
 
@@ -383,6 +392,7 @@ def create_routine_set(routine_exercise_id, weight, reps, is_warmup):
     if is_warmup:
         reorder_sets_for_routine_exercise(routine_exercise)
         routine_set.refresh_from_db()
+    mark_routine_recently_changed(routine_exercise.routine_id)
     routine_exercise = get_routine_exercise(routine_exercise.pk)
     return routine_set, routine_exercise
 

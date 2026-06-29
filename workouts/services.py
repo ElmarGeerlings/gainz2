@@ -8,6 +8,7 @@ from exercises.models import Exercise
 from gainz2.utils import next_numbered_name, quantize_weight
 from programs.models import Program, ProgramExercise, ProgramRoutine, ProgressionStep, ProgressionTemplate
 from programs.services import get_program_type_progression_template
+from routines.models import Routine, RoutineExercise
 from routines.services import list_routines
 from workouts.models import Workout, WorkoutExercise, ExerciseSet
 
@@ -88,37 +89,34 @@ def find_prior_workout_exercise(
     return None
 
 
-def new_workout_from_routine(user, routine):
-    names = Workout.objects.filter(user=user, routine=routine).values_list(
-        "name", flat=True
+def find_prior_workout(user, routine, exclude_workout=None):
+    workouts = Workout.objects.filter(user=user, routine=routine).order_by(
+        "-date", "-pk"
     )
-    name = next_numbered_name(routine.name, names)
-    workout = Workout.objects.create(user=user, name=name, routine=routine)
-    program = get_active_program(user)
-    program_includes_routine = (
-        program
-        and ProgramRoutine.objects.filter(program=program, routine=routine).exists()
-    )
-    for routine_exercise in routine.exercises.prefetch_related("sets", "exercise").order_by("order"):
-        prior = find_prior_workout_exercise(
-            user,
-            routine_exercise.exercise,
-            routine_exercise.effective_exercise_type(),
-            workout.routine,
-            program=program,
-            exclude_workout=workout,
-        )
-        notes = routine_exercise.notes or (prior.notes if prior else "")
-        if prior:
-            feedback = prior.performance_feedback or "stay"
-            prior_step = prior.progression_step
-        else:
-            feedback = "stay"
-            prior_step = 0
+    if exclude_workout:
+        workouts = workouts.exclude(pk=exclude_workout.pk)
+    return workouts.first()
 
-        template = None
-        step_count = 0
-        if prior and program_includes_routine:
+
+def resolve_progression(
+    program,
+    program_includes_routine,
+    routine_exercise,
+    prior,
+    exercise_type,
+):
+    if prior:
+        feedback = prior.performance_feedback or "stay"
+        prior_step = prior.progression_step
+    else:
+        feedback = "stay"
+        prior_step = 0
+
+    template = None
+    step_count = 0
+    if program_includes_routine:
+        template_pk = None
+        if routine_exercise:
             program_exercise = (
                 ProgramExercise.objects.filter(
                     program=program,
@@ -129,100 +127,245 @@ def new_workout_from_routine(user, routine):
             )
             if program_exercise and program_exercise.progression_template_id:
                 template_pk = program_exercise.progression_template_id
-            else:
-                type_template = get_program_type_progression_template(
-                    program, routine_exercise.effective_exercise_type()
-                )
-                template_pk = type_template.pk if type_template else None
-            if template_pk:
-                template = (
-                    ProgressionTemplate.objects.filter(pk=template_pk)
-                    .prefetch_related(
-                        Prefetch(
-                            "steps",
-                            queryset=ProgressionStep.objects.order_by("order"),
-                        )
-                    )
-                    .first()
-                )
-                if template:
-                    step_count = template.steps.count()
-
-        step_to_apply = None
-        reverse = False
-        if prior and template and step_count:
-            if prior_step >= step_count:
-                if feedback == "increase":
-                    prior_step = 0
-                else:
-                    prior_step = step_count - 1
-            if feedback == "stay":
-                new_step = prior_step
-            elif feedback == "increase":
-                if prior_step == step_count - 1:
-                    step_to_apply = step_count
-                    new_step = 0
-                else:
-                    step_to_apply = prior_step + 1
-                    new_step = prior_step + 1
-            else:
-                if prior_step == 0:
-                    step_to_apply = step_count
-                    new_step = step_count - 1
-                else:
-                    step_to_apply = prior_step
-                    new_step = prior_step - 1
-                reverse = True
-        elif prior:
-            new_step = prior_step
-        else:
-            new_step = 0
-
-        we = WorkoutExercise.objects.create(
-            workout=workout,
-            exercise=routine_exercise.exercise,
-            order=routine_exercise.order,
-            exercise_type=routine_exercise.effective_exercise_type(),
-            notes=notes,
-            performance_feedback=feedback,
-            progression_step=new_step,
-        )
-        prior_sets = list(prior.sets.order_by("set_number")) if prior else []
-        set_values = []
-        for i, rs in enumerate(routine_exercise.sets.order_by("set_number")):
-            if prior_sets:
-                source = prior_sets[i] if i < len(prior_sets) else prior_sets[-1]
-                weight, reps = source.weight, source.reps
-            else:
-                weight, reps = rs.weight, rs.reps
-            set_values.append((weight, reps, rs.is_warmup))
-
-        if step_to_apply is not None:
-            step = None
-            for template_step in template.steps.all():
-                if template_step.order == step_to_apply:
-                    step = template_step
-                    break
-            if step:
-                sign = -1 if reverse else 1
-                set_values = [
-                    (
-                        quantize_weight(max(0, weight + sign * step.weight_delta)),
-                        max(0, reps + sign * step.reps_delta),
-                        is_warmup,
-                    )
-                    for weight, reps, is_warmup in set_values
-                ]
-
-        for i, rs in enumerate(routine_exercise.sets.order_by("set_number")):
-            weight, reps, is_warmup = set_values[i]
-            ExerciseSet.objects.create(
-                workout_exercise=we,
-                set_number=rs.set_number,
-                weight=weight,
-                reps=reps,
-                is_warmup=is_warmup,
+        if template_pk is None:
+            type_template = get_program_type_progression_template(
+                program, exercise_type
             )
+            template_pk = type_template.pk if type_template else None
+        if template_pk:
+            template = (
+                ProgressionTemplate.objects.filter(pk=template_pk)
+                .prefetch_related(
+                    Prefetch(
+                        "steps",
+                        queryset=ProgressionStep.objects.order_by("order"),
+                    )
+                )
+                .first()
+            )
+            if template:
+                step_count = template.steps.count()
+
+    step_to_apply = None
+    reverse = False
+    if prior and template and step_count:
+        if prior_step >= step_count:
+            if feedback == "increase":
+                prior_step = 0
+            else:
+                prior_step = step_count - 1
+        if feedback == "stay":
+            new_step = prior_step
+        elif feedback == "increase":
+            if prior_step == step_count - 1:
+                step_to_apply = step_count
+                new_step = 0
+            else:
+                step_to_apply = prior_step + 1
+                new_step = prior_step + 1
+        else:
+            if prior_step == 0:
+                step_to_apply = step_count
+                new_step = step_count - 1
+            else:
+                step_to_apply = prior_step
+                new_step = prior_step - 1
+            reverse = True
+    elif prior:
+        new_step = prior_step
+    else:
+        new_step = 0
+
+    return template, step_to_apply, reverse, new_step, feedback
+
+
+def apply_progression_to_set_values(set_values, step_to_apply, reverse, template):
+    if step_to_apply is None or template is None:
+        return set_values
+    step = None
+    for template_step in template.steps.all():
+        if template_step.order == step_to_apply:
+            step = template_step
+            break
+    if not step:
+        return set_values
+    sign = -1 if reverse else 1
+    return [
+        (
+            quantize_weight(max(0, weight + sign * step.weight_delta)),
+            max(0, reps + sign * step.reps_delta),
+            is_warmup,
+        )
+        for weight, reps, is_warmup in set_values
+    ]
+
+
+def create_workout_exercise_with_sets(
+    workout,
+    exercise,
+    order,
+    exercise_type,
+    notes,
+    feedback,
+    new_step,
+    set_values,
+):
+    workout_exercise = WorkoutExercise.objects.create(
+        workout=workout,
+        exercise=exercise,
+        order=order,
+        exercise_type=exercise_type,
+        notes=notes,
+        performance_feedback=feedback,
+        progression_step=new_step,
+    )
+    for set_number, (weight, reps, is_warmup) in enumerate(set_values, start=1):
+        ExerciseSet.objects.create(
+            workout_exercise=workout_exercise,
+            set_number=set_number,
+            weight=weight,
+            reps=reps,
+            is_warmup=is_warmup,
+        )
+    return workout_exercise
+
+
+def complete_latest_workout(user, workout=None):
+    if workout is None:
+        workout = Workout.objects.filter(user=user).order_by("-date", "-pk").first()
+    if workout:
+        ExerciseSet.objects.filter(
+            workout_exercise__workout=workout,
+            is_completed=False,
+        ).update(is_completed=True)
+
+
+def new_workout_from_routine(user, routine):
+    complete_latest_workout(user)
+    names = Workout.objects.filter(user=user, routine=routine).values_list(
+        "name", flat=True
+    )
+    name = next_numbered_name(routine.name, names)
+    workout = Workout.objects.create(user=user, name=name, routine=routine)
+    program = get_active_program(user)
+    program_includes_routine = (
+        program
+        and ProgramRoutine.objects.filter(program=program, routine=routine).exists()
+    )
+    if routine.recently_changed:
+        for routine_exercise in routine.exercises.prefetch_related(
+            "sets", "exercise"
+        ).order_by("order"):
+            prior = find_prior_workout_exercise(
+                user,
+                routine_exercise.exercise,
+                routine_exercise.effective_exercise_type(),
+                workout.routine,
+                program=program,
+                exclude_workout=workout,
+            )
+            notes = routine_exercise.notes or (prior.notes if prior else "")
+            template, step_to_apply, reverse, new_step, feedback = resolve_progression(
+                program,
+                program_includes_routine,
+                routine_exercise,
+                prior,
+                routine_exercise.effective_exercise_type(),
+            )
+            routine_sets = list(routine_exercise.sets.order_by("set_number"))
+            if prior:
+                prior_sets = list(prior.sets.order_by("set_number"))
+                prior_warmups = [s for s in prior_sets if s.is_warmup]
+                prior_work = [s for s in prior_sets if not s.is_warmup]
+                set_values = []
+                warmup_index = 0
+                work_index = 0
+                for routine_set in routine_sets:
+                    if routine_set.is_warmup:
+                        if warmup_index < len(prior_warmups):
+                            source = prior_warmups[warmup_index]
+                            warmup_index += 1
+                        elif prior_warmups:
+                            source = prior_warmups[-1]
+                        else:
+                            set_values.append(
+                                (routine_set.weight, routine_set.reps, True)
+                            )
+                            continue
+                        set_values.append((source.weight, source.reps, True))
+                    else:
+                        if work_index < len(prior_work):
+                            source = prior_work[work_index]
+                            work_index += 1
+                        elif prior_work:
+                            source = prior_work[-1]
+                        else:
+                            set_values.append(
+                                (routine_set.weight, routine_set.reps, False)
+                            )
+                            continue
+                        set_values.append((source.weight, source.reps, False))
+            else:
+                set_values = [
+                    (rs.weight, rs.reps, rs.is_warmup) for rs in routine_sets
+                ]
+            set_values = apply_progression_to_set_values(
+                set_values, step_to_apply, reverse, template
+            )
+            create_workout_exercise_with_sets(
+                workout,
+                routine_exercise.exercise,
+                routine_exercise.order,
+                routine_exercise.effective_exercise_type(),
+                notes,
+                feedback,
+                new_step,
+                set_values,
+            )
+    else:
+        prior_workout = find_prior_workout(user, routine, exclude_workout=workout)
+        prior_workout = Workout.objects.prefetch_related(
+            Prefetch(
+                "exercises",
+                queryset=WorkoutExercise.objects.select_related(
+                    "exercise"
+                ).prefetch_related(
+                    Prefetch(
+                        "sets",
+                        queryset=ExerciseSet.objects.order_by("set_number"),
+                    )
+                ),
+            ),
+        ).get(pk=prior_workout.pk)
+        for prior_we in prior_workout.exercises.all():
+            routine_exercise = RoutineExercise.objects.filter(
+                routine=routine,
+                exercise_id=prior_we.exercise_id,
+            ).first()
+            template, step_to_apply, reverse, new_step, feedback = resolve_progression(
+                program,
+                program_includes_routine,
+                routine_exercise,
+                prior_we,
+                prior_we.effective_exercise_type(),
+            )
+            set_values = [
+                (s.weight, s.reps, s.is_warmup) for s in prior_we.sets.all()
+            ]
+            set_values = apply_progression_to_set_values(
+                set_values, step_to_apply, reverse, template
+            )
+            create_workout_exercise_with_sets(
+                workout,
+                prior_we.exercise,
+                prior_we.order,
+                prior_we.effective_exercise_type(),
+                prior_we.notes,
+                feedback,
+                new_step,
+                set_values,
+            )
+    Routine.objects.filter(pk=routine.pk).update(recently_changed=False)
     return workout
 
 

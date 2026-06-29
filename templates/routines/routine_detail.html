@@ -14,6 +14,10 @@
         {% include "routines/routine_header.html" %}
     </div>
 
+    {% if routine.recently_changed %}
+    <p class="text-sm text-muted m-0 mb-3">Routine updated — next workout will use this template.</p>
+    {% endif %}
+
     {% if programs_for_routine %}
     <section class="panel stack-sm mb-3">
         <p class="text-sm text-muted m-0">Part of program:</p>
