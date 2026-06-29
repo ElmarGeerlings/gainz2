@@ -44,7 +44,7 @@ def new_program(user):
     names = Program.objects.filter(user=user).values_list("name", flat=True)
     no_progression = ProgressionTemplate.objects.get(
         is_system=True,
-        name="No progression",
+        name="System: No progression",
     )
     return Program.objects.create(
         user=user,
@@ -127,7 +127,7 @@ def prepare_program_import(user, text):
 def import_program_from_parsed(user, program_name, routine_groups, name_to_exercise):
     no_progression = ProgressionTemplate.objects.get(
         is_system=True,
-        name="No progression",
+        name="System: No progression",
     )
     with transaction.atomic():
         program = Program.objects.create(

@@ -139,15 +139,15 @@ def seed_demo_user(user):
         is_active=True,
         primary_progression_template=ProgressionTemplate.objects.get(
             is_system=True,
-            name="No progression",
+            name="System: No progression",
         ),
         secondary_progression_template=ProgressionTemplate.objects.get(
             is_system=True,
-            name="No progression",
+            name="System: No progression",
         ),
         accessory_progression_template=ProgressionTemplate.objects.get(
             is_system=True,
-            name="No progression",
+            name="System: No progression",
         ),
     )
     ProgramRoutine.objects.create(program=program, routine=push_day, order=1)
