@@ -50,13 +50,11 @@ class Exercise(models.Model):
         blank=True,
         help_text="Secondary muscle group targeted by this exercise"
     )
-    # Per-exercise weight increment (kg). If null, fallback to 2.5 kg in UI logic
     weight_increment = models.DecimalField(
         max_digits=4,
         decimal_places=1,
-        null=True,
-        blank=True,
-        help_text="Weight increment in kg for this exercise (e.g., 1.0, 2.5)"
+        default=0.5,
+        help_text="Weight increment in kg for this exercise (0.5, 1, 2.5, or 5)",
     )
     alternative_names = models.JSONField(default=list, blank=True)
 

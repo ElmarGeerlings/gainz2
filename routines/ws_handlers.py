@@ -69,7 +69,7 @@ def handle_set_modal_form(user, attributes):
             "weight": weight,
             "reps": reps,
             "is_warmup": False,
-            "uses_wheel": True,
+            "weight_increment": re.exercise.weight_increment,
             "reps_range": range(100),
             "is_routine": True,
             "endpoint_ns": "routines",
@@ -84,7 +84,9 @@ def handle_set_modal_form(user, attributes):
 
 def handle_set_edit_modal_form(user, attributes):
     set_id = int(attributes["data-set-id"])
-    routine_set = RoutineSet.objects.select_related("routine_exercise").get(pk=set_id)
+    routine_set = RoutineSet.objects.select_related(
+        "routine_exercise__exercise"
+    ).get(pk=set_id)
     html = render_to_string(
         "workouts/set_modal.html",
         {
@@ -94,7 +96,7 @@ def handle_set_edit_modal_form(user, attributes):
             "reps": routine_set.reps,
             "is_warmup": routine_set.is_warmup,
             "smartchange_enabled": user.settings.smartchange_enabled,
-            "uses_wheel": True,
+            "weight_increment": routine_set.routine_exercise.exercise.weight_increment,
             "reps_range": range(100),
             "is_routine": True,
             "endpoint_ns": "routines",

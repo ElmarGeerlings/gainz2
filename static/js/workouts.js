@@ -187,10 +187,10 @@ function handleWorkoutSwipe() {
         return;
     }
     if (dx > 0) {
-        showNextWorkoutCard();
+        setWorkoutCardIndex(workoutCurrentCardIndex + 1);
         return;
     }
-    showPreviousWorkoutCard();
+    setWorkoutCardIndex(workoutCurrentCardIndex - 1);
 }
 
 function bindWorkoutTouch(container) {
@@ -296,17 +296,6 @@ function initOverviewSortable() {
     });
 }
 
-function overviewRowTapWithinThreshold(startX, startY, endX, endY) {
-    return (
-        Math.abs(endX - startX) <= OVERVIEW_TAP_MOVE_THRESHOLD &&
-        Math.abs(endY - startY) <= OVERVIEW_TAP_MOVE_THRESHOLD
-    );
-}
-
-function navigateOverviewRowToDetail(row) {
-    refreshExerciseView("detail", row.dataset.exerciseId);
-}
-
 function initOverviewRowTap() {
     document.querySelectorAll("#exercise-overview-view .exercise-overview-row").forEach((row) => {
         let tapStartX = 0;
@@ -323,11 +312,14 @@ function initOverviewRowTap() {
             if (overviewSortEngagedThisGesture) {
                 return;
             }
-            if (!overviewRowTapWithinThreshold(tapStartX, tapStartY, endX, endY)) {
+            if (
+                Math.abs(endX - tapStartX) > OVERVIEW_TAP_MOVE_THRESHOLD ||
+                Math.abs(endY - tapStartY) > OVERVIEW_TAP_MOVE_THRESHOLD
+            ) {
                 return;
             }
             overviewTouchHandled = true;
-            navigateOverviewRowToDetail(row);
+            refreshExerciseView("detail", row.dataset.exerciseId);
         }, { passive: true });
         row.addEventListener("touchcancel", () => {
             row.classList.remove("overview-row-armed");
@@ -337,7 +329,7 @@ function initOverviewRowTap() {
                 overviewTouchHandled = false;
                 return;
             }
-            navigateOverviewRowToDetail(row);
+            refreshExerciseView("detail", row.dataset.exerciseId);
         });
     });
 }
@@ -347,7 +339,34 @@ function initOverviewRowTap() {
 const PICKER_ROW_HEIGHT = 44;
 const WEIGHT_WINDOW_HALF_STEPS = 40;
 const PICKER_SCROLL_DEBOUNCE_MS = 80;
+const DEFAULT_WEIGHT_PICKER_STEP = 0.5;
 
+function getWeightPickerStep(picker) {
+    const step = Number(picker.getAttribute("data-step"));
+    if (step > 0) {
+        return step;
+    }
+    return DEFAULT_WEIGHT_PICKER_STEP;
+}
+
+function weightValueToIndex(picker, value) {
+    const min = Number(picker.getAttribute("data-min") || 0);
+    const step = getWeightPickerStep(picker);
+    return Math.round((Number(value) - min) / step);
+}
+
+function createWeightPickerItem(picker, index) {
+    const item = document.createElement("li");
+    item.className = "value-picker-item";
+    item.dataset.index = String(index);
+    const min = Number(picker.getAttribute("data-min") || 0);
+    const step = getWeightPickerStep(picker);
+    const rounded = Math.round((min + index * step) * 10) / 10;
+    item.dataset.value = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+    const unit = picker.getAttribute("data-unit") || "kg";
+    item.textContent = `${item.dataset.value} ${unit}`;
+    return item;
+}
 function getPickerHiddenInput(picker) {
     const form = picker.closest("form");
     if (!form) {
@@ -367,16 +386,6 @@ function getPickerHiddenInput(picker) {
     return null;
 }
 
-function createWeightPickerItem(picker, index) {
-    const item = document.createElement("li");
-    item.className = "value-picker-item";
-    item.dataset.index = String(index);
-    item.dataset.value = String(index / 2);
-    const unit = picker.getAttribute("data-unit") || "kg";
-    item.textContent = `${item.dataset.value} ${unit}`;
-    return item;
-}
-
 function renderWeightPickerItems(picker, lowIndex, highIndex) {
     const list = picker.querySelector(".value-picker-list");
     list.innerHTML = "";
@@ -388,8 +397,11 @@ function renderWeightPickerItems(picker, lowIndex, highIndex) {
 }
 
 function buildWeightPickerItems(picker, centerIndex) {
-    const minIndex = Number(picker.getAttribute("data-min")) * 2;
-    const maxIndex = Number(picker.getAttribute("data-max")) * 2;
+    const minIndex = 0;
+    const min = Number(picker.getAttribute("data-min") || 0);
+    const maxIndex = Math.round(
+        (Number(picker.getAttribute("data-max")) - min) / getWeightPickerStep(picker)
+    );
     if (maxIndex - minIndex <= 80) {
         renderWeightPickerItems(picker, minIndex, maxIndex);
         return;
@@ -400,21 +412,17 @@ function buildWeightPickerItems(picker, centerIndex) {
     renderWeightPickerItems(picker, lowIndex, highIndex);
 }
 
-function createRepsPickerItem(value) {
-    const item = document.createElement("li");
-    item.className = "value-picker-item";
-    item.dataset.value = String(value);
-    item.textContent = String(value);
-    return item;
-}
-
 function buildRepsPickerItems(picker) {
     const min = Number(picker.getAttribute("data-min"));
     const max = Number(picker.getAttribute("data-max"));
     const list = picker.querySelector(".value-picker-list");
     list.innerHTML = "";
     for (let value = min; value <= max; value += 1) {
-        list.appendChild(createRepsPickerItem(value));
+        const item = document.createElement("li");
+        item.className = "value-picker-item";
+        item.dataset.value = String(value);
+        item.textContent = String(value);
+        list.appendChild(item);
     }
 }
 
@@ -422,8 +430,11 @@ function extendPickerRange(picker, direction) {
     if (picker.getAttribute("data-picker") !== "weight") {
         return;
     }
-    const minIndex = Number(picker.getAttribute("data-min")) * 2;
-    const maxIndex = Number(picker.getAttribute("data-max")) * 2;
+    const minIndex = 0;
+    const min = Number(picker.getAttribute("data-min") || 0);
+    const maxIndex = Math.round(
+        (Number(picker.getAttribute("data-max")) - min) / getWeightPickerStep(picker)
+    );
     const list = picker.querySelector(".value-picker-list");
     const windowEl = picker.querySelector(".value-picker-window");
     const lowIndex = Number(picker.dataset.rangeLowIndex);
@@ -537,8 +548,9 @@ function onPickerScroll(picker) {
 function findPickerItem(picker, valueStr) {
     const kind = picker.getAttribute("data-picker");
     if (kind === "weight") {
+        const index = weightValueToIndex(picker, valueStr);
         return picker.querySelector(".value-picker-list").querySelector(
-            `[data-index="${Number(valueStr) * 2}"]`
+            `[data-index="${index}"]`
         );
     }
     return picker.querySelector(".value-picker-list").querySelector(`[data-value="${valueStr}"]`);
@@ -548,7 +560,7 @@ function setPickerValue(picker, valueStr) {
     let item = findPickerItem(picker, valueStr);
     const kind = picker.getAttribute("data-picker");
     if (!item && kind === "weight") {
-        buildWeightPickerItems(picker, Number(valueStr) * 2);
+        buildWeightPickerItems(picker, weightValueToIndex(picker, valueStr));
         item = findPickerItem(picker, valueStr);
     }
     if (!item && kind === "reps" && picker.hasAttribute("data-min")) {
@@ -569,7 +581,7 @@ function initValuePickers(root) {
         const hidden = getPickerHiddenInput(picker);
         const initialValue = hidden && hidden.value !== "" ? hidden.value : "0";
         if (picker.getAttribute("data-picker") === "weight") {
-            buildWeightPickerItems(picker, Number(initialValue) * 2);
+            buildWeightPickerItems(picker, weightValueToIndex(picker, initialValue));
         } else if (picker.getAttribute("data-picker") === "reps" && picker.hasAttribute("data-min")) {
             buildRepsPickerItems(picker);
         }

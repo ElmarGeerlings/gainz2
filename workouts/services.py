@@ -1,11 +1,11 @@
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.db.models import Count, F, Max, Prefetch, Q
 from django.utils import timezone
 
 from exercises.models import Exercise
-from gainz2.utils import next_numbered_name, quantize_weight
+from gainz2.utils import next_numbered_name, parse_weight_increment, quantize_weight
 from programs.models import Program, ProgramExercise, ProgramRoutine, ProgressionStep, ProgressionTemplate
 from programs.services import get_program_type_progression_template
 from routines.models import Routine, RoutineExercise
@@ -179,7 +179,9 @@ def resolve_progression(
     return template, step_to_apply, reverse, new_step, feedback
 
 
-def apply_progression_to_set_values(set_values, step_to_apply, reverse, template):
+def apply_progression_to_set_values(
+    set_values, step_to_apply, reverse, template, weight_increment
+):
     if step_to_apply is None or template is None:
         return set_values
     step = None
@@ -190,9 +192,28 @@ def apply_progression_to_set_values(set_values, step_to_apply, reverse, template
     if not step:
         return set_values
     sign = -1 if reverse else 1
+    increment = parse_weight_increment(weight_increment)
+    progression_delta = Decimal(step.weight_delta)
+    if progression_delta == 0:
+        weight_delta = Decimal("0")
+    else:
+        steps = int(
+            (abs(progression_delta) / increment).quantize(
+                Decimal("1"), rounding=ROUND_HALF_UP
+            )
+        )
+        if steps == 0:
+            weight_delta = Decimal("0")
+        elif progression_delta > 0:
+            weight_delta = steps * increment
+        else:
+            weight_delta = -steps * increment
     return [
         (
-            quantize_weight(max(0, weight + sign * step.weight_delta)),
+            quantize_weight(
+                max(0, weight + sign * weight_delta),
+                weight_increment,
+            ),
             max(0, reps + sign * step.reps_delta),
             is_warmup,
         )
@@ -310,7 +331,11 @@ def new_workout_from_routine(user, routine):
                     (rs.weight, rs.reps, rs.is_warmup) for rs in routine_sets
                 ]
             set_values = apply_progression_to_set_values(
-                set_values, step_to_apply, reverse, template
+                set_values,
+                step_to_apply,
+                reverse,
+                template,
+                routine_exercise.exercise.weight_increment,
             )
             create_workout_exercise_with_sets(
                 workout,
@@ -353,7 +378,11 @@ def new_workout_from_routine(user, routine):
                 (s.weight, s.reps, s.is_warmup) for s in prior_we.sets.all()
             ]
             set_values = apply_progression_to_set_values(
-                set_values, step_to_apply, reverse, template
+                set_values,
+                step_to_apply,
+                reverse,
+                template,
+                prior_we.exercise.weight_increment,
             )
             create_workout_exercise_with_sets(
                 workout,
@@ -410,7 +439,7 @@ def new_workout(user):
 
 
 def get_workout_exercise(workout_exercise_id):
-    return WorkoutExercise.objects.prefetch_related(
+    return WorkoutExercise.objects.select_related("exercise").prefetch_related(
         Prefetch(
             "sets",
             queryset=ExerciseSet.objects.order_by("set_number"),
@@ -729,6 +758,7 @@ def apply_smartchange(
     reps_delta,
     is_warmup,
     smartchange_warmup,
+    weight_increment,
 ):
     siblings = ExerciseSet.objects.filter(
         workout_exercise=workout_exercise
@@ -742,7 +772,7 @@ def apply_smartchange(
         if new_weight < 0:
             new_weight = Decimal("0")
         else:
-            new_weight = quantize_weight(new_weight)
+            new_weight = quantize_weight(new_weight, weight_increment)
         new_reps = max(1, sibling.reps + reps_delta)
         if new_weight != sibling.weight or new_reps != sibling.reps:
             sibling.weight = new_weight
@@ -753,14 +783,15 @@ def apply_smartchange(
 
 
 def update_exercise_set(set_id, weight, reps, is_warmup, *, user=None, smartchange=False):
-    exercise_set = ExerciseSet.objects.select_related("workout_exercise").get(
-        pk=set_id
-    )
+    exercise_set = ExerciseSet.objects.select_related(
+        "workout_exercise__exercise"
+    ).get(pk=set_id)
     workout_exercise = exercise_set.workout_exercise
+    weight_increment = workout_exercise.exercise.weight_increment
     old_weight = exercise_set.weight
     old_reps = exercise_set.reps
     old_is_warmup = exercise_set.is_warmup
-    exercise_set.weight = quantize_weight(weight)
+    exercise_set.weight = quantize_weight(weight, weight_increment)
     exercise_set.reps = reps
     exercise_set.is_warmup = is_warmup
     exercise_set.save()
@@ -780,6 +811,7 @@ def update_exercise_set(set_id, weight, reps, is_warmup, *, user=None, smartchan
             reps_delta,
             exercise_set.is_warmup,
             user.settings.smartchange_warmup,
+            weight_increment,
         )
         if siblings_updated_count:
             workout_exercise = get_workout_exercise(workout_exercise.pk)
@@ -821,7 +853,10 @@ def get_add_set_defaults(user, workout_exercise_id):
 
 
 def create_exercise_set(workout_exercise_id, weight, reps, is_warmup):
-    workout_exercise = WorkoutExercise.objects.get(pk=workout_exercise_id)
+    workout_exercise = WorkoutExercise.objects.select_related("exercise").get(
+        pk=workout_exercise_id
+    )
+    weight_increment = workout_exercise.exercise.weight_increment
     max_set_number = (
         ExerciseSet.objects.filter(workout_exercise=workout_exercise).aggregate(
             Max("set_number")
@@ -831,7 +866,7 @@ def create_exercise_set(workout_exercise_id, weight, reps, is_warmup):
     exercise_set = ExerciseSet.objects.create(
         workout_exercise=workout_exercise,
         set_number=max_set_number + 1,
-        weight=quantize_weight(weight),
+        weight=quantize_weight(weight, weight_increment),
         reps=reps,
         is_warmup=is_warmup,
     )

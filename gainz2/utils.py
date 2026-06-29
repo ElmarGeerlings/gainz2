@@ -1,7 +1,16 @@
 import re
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.template.loader import render_to_string
+
+WEIGHT_INCREMENT_CHOICES = (
+    Decimal("0.5"),
+    Decimal("1"),
+    Decimal("2.5"),
+    Decimal("5"),
+)
+
+DEFAULT_WEIGHT_INCREMENT = Decimal("0.5")
 
 
 def next_numbered_name(prefix, existing_names):
@@ -14,9 +23,18 @@ def next_numbered_name(prefix, existing_names):
     return f"{prefix} #{max_n + 1}"
 
 
-def quantize_weight(weight):
-    half_steps = (Decimal(weight) * 2).quantize(Decimal("1"))
-    return half_steps / Decimal("2")
+def parse_weight_increment(value):
+    increment = Decimal(str(value))
+    if increment in WEIGHT_INCREMENT_CHOICES:
+        return increment
+    return DEFAULT_WEIGHT_INCREMENT
+
+
+def quantize_weight(weight, increment=DEFAULT_WEIGHT_INCREMENT):
+    increment = parse_weight_increment(increment)
+    weight = Decimal(weight)
+    steps = (weight / increment).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    return steps * increment
 
 
 def render_toast(message, variant="success"):

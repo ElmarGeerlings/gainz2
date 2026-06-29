@@ -1,5 +1,6 @@
 from django.db.models import Q
 from exercises.models import Exercise
+from gainz2.utils import DEFAULT_WEIGHT_INCREMENT, parse_weight_increment
 
 
 def list_exercises_for_user(
@@ -83,6 +84,9 @@ def create_custom_exercise(user, attributes):
     primary_bodypart = attributes.get("primary_bodypart") or None
     secondary_bodypart = attributes.get("secondary_bodypart") or None
     exercise_type = attributes.get("exercise_type") or "accessory"
+    weight_increment = parse_weight_increment(
+        attributes.get("weight_increment", DEFAULT_WEIGHT_INCREMENT)
+    )
 
     exercise = Exercise.objects.create(
         user=user,
@@ -92,6 +96,7 @@ def create_custom_exercise(user, attributes):
         exercise_type=exercise_type,
         primary_bodypart=primary_bodypart,
         secondary_bodypart=secondary_bodypart,
+        weight_increment=weight_increment,
     )
     return {"exercise": exercise}
 
@@ -107,5 +112,8 @@ def update_custom_exercise(user, exercise_id, attributes):
     exercise.primary_bodypart = attributes.get("primary_bodypart") or None
     exercise.secondary_bodypart = attributes.get("secondary_bodypart") or None
     exercise.exercise_type = attributes.get("exercise_type") or "accessory"
+    exercise.weight_increment = parse_weight_increment(
+        attributes.get("weight_increment", exercise.weight_increment)
+    )
     exercise.save()
     return {"exercise": exercise}

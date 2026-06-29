@@ -91,7 +91,7 @@ def update_routine(user, routine_id, name=None, notes=None):
 
 
 def get_routine_exercise(routine_exercise_id):
-    return RoutineExercise.objects.prefetch_related(
+    return RoutineExercise.objects.select_related("exercise").prefetch_related(
         Prefetch(
             "sets",
             queryset=RoutineSet.objects.order_by("set_number"),
@@ -292,6 +292,7 @@ def apply_smartchange(
     reps_delta,
     is_warmup,
     smartchange_warmup,
+    weight_increment,
 ):
     siblings = RoutineSet.objects.filter(
         routine_exercise=routine_exercise
@@ -304,7 +305,7 @@ def apply_smartchange(
         if new_weight < 0:
             new_weight = Decimal("0")
         else:
-            new_weight = quantize_weight(new_weight)
+            new_weight = quantize_weight(new_weight, weight_increment)
         new_reps = max(1, sibling.reps + reps_delta)
         if new_weight != sibling.weight or new_reps != sibling.reps:
             sibling.weight = new_weight
@@ -315,14 +316,15 @@ def apply_smartchange(
 
 
 def update_routine_set(set_id, weight, reps, is_warmup, *, user=None, smartchange=False):
-    routine_set = RoutineSet.objects.select_related("routine_exercise").get(
-        pk=set_id
-    )
+    routine_set = RoutineSet.objects.select_related(
+        "routine_exercise__exercise"
+    ).get(pk=set_id)
     routine_exercise = routine_set.routine_exercise
+    weight_increment = routine_exercise.exercise.weight_increment
     old_weight = routine_set.weight
     old_reps = routine_set.reps
     old_is_warmup = routine_set.is_warmup
-    routine_set.weight = quantize_weight(weight)
+    routine_set.weight = quantize_weight(weight, weight_increment)
     routine_set.reps = reps
     routine_set.is_warmup = is_warmup
     routine_set.save()
@@ -342,6 +344,7 @@ def update_routine_set(set_id, weight, reps, is_warmup, *, user=None, smartchang
             reps_delta,
             routine_set.is_warmup,
             user.settings.smartchange_warmup,
+            weight_increment,
         )
         if siblings_updated_count:
             routine_exercise = get_routine_exercise(routine_exercise.pk)
@@ -375,7 +378,10 @@ def get_add_set_defaults(user, routine_exercise_id):
 
 
 def create_routine_set(routine_exercise_id, weight, reps, is_warmup):
-    routine_exercise = RoutineExercise.objects.get(pk=routine_exercise_id)
+    routine_exercise = RoutineExercise.objects.select_related("exercise").get(
+        pk=routine_exercise_id
+    )
+    weight_increment = routine_exercise.exercise.weight_increment
     max_set_number = (
         RoutineSet.objects.filter(routine_exercise=routine_exercise).aggregate(
             Max("set_number")
@@ -385,7 +391,7 @@ def create_routine_set(routine_exercise_id, weight, reps, is_warmup):
     routine_set = RoutineSet.objects.create(
         routine_exercise=routine_exercise,
         set_number=max_set_number + 1,
-        weight=quantize_weight(weight),
+        weight=quantize_weight(weight, weight_increment),
         reps=reps,
         is_warmup=is_warmup,
     )
@@ -576,7 +582,10 @@ def import_routine_from_parsed(user, routine_name, parsed_lines, name_to_exercis
                 RoutineSet.objects.create(
                     routine_exercise=routine_exercise,
                     set_number=set_num,
-                    weight=quantize_weight(Decimal(str(weight_value))),
+                    weight=quantize_weight(
+                        Decimal(str(weight_value)),
+                        exercise.weight_increment,
+                    ),
                     reps=reps_value,
                     is_warmup=False,
                 )

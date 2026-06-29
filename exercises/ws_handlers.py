@@ -2,7 +2,7 @@
 
 from django.template.loader import render_to_string
 
-from gainz2.utils import render_toast
+from gainz2.utils import WEIGHT_INCREMENT_CHOICES, render_toast
 from exercises.services import (
     create_custom_exercise,
     get_exercise_for_modal,
@@ -16,6 +16,7 @@ def handle_exercise_form(user, attributes):
     choice_context = {
         "bodypart_choices": Exercise.BODYPART_CHOICES,
         "exercise_type_choices": Exercise.EXERCISE_TYPE_CHOICES,
+        "weight_increment_choices": WEIGHT_INCREMENT_CHOICES,
     }
 
     if not exercise_id_raw:

@@ -39,6 +39,12 @@
         <option value="{{ code }}"{% if exercise and exercise.exercise_type == code %} selected{% elif not exercise and code == 'accessory' %} selected{% endif %}>{{ label }}</option>
         {% endfor %}
     </select>
+    <label for="exercise-modal-weight-increment" class="form-label">Weight increment</label>
+    <select id="exercise-modal-weight-increment" name="weight_increment" class="form-control">
+        {% for choice in weight_increment_choices %}
+        <option value="{{ choice }}"{% if mode == "edit" and exercise.weight_increment == choice %} selected{% elif mode != "edit" and forloop.first %} selected{% endif %}>{{ choice }} kg</option>
+        {% endfor %}
+    </select>
     <div class="set-modal-actions mt-4">
         <button
             type="button"
