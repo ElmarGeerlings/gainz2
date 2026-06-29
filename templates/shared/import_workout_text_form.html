@@ -1,7 +1,6 @@
 <main class="page page-narrow">
     <section class="panel stack-sm">
         <h1 class="title-lg m-0">{{ import_title }}</h1>
-
         {% if errors %}
         <ul class="text-danger text-sm m-0 pl-4">
             {% for error in errors %}
@@ -9,10 +8,8 @@
             {% endfor %}
         </ul>
         {% endif %}
-
         <form method="post" class="form-stack">
             {% csrf_token %}
-
             <label for="{{ name_input_id }}" class="form-label">{{ name_label }}</label>
             <input
                 type="text"
@@ -24,7 +21,6 @@
                 autocomplete="off"
                 placeholder="{{ name_placeholder }}"
             >
-
             <label for="workout-text" class="form-label">Paste Your Workout Text</label>
             <textarea
                 id="workout-text"
@@ -36,12 +32,10 @@
             >{{ workout_text }}</textarea>
             <p class="text-muted text-sm m-0">{{ format_hint }}</p>
             <pre class="text-sm p-3 surface-soft m-0">{{ sample_format }}</pre>
-
             <div class="row-center gap-sm mt-2">
                 <button type="submit" name="step" value="parse" class="btn btn-primary">Import</button>
                 <a href="{% url cancel_url_name %}" class="btn btn-outline">Cancel</a>
             </div>
-
             <div
                 id="import-confirm-modal"
                 class="gainz-modal"

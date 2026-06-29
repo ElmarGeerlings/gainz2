@@ -143,6 +143,12 @@ Markup below is the contract; see `/design/` for live examples.
 - Prefer **composing** existing utilities and components in HTML.
 - Add a **new CSS rule** only when the same combination appears repeatedly or the markup becomes unreadable.
 
+### Blank lines
+
+- **No blank lines** between HTML siblings (`<section>`, `<label>`, `<input>`, nav items, etc.) — use CSS utilities (`stack-sm`, `mb-*`, …) for spacing.
+- **Blank lines only** between Django template blocks: one line before each `{% block … %}` (after `{% extends %}`, `{% load … %}`, or `{% endblock %}`).
+- **Partials and includes** stay compact (no blank lines unless they define their own `{% block %}` sections).
+
 ## Mobile-first
 
 - Default styles target a **narrow viewport**; add `min-width` media queries when larger screens need more space — not the other way around.

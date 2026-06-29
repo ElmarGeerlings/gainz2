@@ -13,10 +13,8 @@
             {% endif %}
             <label for="login-username" class="form-label">Username</label>
             <input type="text" id="login-username" name="username" class="form-control" autocomplete="username" required>
-
             <label for="login-password" class="form-label">Password</label>
             <input type="password" id="login-password" name="password" class="form-control" autocomplete="current-password" required>
-
             <button type="submit" class="btn btn-primary w-100">Log in</button>
         </form>
         <p class="text-muted text-sm m-0">No account? <a href="{% url 'register' %}{% if next %}?next={{ next }}{% endif %}">Register</a></p>

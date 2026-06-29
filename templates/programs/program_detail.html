@@ -10,7 +10,6 @@
 {% block content %}
 <main class="page page-narrow">
     {{ routines_catalog|json_script:"routines-catalog" }}
-
     <form id="program-edit-form" class="stack-sm" data-program-id="{{ program.pk }}">
         <header class="mb-4">
             <div class="row-between gap-md">
@@ -29,7 +28,6 @@
                 </div>
             </div>
         </header>
-
         <section class="panel stack-sm mb-4">
             <div class="form-stack">
                 <label for="program-name">Name</label>
@@ -41,7 +39,6 @@
                     value="{{ program.name }}"
                     autocomplete="off"
                 >
-
                 <label for="program-description">Description</label>
                 <textarea
                 id="program-description"
@@ -49,7 +46,6 @@
                 class="form-control"
                 rows="3"
                 >{{ program.description }}</textarea>
-
                 <div class="program-form-section">
                 <fieldset class="program-form-fieldset">
                     <legend class="text-sm text-muted mb-2">Cross-routine weight carryover</legend>
@@ -99,7 +95,6 @@
                     </div>
                 </fieldset>
                 </div>
-
                 <div class="program-form-section">
                 <fieldset class="program-form-fieldset">
                     <legend class="text-sm text-muted mb-2">Progression defaults</legend>
@@ -142,7 +137,6 @@
                 </div>
             </div>
         </section>
-
         <section class="stack-sm mb-4">
             <h2 class="title-sm m-0">Routines</h2>
             <div id="program-routines-sortable" class="stack-sm">
@@ -164,7 +158,6 @@
                 {% endfor %}
             </select>
         </section>
-
         <div class="row-center gap-sm">
             <button
             type="button"

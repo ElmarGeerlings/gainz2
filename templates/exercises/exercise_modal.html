@@ -3,7 +3,6 @@
     <input type="hidden" name="exercise_id" id="exercise-modal-id" value="{{ exercise.pk }}">
     {% endif %}
     <h2 class="title-md m-0 mb-3">{% if mode == "edit" %}Edit Exercise{% else %}Add Exercise{% endif %}</h2>
-
     <label for="exercise-modal-name" class="form-label">Exercise Name</label>
     <input
         type="text"
@@ -13,7 +12,6 @@
         autocomplete="off"
         value="{% if exercise %}{{ exercise.name }}{% endif %}"
     >
-
     <label for="exercise-modal-description" class="form-label">Description</label>
     <textarea
         id="exercise-modal-description"
@@ -21,7 +19,6 @@
         class="form-control"
         rows="3"
     >{% if exercise %}{{ exercise.description }}{% endif %}</textarea>
-
     <label for="exercise-modal-primary-bodypart" class="form-label">Primary Bodypart</label>
     <select id="exercise-modal-primary-bodypart" name="primary_bodypart" class="form-control">
         <option value="">Choose...</option>
@@ -29,7 +26,6 @@
         <option value="{{ code }}"{% if exercise and exercise.primary_bodypart == code %} selected{% endif %}>{{ label }}</option>
         {% endfor %}
     </select>
-
     <label for="exercise-modal-secondary-bodypart" class="form-label">Secondary Bodypart</label>
     <select id="exercise-modal-secondary-bodypart" name="secondary_bodypart" class="form-control">
         <option value="">None</option>
@@ -37,14 +33,12 @@
         <option value="{{ code }}"{% if exercise and exercise.secondary_bodypart == code %} selected{% endif %}>{{ label }}</option>
         {% endfor %}
     </select>
-
     <label for="exercise-modal-exercise-type" class="form-label">Exercise Type</label>
     <select id="exercise-modal-exercise-type" name="exercise_type" class="form-control">
         {% for code, label in exercise_type_choices %}
         <option value="{{ code }}"{% if exercise and exercise.exercise_type == code %} selected{% elif not exercise and code == 'accessory' %} selected{% endif %}>{{ label }}</option>
         {% endfor %}
     </select>
-
     <div class="set-modal-actions mt-4">
         <button
             type="button"

@@ -13,11 +13,9 @@
     <div id="routine-header">
         {% include "routines/routine_header.html" %}
     </div>
-
     {% if routine.recently_changed %}
     <p class="text-sm text-muted m-0 mb-3">Routine updated — next workout will use this template.</p>
     {% endif %}
-
     {% if programs_for_routine %}
     <section class="panel stack-sm mb-3">
         <p class="text-sm text-muted m-0">Part of program:</p>
@@ -28,18 +26,14 @@
         </div>
     </section>
     {% endif %}
-
     {% include "workouts/workout_exercise_ui.html" with session=routine is_routine=True endpoint_ns="routines" active_exercise_index=0 %}
-
     {% include "workouts/add_exercise_form.html" with session_pk=routine.pk session_kind="routine" endpoint_ns="routines" section_title="Add Exercise to This Routine" add_exercise_options=add_exercise_options bodypart_choices=bodypart_choices exercise_type_choices=exercise_type_choices %}
 </main>
-
 <div id="set-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
     <div id="set-modal-content" class="gainz-modal-content">
         {% include "workouts/set_modal.html" with is_routine=True endpoint_ns="routines" %}
     </div>
 </div>
-
 <div id="routine-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
     <div class="gainz-modal-content">
         {% include "routines/routine_edit_modal.html" %}

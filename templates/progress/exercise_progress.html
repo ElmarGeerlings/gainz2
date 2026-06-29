@@ -12,7 +12,6 @@
 <main class="page page-narrow">
     <form id="progress-form" class="stack-lg">
         <h1 class="title-lg m-0">Progress</h1>
-
         <div class="form-stack">
             <span class="form-label">Period</span>
             <select
@@ -26,12 +25,10 @@
                 {% endfor %}
             </select>
         </div>
-
         <section class="panel stack-md">
             <h2 class="title-md m-0">Stats</h2>
             <div id="progress-stats-wrap" class="stack-sm progress-stats-list"></div>
         </section>
-
         <section class="panel stack-md">
             <div class="row-between gap-sm">
                 <h2 class="title-md m-0">Exercise progress</h2>
@@ -43,7 +40,6 @@
                 </div>
             </div>
             <input type="hidden" id="progress-chart-type" name="chart_type" value="{{ chart_type }}">
-
             <div class="form-stack">
                 <span class="form-label">Exercise</span>
                 <select
@@ -63,19 +59,16 @@
                     {% include "progress/exercise_select.html" %}
                 </div>
             </div>
-
             <div id="progress-rep-range-wrap" class="form-stack" hidden>
                 <span class="form-label">Rep range: <span id="rep-range-display">All</span></span>
                 <div id="progress-rep-slider"></div>
                 <input type="hidden" id="progress-min-reps" name="min_reps">
                 <input type="hidden" id="progress-max-reps" name="max_reps">
             </div>
-
             <div class="progress-chart-panel">
                 <canvas id="progress-chart" class="progress-chart-canvas" hidden aria-label="Exercise progress chart"></canvas>
                 <p id="progress-chart-empty" class="progress-chart-empty text-muted text-center m-0">Select an exercise to see your progress.</p>
             </div>
-
             <div id="progress-sets-detail" class="mt-2"></div>
         </section>
     </form>

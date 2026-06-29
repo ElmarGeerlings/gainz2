@@ -6,7 +6,6 @@
         {% else %}
         <input type="hidden" name="routine_id" value="{{ session_pk }}">
         {% endif %}
-
         <span class="form-label">Exercise</span>
         <select
             id="bodypart-select-{{ session_pk }}"
@@ -24,7 +23,6 @@
         <div id="add-exercise-select-wrap" class="form-stack">
             {% include "workouts/add_exercise_select.html" %}
         </div>
-
         <span class="form-label">Type (Optional)</span>
         <div class="gainz-dropdown gainz-dropdown-full">
             <button
@@ -49,7 +47,6 @@
             </div>
             <input type="hidden" name="exercise_type" value="">
         </div>
-
         <button
             type="button"
             class="btn btn-primary w-100"

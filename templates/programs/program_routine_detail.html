@@ -16,7 +16,6 @@
             <a href="{% url 'routine-detail' routine.pk %}">{{ routine.name }}</a>
         </h1>
     </header>
-
     <section class="panel stack-sm">
         {% for we in routine.exercises.all %}
         <div class="row-between gap-sm program-routine-exercise-row carryover-row">

@@ -13,18 +13,14 @@
     <div id="workout-header">
         {% include "workouts/workout_header.html" %}
     </div>
-
     {% include "workouts/workout_exercise_ui.html" with session=workout endpoint_ns="workouts" active_exercise_index=0 %}
-
     {% include "workouts/add_exercise_form.html" with session_pk=workout.pk session_kind="workout" endpoint_ns="workouts" section_title="Add Exercise to This Workout" add_exercise_options=add_exercise_options bodypart_choices=bodypart_choices exercise_type_choices=exercise_type_choices %}
 </main>
-
 <div id="set-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
     <div id="set-modal-content" class="gainz-modal-content">
         {% include "workouts/set_modal.html" with endpoint_ns="workouts" %}
     </div>
 </div>
-
 <div id="workout-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
     <div class="gainz-modal-content">
         {% include "workouts/workout_edit_modal.html" %}
