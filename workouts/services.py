@@ -875,3 +875,14 @@ def create_exercise_set(workout_exercise_id, weight, reps, is_warmup):
         exercise_set.refresh_from_db()
     workout_exercise = get_workout_exercise(workout_exercise.pk)
     return exercise_set, workout_exercise
+
+
+def attach_rest_times(session, user_settings):
+    for session_exercise in session.exercises.all():
+        if session_exercise.effective_exercise_type() == "primary":
+            session_exercise.rest_seconds = user_settings.primary_rest_time
+        elif session_exercise.effective_exercise_type() == "secondary":
+            session_exercise.rest_seconds = user_settings.secondary_rest_time
+        else:
+            session_exercise.rest_seconds = user_settings.accessory_rest_time
+    return session

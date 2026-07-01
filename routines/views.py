@@ -11,7 +11,7 @@ from routines.services import (
     prepare_routine_import,
     resolve_import_exercises,
 )
-from workouts.services import list_add_exercise_options
+from workouts.services import attach_rest_times, list_add_exercise_options
 
 SAMPLE_IMPORT_FORMAT = """OHP 3x5 70
 Pull ups 3x10
@@ -48,7 +48,8 @@ def new_routine_page(req_event):
 
 def routine_detail_page(req_event, routine_id):
     get_object_or_404(Routine, pk=routine_id, user=req_event.user)
-    routine = get_routine(routine_id)
+    user_settings = req_event.user.settings
+    routine = attach_rest_times(get_routine(routine_id), user_settings)
     programs_for_routine = list(list_programs_for_routine(req_event.user, routine))
     response = {
         "title": routine.name,
@@ -60,6 +61,7 @@ def routine_detail_page(req_event, routine_id):
             {"value": value, "label": label}
             for value, label in RoutineExercise.EXERCISE_TYPE_CHOICES
         ],
+        "user_settings": user_settings,
     }
     return render(req_event, "routines/routine_detail.html", response)
 

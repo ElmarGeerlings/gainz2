@@ -13,7 +13,7 @@
     <div id="workout-header">
         {% include "workouts/workout_header.html" %}
     </div>
-    {% include "workouts/workout_exercise_ui.html" with session=workout endpoint_ns="workouts" active_exercise_index=0 %}
+    {% include "workouts/workout_exercise_ui.html" with session=workout endpoint_ns="workouts" active_exercise_index=0 user_settings=user_settings %}
     {% include "workouts/add_exercise_form.html" with session_pk=workout.pk session_kind="workout" endpoint_ns="workouts" section_title="Add Exercise to This Workout" add_exercise_options=add_exercise_options bodypart_choices=bodypart_choices exercise_type_choices=exercise_type_choices %}
 </main>
 <div id="set-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
@@ -30,5 +30,6 @@
 
 {% block extra_js %}
 <script defer src="{% static 'js/sortable.min.js' %}"></script>
+<script defer src="{% static 'js/timer.js' %}"></script>
 <script defer src="{% static 'js/workouts.js' %}"></script>
 {% endblock %}

@@ -1,4 +1,13 @@
-<div id="workout-exercise-ui" data-session-id="{{ session.pk }}" data-endpoint-ns="{{ endpoint_ns }}">
+<div
+    id="workout-exercise-ui"
+    data-session-id="{{ session.pk }}"
+    data-endpoint-ns="{{ endpoint_ns }}"
+    {% if not is_routine %}
+    data-workout-id="{{ session.pk }}"
+    data-notification-sound-enabled="{{ user_settings.notification_sound_enabled|yesno:'true,false' }}"
+    data-notification-vibration-enabled="{{ user_settings.notification_vibration_enabled|yesno:'true,false' }}"
+    {% endif %}
+>
     <div class="exercise-view-toggle row-center justify-center gap-sm mb-3">
         <button
             type="button"

@@ -159,6 +159,45 @@ function dismissToast(event) {
   }
 }
 
+function notifyUser(message, options) {
+  const opts = options || {};
+  const variant = opts.variant || 'success';
+  const delayMs = opts.delayMs != null ? Number(opts.delayMs) : 2500;
+  const toastHtml =
+    '<div class="gainz-toast gainz-toast-' + variant + '" role="alert">' +
+    '<button type="button" class="gainz-toast-close" data-function="click->dismissToast" aria-label="Close">×</button>' +
+    '<p class="gainz-toast-message"></p>' +
+    '</div>';
+  const toastContainer = document.querySelector('.toast-container');
+  if (toastContainer) {
+    const parser = new DOMParser();
+    const toast = parser.parseFromString(toastHtml, 'text/html').body.firstChild;
+    toast.querySelector('.gainz-toast-message').textContent = message;
+    toastContainer.appendChild(toast);
+    const closeBtn = toast.querySelector('.gainz-toast-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', dismissToast);
+    }
+    setTimeout(() => {
+      toast.remove();
+    }, delayMs);
+  }
+  if (opts.sound) {
+    const audioContext = new AudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.frequency.value = 880;
+    gainNode.gain.value = 0.15;
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.2);
+  }
+  if (opts.vibrate && navigator.vibrate) {
+    navigator.vibrate(200);
+  }
+}
+
 function navigateTo(req_event) {
   const el = req_event.currentTarget;
   let url = el.getAttribute('data-nav');

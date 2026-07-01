@@ -21,6 +21,7 @@ from routines.services import (
     update_routine_set,
 )
 from utils.templatetags.formatting import weight_display
+from workouts.services import attach_rest_times
 
 
 def handle_delete_routine(user, attributes):
@@ -158,6 +159,7 @@ def handle_add_exercise(user, attributes):
         current_routine_exercise_id,
         exercise_type,
     )
+    attach_rest_times(routine, user.settings)
     html = render_to_string(
         "workouts/workout_exercise_ui.html",
         {
@@ -165,6 +167,7 @@ def handle_add_exercise(user, attributes):
             "is_routine": True,
             "endpoint_ns": "routines",
             "active_exercise_index": new_exercise_index,
+            "user_settings": user.settings,
         },
     )
     return {
@@ -207,6 +210,7 @@ def handle_delete_exercise(user, attributes):
         routine_exercise_id,
         current_exercise_index,
     )
+    attach_rest_times(routine, user.settings)
     html = render_to_string(
         "workouts/workout_exercise_ui.html",
         {
@@ -214,6 +218,7 @@ def handle_delete_exercise(user, attributes):
             "is_routine": True,
             "endpoint_ns": "routines",
             "active_exercise_index": active_exercise_index,
+            "user_settings": user.settings,
         },
     )
     return {
@@ -277,6 +282,7 @@ def handle_refresh_exercise_view(user, attributes):
     session_id = int(attributes["data-session-id"])
     Routine.objects.get(pk=session_id, user=user)
     routine = get_routine(session_id)
+    attach_rest_times(routine, user.settings)
     exercises = list(routine.exercises.all())
     active_exercise_index = 0
     if view == "detail":
@@ -296,6 +302,7 @@ def handle_refresh_exercise_view(user, attributes):
                 "endpoint_ns": "routines",
                 "is_routine": True,
                 "active_exercise_index": active_exercise_index,
+                "user_settings": user.settings,
             },
         )
     elif view == "overview":
@@ -307,6 +314,7 @@ def handle_refresh_exercise_view(user, attributes):
                 "endpoint_ns": "routines",
                 "is_routine": True,
                 "active_exercise_index": active_exercise_index,
+                "user_settings": user.settings,
             },
         )
     else:

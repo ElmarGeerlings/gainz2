@@ -17,6 +17,7 @@ from utils.templatetags.formatting import weight_display
 from workouts.models import ExerciseSet, Workout
 from workouts.services import (
     add_exercise_to_workout,
+    attach_rest_times,
     create_exercise_set,
     delete_exercise_set,
     delete_workout,
@@ -244,12 +245,14 @@ def handle_add_exercise(user, attributes):
         current_workout_exercise_id,
         exercise_type,
     )
+    attach_rest_times(workout, user.settings)
     html = render_to_string(
         "workouts/workout_exercise_ui.html",
         {
             "session": workout,
             "endpoint_ns": "workouts",
             "active_exercise_index": new_exercise_index,
+            "user_settings": user.settings,
         },
     )
     return {
@@ -291,12 +294,14 @@ def handle_delete_exercise(user, attributes):
         workout_exercise_id,
         current_exercise_index,
     )
+    attach_rest_times(workout, user.settings)
     html = render_to_string(
         "workouts/workout_exercise_ui.html",
         {
             "session": workout,
             "endpoint_ns": "workouts",
             "active_exercise_index": active_exercise_index,
+            "user_settings": user.settings,
         },
     )
     return {
@@ -360,6 +365,7 @@ def handle_refresh_exercise_view(user, attributes):
     session_id = int(attributes["data-session-id"])
     Workout.objects.get(pk=session_id, user=user)
     workout = get_workout(session_id)
+    attach_rest_times(workout, user.settings)
     exercises = list(workout.exercises.all())
     active_exercise_index = 0
     if view == "detail":
@@ -378,6 +384,7 @@ def handle_refresh_exercise_view(user, attributes):
                 "session": workout,
                 "endpoint_ns": "workouts",
                 "active_exercise_index": active_exercise_index,
+                "user_settings": user.settings,
             },
         )
     elif view == "overview":
@@ -388,6 +395,7 @@ def handle_refresh_exercise_view(user, attributes):
                 "session": workout,
                 "endpoint_ns": "workouts",
                 "active_exercise_index": active_exercise_index,
+                "user_settings": user.settings,
             },
         )
     else:

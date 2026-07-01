@@ -11,4 +11,14 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(UserSettings)
 class UserSettingsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'set_carryover', 'smartchange_enabled', 'smartchange_warmup')
+    list_display = (
+        'user',
+        'set_carryover',
+        'smartchange_enabled',
+        'smartchange_warmup',
+        'primary_rest_time',
+        'secondary_rest_time',
+        'accessory_rest_time',
+        'notification_sound_enabled',
+        'notification_vibration_enabled',
+    )

@@ -26,7 +26,7 @@
         </div>
     </section>
     {% endif %}
-    {% include "workouts/workout_exercise_ui.html" with session=routine is_routine=True endpoint_ns="routines" active_exercise_index=0 %}
+    {% include "workouts/workout_exercise_ui.html" with session=routine is_routine=True endpoint_ns="routines" active_exercise_index=0 user_settings=user_settings %}
     {% include "workouts/add_exercise_form.html" with session_pk=routine.pk session_kind="routine" endpoint_ns="routines" section_title="Add Exercise to This Routine" add_exercise_options=add_exercise_options bodypart_choices=bodypart_choices exercise_type_choices=exercise_type_choices %}
 </main>
 <div id="set-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">

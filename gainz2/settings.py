@@ -79,6 +79,7 @@ LOGIN_EXEMPT_URLS = [
     r'^/register/?$',
     r'^/demo/?$',
     r'^/admin/login/?$',
+    r'^/service-worker\.js$',
 ]
 
 ROOT_URLCONF = 'gainz2.urls'

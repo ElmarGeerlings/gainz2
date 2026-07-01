@@ -18,6 +18,15 @@ def list_datetime_format(value):
     return local.strftime("%B %d, %Y, %H:%M")
 
 
+
+@register.filter(name="format_minutes")
+def format_minutes(seconds):
+    total = int(seconds)
+    minutes = total // 60
+    secs = total % 60
+    return f"{minutes}:{secs:02d}"
+
+
 @register.filter(name="weight_display")
 def weight_display(value):
     d = Decimal(value).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)

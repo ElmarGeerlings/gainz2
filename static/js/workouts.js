@@ -107,6 +107,9 @@ function initWorkoutCardsPage(activeIndex) {
     refreshWorkoutNavState();
     bindWorkoutTouch(container);
     applyExerciseViewMode();
+    if (typeof syncRestTimerDisplay === 'function') {
+        syncRestTimerDisplay();
+    }
 }
 
 function refreshWorkoutNavState() {

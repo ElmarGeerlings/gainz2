@@ -1,8 +1,11 @@
-from django.shortcuts import redirect, render, get_object_or_404
+from django.conf import settings
+from django.http import FileResponse
+from django.shortcuts import redirect, render
 
 from exercises.models import Exercise
 from workouts.models import WorkoutExercise
 from workouts.services import (
+    attach_rest_times,
     get_workout,
     list_add_exercise_options,
     list_routines_for_choose,
@@ -28,7 +31,8 @@ def new_workout_page(req_event):
 
 
 def workout_detail_page(req_event, workout_id):
-    workout = get_workout(workout_id)
+    user_settings = req_event.user.settings
+    workout = attach_rest_times(get_workout(workout_id), user_settings)
     response = {
         "workout": workout,
         "add_exercise_options": list_add_exercise_options(),
@@ -38,5 +42,11 @@ def workout_detail_page(req_event, workout_id):
             for value, label in WorkoutExercise.EXERCISE_TYPE_CHOICES
         ],
         "title": "Workout Details",
+        "user_settings": user_settings,
     }
     return render(req_event, "workouts/workout_detail.html", response)
+
+
+def service_worker(req_event):
+    path = settings.BASE_DIR / "static" / "service-worker.js"
+    return FileResponse(path.open("rb"), content_type="application/javascript")
