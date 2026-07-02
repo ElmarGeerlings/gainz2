@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.http import FileResponse
 from django.shortcuts import redirect, render
 
 from exercises.models import Exercise
@@ -45,8 +43,3 @@ def workout_detail_page(req_event, workout_id):
         "user_settings": user_settings,
     }
     return render(req_event, "workouts/workout_detail.html", response)
-
-
-def service_worker(req_event):
-    path = settings.BASE_DIR / "static" / "service-worker.js"
-    return FileResponse(path.open("rb"), content_type="application/javascript")

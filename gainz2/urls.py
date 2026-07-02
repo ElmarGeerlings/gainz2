@@ -38,13 +38,11 @@ from programs.views import (
 from progress.views import progress_page, progress_records_page
 from workouts.views import (
     new_workout_page,
-    service_worker,
     workout_detail_page,
     workouts_list_page,
 )
 
 urlpatterns = [
-    path("service-worker.js", service_worker, name="service-worker"),
     path("", home_page, name="home"),
     path("design/", design_page, name="design"),
     path("login/", login_page, name="login"),

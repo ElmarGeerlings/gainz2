@@ -1,12 +1,6 @@
 const REST_TIMER_STORAGE_KEY = 'gainz-active-rest-timer';
-const NOTIFICATION_PERMISSION_KEY = 'gainz-notification-permission-asked';
-const REST_TIMER_NOTIFICATION_TAG = 'gainz-rest-timer';
 
 let restTimerTickIntervalId = null;
-
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
-}
 
 function formatMinutes(seconds) {
     const total = Math.max(0, Math.floor(Number(seconds)));
@@ -26,33 +20,6 @@ function getWorkoutTimerState() {
         return null;
     }
     return state;
-}
-
-function postToServiceWorker(message) {
-    if (!('serviceWorker' in navigator)) {
-        return;
-    }
-    navigator.serviceWorker.ready.then((registration) => {
-        if (registration.active) {
-            registration.active.postMessage(message);
-        }
-    });
-}
-
-function scheduleSwNotification(state) {
-    if (!state || state.isPaused || !state.endTimestamp) {
-        return;
-    }
-    postToServiceWorker({
-        type: 'timer-schedule',
-        endTimestamp: state.endTimestamp,
-        title: 'Rest over',
-        body: state.exerciseName
-            ? `${state.exerciseName} — start your next set.`
-            : 'Time to start your next set.',
-        url: `/workouts/${state.workoutId}/`,
-        tag: REST_TIMER_NOTIFICATION_TAG,
-    });
 }
 
 function getRemainingSeconds(state) {
@@ -96,7 +63,6 @@ function finalizeExpiredTimer(state, showForegroundAlert) {
     }
     state.completeHandled = true;
     localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
-    postToServiceWorker({ type: 'timer-cancel' });
     stopRestTimerTick();
 
     if (showForegroundAlert && !document.hidden && typeof notifyUser === 'function') {
@@ -190,13 +156,6 @@ function startRestTimer(req_event) {
         return;
     }
 
-    if ('Notification' in window && localStorage.getItem(NOTIFICATION_PERMISSION_KEY) !== 'true') {
-        localStorage.setItem(NOTIFICATION_PERMISSION_KEY, 'true');
-        if (Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
-    }
-
     const card = req_event.currentTarget.closest('.exercise-card');
     if (!card) {
         return;
@@ -226,13 +185,11 @@ function startRestTimer(req_event) {
         existing.endTimestamp = Date.now() + pausedRemaining * 1000;
         existing.completeHandled = false;
         localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(existing));
-        scheduleSwNotification(existing);
         syncRestTimerDisplay();
         return;
     }
 
     if (existing) {
-        postToServiceWorker({ type: 'timer-cancel' });
         resetCardToIdle(
             document.querySelector(`.exercise-card[data-exercise-id="${existing.exerciseId}"]`)
         );
@@ -249,7 +206,6 @@ function startRestTimer(req_event) {
         completeHandled: false,
     };
     localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
-    scheduleSwNotification(state);
     syncRestTimerDisplay();
 }
 
@@ -264,7 +220,6 @@ function pauseRestTimer(req_event) {
         return;
     }
 
-    postToServiceWorker({ type: 'timer-cancel' });
     stopRestTimerTick();
 
     state.isPaused = true;
@@ -287,7 +242,6 @@ function stopRestTimer(req_event) {
         return;
     }
 
-    postToServiceWorker({ type: 'timer-cancel' });
     stopRestTimerTick();
 
     resetCardToIdle(
