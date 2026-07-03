@@ -28,9 +28,14 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-4n*ttb=fd)_5tz0c#2rl*idv73
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
+if DEBUG and '.ngrok-free.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.ngrok-free.app')
 
-CSRF_TRUSTED_ORIGINS = [origin for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+ngrok_csrf_origin = os.getenv('NGROK_CSRF_ORIGIN', '').strip()
+if DEBUG and ngrok_csrf_origin and ngrok_csrf_origin not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(ngrok_csrf_origin)
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG

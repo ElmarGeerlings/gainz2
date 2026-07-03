@@ -4,6 +4,8 @@ venv/
 env/
 staticfiles/
 .env
+node_modules/
+android/
 
 # Python
 __pycache__/

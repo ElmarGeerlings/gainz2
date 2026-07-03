@@ -1,4 +1,5 @@
 const REST_TIMER_STORAGE_KEY = 'gainz-active-rest-timer';
+const REST_TIMER_NOTIFICATION_ID = 1;
 
 let restTimerTickIntervalId = null;
 
@@ -7,6 +8,71 @@ function formatMinutes(seconds) {
     const minutes = Math.floor(total / 60);
     const secs = total % 60;
     return `${minutes}:${String(secs).padStart(2, '0')}`;
+}
+
+function isCapacitorNative() {
+    return window.Capacitor
+        && Capacitor.isNativePlatform
+        && Capacitor.isNativePlatform();
+}
+
+function getLocalNotifications() {
+    if (!isCapacitorNative()) {
+        return null;
+    }
+    if (Capacitor.Plugins && Capacitor.Plugins.LocalNotifications) {
+        return Capacitor.Plugins.LocalNotifications;
+    }
+    if (window.capacitorLocalNotifications && window.capacitorLocalNotifications.LocalNotifications) {
+        return window.capacitorLocalNotifications.LocalNotifications;
+    }
+    return null;
+}
+
+function ensureNativeNotificationPermission() {
+    const LocalNotifications = getLocalNotifications();
+    if (!LocalNotifications) {
+        return Promise.resolve();
+    }
+    return LocalNotifications.checkPermissions().then((status) => {
+        if (status.display === 'granted') {
+            return;
+        }
+        return LocalNotifications.requestPermissions();
+    });
+}
+
+function scheduleNativeRestNotification(state) {
+    const LocalNotifications = getLocalNotifications();
+    if (!LocalNotifications || !state || state.isPaused || !state.endTimestamp) {
+        return Promise.resolve();
+    }
+    const body = state.exerciseName
+        ? `${state.exerciseName} — start your next set.`
+        : 'Time to start your next set.';
+    return ensureNativeNotificationPermission().then(() => LocalNotifications.cancel({
+        notifications: [{ id: REST_TIMER_NOTIFICATION_ID }],
+    })).then(() => LocalNotifications.schedule({
+        notifications: [{
+            id: REST_TIMER_NOTIFICATION_ID,
+            title: 'Rest over',
+            body,
+            schedule: {
+                at: new Date(state.endTimestamp),
+                allowWhileIdle: true,
+            },
+        }],
+    }));
+}
+
+function cancelNativeRestNotification() {
+    const LocalNotifications = getLocalNotifications();
+    if (!LocalNotifications) {
+        return Promise.resolve();
+    }
+    return LocalNotifications.cancel({
+        notifications: [{ id: REST_TIMER_NOTIFICATION_ID }],
+    });
 }
 
 function getWorkoutTimerState() {
@@ -66,6 +132,7 @@ function finalizeExpiredTimer(state, showForegroundAlert) {
     stopRestTimerTick();
 
     if (showForegroundAlert && !document.hidden && typeof notifyUser === 'function') {
+        cancelNativeRestNotification();
         const workoutUi = document.getElementById('workout-exercise-ui');
         const sound = !workoutUi || workoutUi.dataset.notificationSoundEnabled === 'true';
         const vibrate = !workoutUi || workoutUi.dataset.notificationVibrationEnabled === 'true';
@@ -147,6 +214,7 @@ function syncRestTimerDisplay() {
         return;
     }
 
+    scheduleNativeRestNotification(state);
     startRestTimerTick();
 }
 
@@ -190,6 +258,7 @@ function startRestTimer(req_event) {
     }
 
     if (existing) {
+        cancelNativeRestNotification();
         resetCardToIdle(
             document.querySelector(`.exercise-card[data-exercise-id="${existing.exerciseId}"]`)
         );
@@ -221,6 +290,7 @@ function pauseRestTimer(req_event) {
     }
 
     stopRestTimerTick();
+    cancelNativeRestNotification();
 
     state.isPaused = true;
     state.pausedRemaining = remaining;
@@ -243,6 +313,7 @@ function stopRestTimer(req_event) {
     }
 
     stopRestTimerTick();
+    cancelNativeRestNotification();
 
     resetCardToIdle(
         document.querySelector(`.exercise-card[data-exercise-id="${state.exerciseId}"]`)
