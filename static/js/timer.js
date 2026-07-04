@@ -1,7 +1,13 @@
 const REST_TIMER_STORAGE_KEY = 'gainz-active-rest-timer';
+const REST_TIMER_CHANNEL_STORAGE_KEY = 'gainz-rest-timer-channel-id';
+const REST_TIMER_DEEPLINK_WORKOUT_KEY = 'gainz-rest-deeplink-workout';
+const REST_TIMER_DEEPLINK_EXERCISE_KEY = 'gainz-rest-deeplink-exercise';
 const REST_TIMER_NOTIFICATION_ID = 1;
+const REST_TIMER_ACTION_TYPE = 'REST_TIMER';
 
 let restTimerTickIntervalId = null;
+let restTimerActiveChannelId = null;
+let restTimerNativeListenersInitialized = false;
 
 function formatMinutes(seconds) {
     const total = Math.max(0, Math.floor(Number(seconds)));
@@ -10,14 +16,8 @@ function formatMinutes(seconds) {
     return `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
-function isCapacitorNative() {
-    return window.Capacitor
-        && Capacitor.isNativePlatform
-        && Capacitor.isNativePlatform();
-}
-
 function getLocalNotifications() {
-    if (!isCapacitorNative()) {
+    if (!window.Capacitor || !Capacitor.isNativePlatform || !Capacitor.isNativePlatform()) {
         return null;
     }
     if (Capacitor.Plugins && Capacitor.Plugins.LocalNotifications) {
@@ -42,6 +42,36 @@ function ensureNativeNotificationPermission() {
     });
 }
 
+function ensureRestTimerNotificationChannel() {
+    const LocalNotifications = getLocalNotifications();
+    if (!LocalNotifications) {
+        return Promise.resolve(null);
+    }
+    const workoutUi = document.getElementById('workout-exercise-ui');
+    const sound = !workoutUi || workoutUi.dataset.notificationSoundEnabled === 'true';
+    const vibrate = !workoutUi || workoutUi.dataset.notificationVibrationEnabled === 'true';
+    const channelId = `gainz-rest-s${sound ? 1 : 0}-v${vibrate ? 1 : 0}`;
+    const storedId = restTimerActiveChannelId
+        || localStorage.getItem(REST_TIMER_CHANNEL_STORAGE_KEY);
+    let deletePromise = Promise.resolve();
+    if (storedId && storedId !== channelId) {
+        deletePromise = LocalNotifications.deleteChannel({ id: storedId });
+    }
+    const channelConfig = {
+        id: channelId,
+        name: 'Rest timer',
+        description: 'Alerts when your rest timer finishes',
+        importance: 4,
+        visibility: 1,
+        vibration: vibrate,
+    };
+    return deletePromise.then(() => LocalNotifications.createChannel(channelConfig)).then(() => {
+        restTimerActiveChannelId = channelId;
+        localStorage.setItem(REST_TIMER_CHANNEL_STORAGE_KEY, channelId);
+        return channelId;
+    });
+}
+
 function scheduleNativeRestNotification(state) {
     const LocalNotifications = getLocalNotifications();
     if (!LocalNotifications || !state || state.isPaused || !state.endTimestamp) {
@@ -50,19 +80,46 @@ function scheduleNativeRestNotification(state) {
     const body = state.exerciseName
         ? `${state.exerciseName} — start your next set.`
         : 'Time to start your next set.';
-    return ensureNativeNotificationPermission().then(() => LocalNotifications.cancel({
-        notifications: [{ id: REST_TIMER_NOTIFICATION_ID }],
-    })).then(() => LocalNotifications.schedule({
-        notifications: [{
-            id: REST_TIMER_NOTIFICATION_ID,
-            title: 'Rest over',
-            body,
-            schedule: {
-                at: new Date(state.endTimestamp),
-                allowWhileIdle: true,
-            },
-        }],
-    }));
+    return ensureNativeNotificationPermission()
+        .then(() => ensureRestTimerNotificationChannel())
+        .then((channelId) => LocalNotifications.cancel({
+            notifications: [{ id: REST_TIMER_NOTIFICATION_ID }],
+        }).then(() => channelId))
+        .then((channelId) => LocalNotifications.schedule({
+            notifications: [{
+                id: REST_TIMER_NOTIFICATION_ID,
+                title: 'Rest over',
+                body,
+                channelId,
+                autoCancel: true,
+                actionTypeId: REST_TIMER_ACTION_TYPE,
+                extra: {
+                    workoutId: state.workoutId,
+                    exerciseId: state.exerciseId,
+                    exerciseName: state.exerciseName,
+                    durationSeconds: state.durationSeconds,
+                },
+                schedule: {
+                    at: new Date(state.endTimestamp),
+                    allowWhileIdle: true,
+                },
+            }],
+        }));
+}
+
+function syncNativeRestNotification(state) {
+    if (!state || state.isPaused || !state.endTimestamp) {
+        return cancelNativeRestNotification();
+    }
+    const workoutUi = document.getElementById('workout-exercise-ui');
+    const onThisWorkoutVisible = workoutUi
+        && workoutUi.dataset.workoutId
+        && String(workoutUi.dataset.workoutId) === String(state.workoutId)
+        && !document.hidden;
+    if (onThisWorkoutVisible) {
+        return cancelNativeRestNotification();
+    }
+    return scheduleNativeRestNotification(state);
 }
 
 function cancelNativeRestNotification() {
@@ -147,6 +204,11 @@ function finalizeExpiredTimer(state, showForegroundAlert) {
     resetCardToIdle(
         document.querySelector(`.exercise-card[data-exercise-id="${state.exerciseId}"]`)
     );
+    const workoutUi = document.getElementById('workout-exercise-ui');
+    if (workoutUi && String(workoutUi.dataset.workoutId) === String(state.workoutId)) {
+        sessionStorage.setItem(REST_TIMER_DEEPLINK_WORKOUT_KEY, String(state.workoutId));
+        sessionStorage.setItem(REST_TIMER_DEEPLINK_EXERCISE_KEY, String(state.exerciseId));
+    }
     localStorage.removeItem(REST_TIMER_STORAGE_KEY);
 }
 
@@ -167,12 +229,6 @@ function restTimerTick() {
     }
 }
 
-function startRestTimerTick() {
-    stopRestTimerTick();
-    restTimerTick();
-    restTimerTickIntervalId = setInterval(restTimerTick, 1000);
-}
-
 function syncRestTimerDisplay() {
     const workoutUi = document.getElementById('workout-exercise-ui');
     if (!workoutUi || !workoutUi.dataset.workoutId) {
@@ -187,6 +243,16 @@ function syncRestTimerDisplay() {
             resetCardToIdle(card);
         });
         return;
+    }
+
+    if (typeof setWorkoutCardIndex === 'function') {
+        const cards = document.querySelectorAll('.exercise-card[data-exercise-id]');
+        const cardIndex = Array.from(cards).findIndex(
+            (card) => card.dataset.exerciseId === String(state.exerciseId)
+        );
+        if (cardIndex >= 0) {
+            setWorkoutCardIndex(cardIndex);
+        }
     }
 
     document.querySelectorAll('.exercise-card[data-exercise-id]').forEach((card) => {
@@ -214,8 +280,10 @@ function syncRestTimerDisplay() {
         return;
     }
 
-    scheduleNativeRestNotification(state);
-    startRestTimerTick();
+    syncNativeRestNotification(state);
+    stopRestTimerTick();
+    restTimerTick();
+    restTimerTickIntervalId = setInterval(restTimerTick, 1000);
 }
 
 function startRestTimer(req_event) {
@@ -321,25 +389,120 @@ function stopRestTimer(req_event) {
     localStorage.removeItem(REST_TIMER_STORAGE_KEY);
 }
 
+function initNativeRestNotificationListeners() {
+    const LocalNotifications = getLocalNotifications();
+    if (!LocalNotifications || restTimerNativeListenersInitialized) {
+        return;
+    }
+    restTimerNativeListenersInitialized = true;
+    LocalNotifications.registerActionTypes({
+        types: [{
+            id: REST_TIMER_ACTION_TYPE,
+            actions: [{ id: 'rest-again', title: 'Rest again' }],
+        }],
+    });
+    LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+        const notification = action.notification;
+        if (!notification || notification.id !== REST_TIMER_NOTIFICATION_ID) {
+            return;
+        }
+        const extra = notification.extra;
+        if (action.actionId === 'rest-again') {
+            if (!extra || !extra.workoutId || !extra.exerciseId || !extra.durationSeconds) {
+                return;
+            }
+            const durationSeconds = Number(extra.durationSeconds) || 0;
+            if (durationSeconds <= 0) {
+                return;
+            }
+            const state = {
+                workoutId: String(extra.workoutId),
+                exerciseId: String(extra.exerciseId),
+                exerciseName: extra.exerciseName || '',
+                durationSeconds,
+                endTimestamp: Date.now() + durationSeconds * 1000,
+                isPaused: false,
+                pausedRemaining: 0,
+                completeHandled: false,
+            };
+            localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
+            scheduleNativeRestNotification(state);
+            const App = (Capacitor.Plugins && Capacitor.Plugins.App)
+                || (window.capacitorApp && window.capacitorApp.App);
+            if (App && App.minimizeApp) {
+                App.minimizeApp();
+            }
+            return;
+        }
+        if (action.actionId === 'tap' && extra && extra.workoutId && extra.exerciseId) {
+            const workoutId = String(extra.workoutId);
+            const exerciseId = String(extra.exerciseId);
+            sessionStorage.setItem(REST_TIMER_DEEPLINK_WORKOUT_KEY, workoutId);
+            sessionStorage.setItem(REST_TIMER_DEEPLINK_EXERCISE_KEY, exerciseId);
+            const targetUrl = `/workouts/${workoutId}/?exercise=${exerciseId}`;
+            const workoutUi = document.getElementById('workout-exercise-ui');
+            if (workoutUi && String(workoutUi.dataset.workoutId) === workoutId) {
+                history.replaceState(null, '', targetUrl);
+                if (typeof setWorkoutCardIndex === 'function') {
+                    const cards = document.querySelectorAll('.exercise-card[data-exercise-id]');
+                    const index = Array.from(cards).findIndex(
+                        (card) => card.dataset.exerciseId === exerciseId
+                    );
+                    if (index >= 0) {
+                        setWorkoutCardIndex(index);
+                    }
+                }
+                return;
+            }
+            window.location.href = targetUrl;
+        }
+    });
+}
+
 function initRestTimer() {
     const workoutUi = document.getElementById('workout-exercise-ui');
     if (!workoutUi || !workoutUi.dataset.workoutId) {
         return;
     }
 
-    syncRestTimerDisplay();
+    ensureRestTimerNotificationChannel();
 
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            syncRestTimerDisplay();
-        }
+        syncRestTimerDisplay();
     });
 
     window.addEventListener('pageshow', () => {
         syncRestTimerDisplay();
     });
+
+    window.addEventListener('pagehide', () => {
+        const raw = localStorage.getItem(REST_TIMER_STORAGE_KEY);
+        const storedState = raw ? JSON.parse(raw) : null;
+        if (!storedState || storedState.isPaused || !storedState.endTimestamp) {
+            return;
+        }
+        if (String(storedState.workoutId) !== String(workoutUi.dataset.workoutId)) {
+            return;
+        }
+        scheduleNativeRestNotification(storedState);
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const workoutUi = document.getElementById('workout-exercise-ui');
+    const exerciseParam = new URLSearchParams(window.location.search).get('exercise');
+    if (exerciseParam && workoutUi && workoutUi.dataset.workoutId) {
+        sessionStorage.setItem(REST_TIMER_DEEPLINK_WORKOUT_KEY, workoutUi.dataset.workoutId);
+        sessionStorage.setItem(REST_TIMER_DEEPLINK_EXERCISE_KEY, exerciseParam);
+    }
+    initNativeRestNotificationListeners();
     initRestTimer();
+    const raw = localStorage.getItem(REST_TIMER_STORAGE_KEY);
+    const storedState = raw ? JSON.parse(raw) : null;
+    if (storedState && !storedState.isPaused && storedState.endTimestamp) {
+        const workoutUi = document.getElementById('workout-exercise-ui');
+        if (!workoutUi || !workoutUi.dataset.workoutId) {
+            syncNativeRestNotification(storedState);
+        }
+    }
 });

@@ -97,7 +97,56 @@ function initWorkoutCardsPage(activeIndex) {
 
     workoutCards = Array.from(container.querySelectorAll(".exercise-card"));
     workoutIndicators = Array.from(document.querySelectorAll(".carousel-indicator"));
-    if (activeIndex != null) {
+    const exerciseParam = new URLSearchParams(window.location.search).get("exercise");
+    let targetExerciseIndex = null;
+    if (exerciseParam) {
+        targetExerciseIndex = workoutCards.findIndex(
+            (card) => card.dataset.exerciseId === String(exerciseParam)
+        );
+        if (targetExerciseIndex < 0) {
+            targetExerciseIndex = null;
+        }
+    }
+    if (targetExerciseIndex == null) {
+        const exerciseUi = document.getElementById("workout-exercise-ui");
+        const storedWorkout = sessionStorage.getItem("gainz-rest-deeplink-workout");
+        const storedExercise = sessionStorage.getItem("gainz-rest-deeplink-exercise");
+        if (
+            storedExercise
+            && exerciseUi
+            && storedWorkout === exerciseUi.dataset.workoutId
+        ) {
+            targetExerciseIndex = workoutCards.findIndex(
+                (card) => card.dataset.exerciseId === String(storedExercise)
+            );
+            if (targetExerciseIndex < 0) {
+                targetExerciseIndex = null;
+            }
+        }
+    }
+    if (targetExerciseIndex == null) {
+        const exerciseUi = document.getElementById("workout-exercise-ui");
+        const timerRaw = localStorage.getItem("gainz-active-rest-timer");
+        const timerState = timerRaw ? JSON.parse(timerRaw) : null;
+        if (
+            timerState
+            && exerciseUi
+            && String(timerState.workoutId) === String(exerciseUi.dataset.workoutId)
+            && timerState.exerciseId
+        ) {
+            targetExerciseIndex = workoutCards.findIndex(
+                (card) => card.dataset.exerciseId === String(timerState.exerciseId)
+            );
+            if (targetExerciseIndex < 0) {
+                targetExerciseIndex = null;
+            }
+        }
+    }
+    if (targetExerciseIndex != null) {
+        workoutCurrentCardIndex = targetExerciseIndex;
+        sessionStorage.removeItem("gainz-rest-deeplink-workout");
+        sessionStorage.removeItem("gainz-rest-deeplink-exercise");
+    } else if (activeIndex != null) {
         workoutCurrentCardIndex = activeIndex;
     } else if (!workoutCards.length) {
         workoutCurrentCardIndex = 0;

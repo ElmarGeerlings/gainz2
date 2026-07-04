@@ -20,6 +20,10 @@
     {% endif %}
     {% block content %}{% endblock %}
     <div class="toast-container" aria-live="polite"></div>
+    <script src="{% static 'js/vendor/capacitor.js' %}"></script>
+    <script src="{% static 'js/vendor/capacitor-app.js' %}"></script>
+    <script src="{% static 'js/vendor/capacitor-local-notifications.js' %}"></script>
+    <script defer src="{% static 'js/timer.js' %}"></script>
     <script defer src="{% static 'js/app.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>

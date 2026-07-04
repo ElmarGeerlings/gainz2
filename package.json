@@ -9,7 +9,7 @@
   "scripts": {
     "cap:sync": "cap sync android",
     "cap:open": "cap open android",
-    "cap:vendor": "copy node_modules\\@capacitor\\core\\dist\\capacitor.js static\\js\\vendor\\capacitor.js && copy node_modules\\@capacitor\\local-notifications\\dist\\plugin.js static\\js\\vendor\\capacitor-local-notifications.js"
+    "cap:vendor": "copy node_modules\\@capacitor\\core\\dist\\capacitor.js static\\js\\vendor\\capacitor.js && copy node_modules\\@capacitor\\local-notifications\\dist\\plugin.js static\\js\\vendor\\capacitor-local-notifications.js && copy node_modules\\@capacitor\\app\\dist\\plugin.js static\\js\\vendor\\capacitor-app.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
   "homepage": "https://github.com/ElmarGeerlings/gainz22#readme",
   "dependencies": {
     "@capacitor/android": "^8.4.1",
+    "@capacitor/app": "^8.1.0",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/local-notifications": "^8.2.0"
