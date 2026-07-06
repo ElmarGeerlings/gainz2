@@ -125,12 +125,16 @@
             <span class="text-sm">row-between</span>
             <span class="text-sm text-muted">right</span>
         </div>
+        <div class="row-center gap-sm mt-3">
+            <span class="text-sm">row-center</span>
+            <span class="exercise-type-badge exercise-type-badge--primary" aria-label="Primary">1</span>
+        </div>
         <div class="grid-3 mt-3">
             <div class="panel p-2 text-center text-sm">grid-3</div>
             <div class="panel p-2 text-center text-sm">2</div>
             <div class="panel p-2 text-center text-sm">3</div>
         </div>
-        <p class="text-sm text-muted mt-3 m-0">Spacing utilities: mt-1 … mt-5, mb-1 … mb-4, p-2 … p-4, gap-sm, gap-md</p>
+        <p class="text-sm text-muted mt-3 m-0">Stacks: stack-xs, stack-sm, stack-md, stack-lg · Spacing: mt-1 … mt-5, mb-1 … mb-4, p-2 … p-4, gap-sm, gap-md</p>
     </section>
     <section class="styleguide-section panel stack-md" id="site-nav">
         <h2 class="styleguide-h2">Site nav</h2>
@@ -173,6 +177,65 @@
   &lt;label for="id"&gt;Label&lt;/label&gt;
   &lt;input id="id" class="form-control"&gt;
 &lt;/div&gt;</pre>
+    </section>
+    <section class="styleguide-section panel stack-md" id="exercise-type-badge">
+        <h2 class="styleguide-h2">Exercise type badge</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Labels primary / secondary / accessory exercises. In app templates use <code>{% templatetag openblock %} include "components/exercise_type_badge.html" with exercise_type=… {% templatetag closeblock %}</code>.</p>
+        <div class="row-center gap-md mt-3">
+            <span class="row-center gap-sm text-sm">{% include "components/exercise_type_badge.html" with exercise_type="primary" %} Primary</span>
+            <span class="row-center gap-sm text-sm">{% include "components/exercise_type_badge.html" with exercise_type="secondary" %} Secondary</span>
+            <span class="row-center gap-sm text-sm">{% include "components/exercise_type_badge.html" with exercise_type="accessory" %} Accessory</span>
+        </div>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;span class="exercise-type-badge exercise-type-badge--primary" aria-label="Primary"&gt;1&lt;/span&gt;</pre>
+    </section>
+    <section class="styleguide-section panel stack-md" id="dropdown">
+        <h2 class="styleguide-h2">Dropdown</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Custom select menus; toggle via <code>toggleGainzDropdown</code> in the app.</p>
+        <div class="styleguide-demo mt-3">
+            <div class="gainz-dropdown gainz-dropdown-full">
+                <button type="button" class="form-control row-between w-100" aria-haspopup="listbox" aria-label="Exercise type">
+                    <span>Default</span>
+                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="gainz-dropdown-menu" role="listbox">
+                    <button type="button" class="gainz-dropdown-item">Default</button>
+                    <button type="button" class="gainz-dropdown-item row-center gap-sm">{% include "components/exercise_type_badge.html" with exercise_type="primary" %} Primary</button>
+                    <button type="button" class="gainz-dropdown-item row-center gap-sm">{% include "components/exercise_type_badge.html" with exercise_type="secondary" %} Secondary</button>
+                    <div class="gainz-dropdown-divider"></div>
+                    <p class="gainz-dropdown-empty">No options</p>
+                </div>
+            </div>
+        </div>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;div class="gainz-dropdown gainz-dropdown-full"&gt;
+  &lt;button type="button" class="form-control row-between w-100"&gt;…&lt;/button&gt;
+  &lt;div class="gainz-dropdown-menu" hidden role="listbox"&gt;
+    &lt;button type="button" class="gainz-dropdown-item"&gt;…&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+    </section>
+    <section class="styleguide-section panel stack-md" id="toggle">
+        <h2 class="styleguide-h2">Toggle switch</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Boolean settings (e.g. program carryover). Wrap checkbox in <code>gainz-toggle-switch</code>.</p>
+        <div class="stack-sm mt-3">
+            <div class="row-between gap-sm">
+                <span class="text-sm">Off</span>
+                <label class="gainz-toggle-switch">
+                    <input type="checkbox" class="gainz-toggle-input" disabled>
+                    <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                </label>
+            </div>
+            <div class="row-between gap-sm">
+                <span class="text-sm">On</span>
+                <label class="gainz-toggle-switch">
+                    <input type="checkbox" class="gainz-toggle-input" checked disabled>
+                    <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                </label>
+            </div>
+        </div>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;label class="gainz-toggle-switch"&gt;
+  &lt;input type="checkbox" class="gainz-toggle-input"&gt;
+  &lt;span class="gainz-toggle-slider" aria-hidden="true"&gt;&lt;/span&gt;
+&lt;/label&gt;</pre>
     </section>
     <section class="styleguide-section stack-md" id="tables">
         <h2 class="styleguide-h2">Tables</h2>
@@ -235,30 +298,37 @@
     </section>
     <section class="styleguide-section panel stack-md" id="value-picker">
         <h2 class="styleguide-h2">Set modal fields + value picker</h2>
-        <p class="styleguide-use text-sm text-muted m-0">Scroll-wheel pickers in set/progression modals; pair with set-modal-actions for confirm row.</p>
-        <div class="set-modal-fields-row mt-3">
-            <div class="value-picker" aria-label="Weight">
-                <div class="value-picker-window">
-                    <ul class="value-picker-list">
-                        <li class="value-picker-item is-near">47.5 kg</li>
-                        <li class="value-picker-item is-center">50 kg</li>
-                        <li class="value-picker-item is-near">52.5 kg</li>
-                    </ul>
+        <p class="styleguide-use text-sm text-muted m-0">Scroll-wheel pickers in set/progression modals; pair with set-modal-actions for confirm row. In the app, <code>set-modal-fields-row</code> lives inside <code>gainz-modal-content</code>.</p>
+        <div class="styleguide-demo mt-3">
+            <div class="gainz-modal" role="dialog" aria-modal="true" aria-labelledby="sg-picker-modal-title">
+                <div class="gainz-modal-content">
+                    <h3 id="sg-picker-modal-title" class="title-md">Set values</h3>
+                    <div class="set-modal-fields-row mt-3">
+                        <div class="value-picker" aria-label="Weight">
+                            <div class="value-picker-window">
+                                <ul class="value-picker-list">
+                                    <li class="value-picker-item is-near">47.5 kg</li>
+                                    <li class="value-picker-item is-center">50 kg</li>
+                                    <li class="value-picker-item is-near">52.5 kg</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <span class="set-modal-times" aria-hidden="true">X</span>
+                        <div class="value-picker" aria-label="Reps">
+                            <div class="value-picker-window">
+                                <ul class="value-picker-list">
+                                    <li class="value-picker-item is-near">9</li>
+                                    <li class="value-picker-item is-center">10</li>
+                                    <li class="value-picker-item is-near">11</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="set-modal-actions mt-4">
+                        <button type="button" class="btn btn-primary">Confirm</button>
+                    </div>
                 </div>
             </div>
-            <span class="set-modal-times" aria-hidden="true">X</span>
-            <div class="value-picker" aria-label="Reps">
-                <div class="value-picker-window">
-                    <ul class="value-picker-list">
-                        <li class="value-picker-item is-near">9</li>
-                        <li class="value-picker-item is-center">10</li>
-                        <li class="value-picker-item is-near">11</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="set-modal-actions mt-4">
-            <button type="button" class="btn btn-primary">Confirm</button>
         </div>
         <pre class="styleguide-code text-xs mt-3 m-0">&lt;div class="set-modal-fields-row"&gt;
   &lt;div class="value-picker"&gt;…&lt;/div&gt;
@@ -287,6 +357,11 @@
                 <p class="gainz-toast-message">Error message.</p>
             </div>
         </div>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;div class="gainz-toast gainz-toast-success" role="status"&gt;
+  &lt;button type="button" class="gainz-toast-close" aria-label="Dismiss"&gt;&times;&lt;/button&gt;
+  &lt;p class="gainz-toast-message"&gt;Message.&lt;/p&gt;
+  &lt;div class="gainz-toast-actions"&gt;…&lt;/div&gt;
+&lt;/div&gt;</pre>
     </section>
 </main>
 {% endblock %}

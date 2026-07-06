@@ -14,7 +14,7 @@ Every page should load `base.css` (via `base.html`). Area CSS is optional.
 - **URL:** `/design/` (requires login).
 - **Purpose:** The **only** visual reference needed to design a new feature (lists, auth, programs, etc.). Shows core tokens and components from `base.css`.
 - **Rule:** Compose new UI from what appears on the styleguide. If a core class or token is missing, add it to `base.css` and the styleguide first.
-- **Not on the styleguide:** Page-specific UI (workout set table columns, carousel, feedback toggles, modals with pickers, etc.). Those live in scoped area CSS and feature templates.
+- **Not on the styleguide:** Page-specific UI (workout set table columns, carousel, feedback toggles, inline-edit, etc.). Those live in scoped area CSS and feature templates.
 - **`styleguide.css`** is layout-only for the styleguide page; not part of the reusable system.
 
 ## Area CSS (scoped overrides)
@@ -102,6 +102,46 @@ Markup below is the contract; see `/design/` for live examples.
 - **Use when:** Focused overlay content; visibility toggled in JS.
 - **Classes:** `gainz-modal`, `gainz-modal-content`, `gainz-modal-close`
 
+### Set modal + value picker
+
+- **Use when:** Set edit/add modals and progression step modals with scroll-wheel weight/reps pickers.
+- **Classes:** `set-modal-fields-row`, `set-modal-times`, `set-modal-actions`, `value-picker`, `value-picker-window`, `value-picker-list`, `value-picker-item`, `is-center` / `is-near` on items.
+
+```html
+<div class="set-modal-fields-row">
+  <div class="value-picker" data-picker="weight">…</div>
+  <span class="set-modal-times">X</span>
+  <div class="value-picker" data-picker="reps">…</div>
+</div>
+<div class="set-modal-actions">
+  <button type="button" class="btn btn-primary">Confirm</button>
+</div>
+```
+
+### Exercise type badge
+
+- **Use when:** Showing primary / secondary / accessory on exercises.
+- **Classes:** `exercise-type-badge`, `exercise-type-badge--primary` | `--secondary` | `--accessory`
+- **Partial:** `{% include "components/exercise_type_badge.html" with exercise_type=… %}`
+
+### Dropdown
+
+- **Use when:** Custom select menus (exercise type, start routine).
+- **Classes:** `gainz-dropdown`, `gainz-dropdown-full`, `gainz-dropdown-menu`, `gainz-dropdown-item`, `gainz-dropdown-divider`, `gainz-dropdown-empty`
+- **JS:** `toggleGainzDropdown` on trigger button.
+
+### Toggle switch
+
+- **Use when:** Boolean settings (program carryover, etc.).
+- **Classes:** `gainz-toggle-switch`, `gainz-toggle-input`, `gainz-toggle-slider`
+
+```html
+<label class="gainz-toggle-switch">
+  <input type="checkbox" class="gainz-toggle-input">
+  <span class="gainz-toggle-slider" aria-hidden="true"></span>
+</label>
+```
+
 ### Toast
 
 - **Use when:** Success, warning, or danger feedback.
@@ -117,7 +157,7 @@ Markup below is the contract; see `/design/` for live examples.
 
 1. **Global** — resets, `html`/`body`, links, box-sizing.
 2. **Tokens** — CSS variables in `:root`.
-3. **Reusable components** — buttons, panels, tables, form controls, modals, toasts.
+3. **Reusable components** — buttons, panels, tables, form controls, modals, toasts, exercise type badges, dropdowns, toggle switches, set-modal fields and value pickers.
 4. **Generic utilities** used on **multiple** screens — e.g. `mb-3`, `text-muted`, `fw-700`.
 
 ## What belongs in area CSS (`workouts.css`, etc.)

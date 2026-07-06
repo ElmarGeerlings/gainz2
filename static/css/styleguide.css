@@ -82,6 +82,14 @@
     margin: 0;
 }
 
+.styleguide-demo .gainz-dropdown-menu {
+    position: relative;
+    top: auto;
+    left: auto;
+    display: block;
+    box-shadow: var(--shadow-sm);
+}
+
 .styleguide-toast-stack {
     display: flex;
     flex-direction: column;
