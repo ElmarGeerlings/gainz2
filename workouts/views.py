@@ -3,6 +3,7 @@ from django.shortcuts import redirect, render
 from exercises.models import Exercise
 from workouts.models import WorkoutExercise
 from workouts.services import (
+    attach_prior_set_trends,
     attach_rest_times,
     get_workout,
     list_add_exercise_options,
@@ -31,6 +32,8 @@ def new_workout_page(req_event):
 def workout_detail_page(req_event, workout_id):
     user_settings = req_event.user.settings
     workout = attach_rest_times(get_workout(workout_id), user_settings)
+    for workout_exercise in workout.exercises.all():
+        attach_prior_set_trends(req_event.user, workout_exercise)
     response = {
         "workout": workout,
         "add_exercise_options": list_add_exercise_options(),

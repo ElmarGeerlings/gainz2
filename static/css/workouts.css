@@ -14,8 +14,12 @@
 #workout-exercise-ui .exercise-overview-progress {
     height: 6px;
     border-radius: 999px;
-    background: #e2e6ef;
+    background: var(--border-subtle);
     overflow: hidden;
+}
+
+.rest-timer-controls .btn {
+    min-width: 3rem;
 }
 
 #workout-exercise-ui .exercise-overview-progress-fill {
@@ -47,7 +51,7 @@
 }
 
 #workout-exercise-ui .sortable-chosen {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-sm);
 }
 
 #workout-exercise-ui .exercise-overview-row.overview-row-armed:not(.sortable-ghost):not(.sortable-drag) {
@@ -61,7 +65,7 @@
     height: 8px;
     border-radius: 999px;
     border: 0;
-    background: #c8cedd;
+    background: var(--indicator-inactive);
     padding: 0;
 }
 
@@ -69,7 +73,6 @@
     width: 18px;
     background: var(--primary);
 }
-
 
 /* ── Set row states ──────────────────────────── */
 
@@ -92,21 +95,20 @@
 .feedback-btn-increase.feedback-selected {
     background: var(--success);
     border-color: var(--success);
-    color: #fff;
+    color: var(--surface);
 }
 
 .feedback-btn-stay.feedback-selected {
     background: var(--warning);
     border-color: var(--warning);
-    color: #fff;
+    color: var(--surface);
 }
 
 .feedback-btn-decrease.feedback-selected {
     background: var(--danger);
     border-color: var(--danger);
-    color: #fff;
+    color: var(--surface);
 }
-
 
 .inline-edit-display {
     cursor: pointer;
@@ -117,7 +119,6 @@
     min-height: 3.5rem;
     resize: vertical;
 }
-
 
 /* ── Sets table (workout-sets-table) ────────── */
 
@@ -166,81 +167,29 @@
     padding-right: 0;
 }
 
-/* ── Set modal ───────────────────────────────── */
-
-.set-modal-fields-row {
-    display: flex;
+.workout-sets-table .table-cell-trigger.set-trend-up::after,
+.workout-sets-table .table-cell-trigger.set-trend-down::after {
+    display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-}
-
-.set-modal-fields-row .form-control {
-    flex: 1;
-    min-width: 0;
-}
-
-.set-modal-times {
-    flex-shrink: 0;
-    font-weight: 600;
+    justify-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-left: 0.35rem;
+    border-radius: 50%;
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 0.625rem;
     line-height: 1;
-    color: var(--muted);
+    color: var(--surface);
+    vertical-align: middle;
 }
 
-.set-modal-actions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-4);
+.workout-sets-table .table-cell-trigger.set-trend-up::after {
+    content: "\f062";
+    background: var(--success);
 }
 
-/* ── Value picker ────────────────────────────── */
-
-.value-picker {
-    flex: 1;
-    min-width: 0;
-    position: relative;
-}
-
-.value-picker-window {
-    height: 132px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    position: relative;
-    border-radius: var(--radius-md, 8px);
-    background: var(--surface-soft);
-    mask-image: linear-gradient(
-        to bottom,
-        transparent 0%,
-        #000 18%,
-        #000 82%,
-        transparent 100%
-    );
-}
-
-.value-picker-list {
-    list-style: none;
-    margin: 0;
-    padding: 44px 0;
-    scroll-snap-type: y mandatory;
-}
-
-.value-picker-item {
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    scroll-snap-align: center;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text, #111);
-}
-
-.value-picker-item.is-near {
-    opacity: 0.45;
-}
-
-.value-picker-item.is-center {
-    opacity: 1;
-    font-weight: 700;
+.workout-sets-table .table-cell-trigger.set-trend-down::after {
+    content: "\f063";
+    background: var(--danger);
 }

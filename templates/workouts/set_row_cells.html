@@ -1,9 +1,9 @@
 {% load formatting %}
 <td>
-    <button type="button" class="table-cell-trigger" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="{{ endpoint_ns }}/set_edit_modal_form" data-set-id="{{ set.pk }}">{{ set.weight|weight_display }}</button>
+    <button type="button" class="table-cell-trigger{% if not is_routine and set.weight_trend %} set-trend-{{ set.weight_trend }}{% endif %}" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="{{ endpoint_ns }}/set_edit_modal_form" data-set-id="{{ set.pk }}">{{ set.weight|weight_display }}</button>
 </td>
 <td>
-    <button type="button" class="table-cell-trigger" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="{{ endpoint_ns }}/set_edit_modal_form" data-set-id="{{ set.pk }}">{{ set.reps }}</button>
+    <button type="button" class="table-cell-trigger{% if not is_routine and set.reps_trend %} set-trend-{{ set.reps_trend }}{% endif %}" data-function="click->openSetModal" data-modal-name="set-modal" data-routing="{{ endpoint_ns }}/set_edit_modal_form" data-set-id="{{ set.pk }}">{{ set.reps }}</button>
 </td>
 {% if not is_routine %}
 <td class="text-center">

@@ -726,9 +726,13 @@ function setWorkoutExerciseFeedback(req_event) {
 function toggleSetDone(req_event) {
     const trigger = req_event.currentTarget;
     sendWsRequest("workouts/toggle_set_done", trigger).then((response) => {
-        if (response.json_content?.target && response.json_content?.html) {
-            document.querySelector(response.json_content.target).innerHTML =
-                response.json_content.html;
+        const isCompleted = response.json_content?.is_completed;
+        if (isCompleted === true) {
+            trigger.classList.remove("btn-outline");
+            trigger.classList.add("btn-success", "text-white");
+        } else if (isCompleted === false) {
+            trigger.classList.remove("btn-success", "text-white");
+            trigger.classList.add("btn-outline");
         }
         if (response.json_content?.active_exercise_index != null) {
             setWorkoutCardIndex(Number(response.json_content.active_exercise_index));
@@ -753,6 +757,10 @@ function removeExercise(req_event) {
         if (response.json_content?.active_exercise_index != null) {
             setWorkoutCardIndex(Number(response.json_content.active_exercise_index));
         }
+        if (exerciseViewMode === "overview") {
+            initOverviewSortable();
+            initOverviewRowTap();
+        }
     });
 }
 
@@ -774,6 +782,10 @@ function addExercise(req_event) {
         initWorkoutCardsPage();
         if (response.json_content?.new_exercise_index != null) {
             setWorkoutCardIndex(Number(response.json_content.new_exercise_index));
+        }
+        if (exerciseViewMode === "overview") {
+            initOverviewSortable();
+            initOverviewRowTap();
         }
     });
 }

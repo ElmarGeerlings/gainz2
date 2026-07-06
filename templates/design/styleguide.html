@@ -53,6 +53,14 @@
                 <div class="token-swatch-label">--border</div>
             </div>
             <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--border-subtle);"></div>
+                <div class="token-swatch-label">--border-subtle</div>
+            </div>
+            <div class="token-swatch">
+                <div class="token-swatch-color" style="background: var(--indicator-inactive);"></div>
+                <div class="token-swatch-label">--indicator-inactive</div>
+            </div>
+            <div class="token-swatch">
                 <div class="token-swatch-color" style="background: var(--primary);"></div>
                 <div class="token-swatch-label">--primary</div>
             </div>
@@ -81,7 +89,7 @@
                 <div class="token-swatch-label">--toast-danger-*</div>
             </div>
         </div>
-        <p class="text-sm text-muted mt-3 m-0">Spacing: --space-1 … --space-6 · Radius: --radius · Shadow: --shadow</p>
+        <p class="text-sm text-muted mt-3 m-0">Spacing: --space-1 … --space-6 · Radius: --radius, --radius-md · Shadow: --shadow, --shadow-sm</p>
     </section>
     <section class="styleguide-section panel stack-md" id="panel">
         <h2 class="styleguide-h2">Panel</h2>
@@ -224,6 +232,40 @@
         <pre class="styleguide-code text-xs mt-3 m-0">&lt;div class="gainz-modal"&gt;
   &lt;div class="gainz-modal-content"&gt;…&lt;/div&gt;
 &lt;/div&gt;</pre>
+    </section>
+    <section class="styleguide-section panel stack-md" id="value-picker">
+        <h2 class="styleguide-h2">Set modal fields + value picker</h2>
+        <p class="styleguide-use text-sm text-muted m-0">Scroll-wheel pickers in set/progression modals; pair with set-modal-actions for confirm row.</p>
+        <div class="set-modal-fields-row mt-3">
+            <div class="value-picker" aria-label="Weight">
+                <div class="value-picker-window">
+                    <ul class="value-picker-list">
+                        <li class="value-picker-item is-near">47.5 kg</li>
+                        <li class="value-picker-item is-center">50 kg</li>
+                        <li class="value-picker-item is-near">52.5 kg</li>
+                    </ul>
+                </div>
+            </div>
+            <span class="set-modal-times" aria-hidden="true">X</span>
+            <div class="value-picker" aria-label="Reps">
+                <div class="value-picker-window">
+                    <ul class="value-picker-list">
+                        <li class="value-picker-item is-near">9</li>
+                        <li class="value-picker-item is-center">10</li>
+                        <li class="value-picker-item is-near">11</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="set-modal-actions mt-4">
+            <button type="button" class="btn btn-primary">Confirm</button>
+        </div>
+        <pre class="styleguide-code text-xs mt-3 m-0">&lt;div class="set-modal-fields-row"&gt;
+  &lt;div class="value-picker"&gt;…&lt;/div&gt;
+  &lt;span class="set-modal-times"&gt;X&lt;/span&gt;
+  &lt;div class="value-picker"&gt;…&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="set-modal-actions"&gt;…&lt;/div&gt;</pre>
     </section>
     <section class="styleguide-section" id="toasts">
         <h2 class="styleguide-h2">Toasts</h2>

@@ -17,6 +17,7 @@ from utils.templatetags.formatting import weight_display
 from workouts.models import ExerciseSet, Workout
 from workouts.services import (
     add_exercise_to_workout,
+    attach_prior_set_trends,
     attach_rest_times,
     create_exercise_set,
     delete_exercise_set,
@@ -132,6 +133,7 @@ def handle_create_set(user, attributes):
     exercise_set, workout_exercise = create_exercise_set(
         workout_exercise_id, weight, reps, bool(is_warmup)
     )
+    attach_prior_set_trends(user, workout_exercise)
     html = render_to_string(
         "workouts/exercise_sets_block.html",
         {
@@ -182,18 +184,8 @@ def handle_update_exercise_notes(user, attributes):
 def handle_toggle_set_done(user, attributes):
     set_id = int(attributes["data-set-id"])
     exercise_set, workout_exercise, is_completed = toggle_exercise_set_completed(set_id)
-    html = render_to_string(
-        "workouts/set_row_cells.html",
-        {
-            "set": exercise_set,
-            "we": workout_exercise,
-            "endpoint_ns": "workouts",
-        },
-    )
-    target = f'[data-set-id="{exercise_set.pk}"]'
     json_content = {
-        "target": target,
-        "html": html,
+        "is_completed": is_completed,
     }
     if is_completed and workout_exercise_all_sets_complete(workout_exercise):
         next_index = find_next_exercise_with_incomplete_sets(
@@ -246,6 +238,8 @@ def handle_add_exercise(user, attributes):
         exercise_type,
     )
     attach_rest_times(workout, user.settings)
+    for workout_exercise in workout.exercises.all():
+        attach_prior_set_trends(user, workout_exercise)
     html = render_to_string(
         "workouts/workout_exercise_ui.html",
         {
@@ -269,6 +263,7 @@ def handle_add_exercise(user, attributes):
 def handle_delete_set(user, attributes):
     set_id = int(attributes["data-set-id"])
     workout_exercise = delete_exercise_set(set_id)
+    attach_prior_set_trends(user, workout_exercise)
     html = render_to_string(
         "workouts/exercise_sets_block.html",
         {
@@ -295,6 +290,8 @@ def handle_delete_exercise(user, attributes):
         current_exercise_index,
     )
     attach_rest_times(workout, user.settings)
+    for workout_exercise in workout.exercises.all():
+        attach_prior_set_trends(user, workout_exercise)
     html = render_to_string(
         "workouts/workout_exercise_ui.html",
         {
@@ -367,6 +364,8 @@ def handle_refresh_exercise_view(user, attributes):
     workout = get_workout(session_id)
     attach_rest_times(workout, user.settings)
     exercises = list(workout.exercises.all())
+    for workout_exercise in exercises:
+        attach_prior_set_trends(user, workout_exercise)
     active_exercise_index = 0
     if view == "detail":
         active_exercise_id = attributes.get("data-active-exercise-id")
@@ -428,6 +427,7 @@ def handle_update_set(user, attributes):
     )
     user.settings.smartchange_enabled = smartchange
     user.settings.save(update_fields=["smartchange_enabled"])
+    attach_prior_set_trends(user, workout_exercise)
     if warmup_changed or siblings_updated_count > 0:
         html = render_to_string(
             "workouts/exercise_sets_block.html",

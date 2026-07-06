@@ -171,6 +171,14 @@ function resetCardToIdle(card) {
     }
     setCardTimerDisplay(card, Number(card.dataset.restSeconds) || 0);
     card.classList.remove('timer-display-running');
+    const playBtn = card.querySelector('[data-rest-timer-play]');
+    const pauseBtn = card.querySelector('[data-rest-timer-pause]');
+    const stopBtn = card.querySelector('[data-rest-timer-stop]');
+    if (playBtn && pauseBtn && stopBtn) {
+        playBtn.classList.remove('hidden');
+        pauseBtn.classList.add('hidden');
+        stopBtn.classList.add('hidden');
+    }
 }
 
 function stopRestTimerTick() {
@@ -256,6 +264,9 @@ function syncRestTimerDisplay() {
     }
 
     document.querySelectorAll('.exercise-card[data-exercise-id]').forEach((card) => {
+        const playBtn = card.querySelector('[data-rest-timer-play]');
+        const pauseBtn = card.querySelector('[data-rest-timer-pause]');
+        const stopBtn = card.querySelector('[data-rest-timer-stop]');
         if (card.dataset.exerciseId === String(state.exerciseId)) {
             const remaining = getRemainingSeconds(state);
             if (!state.isPaused && remaining <= 0) {
@@ -264,6 +275,17 @@ function syncRestTimerDisplay() {
             }
             setCardTimerDisplay(card, remaining);
             card.classList.add('timer-display-running');
+            if (playBtn && pauseBtn && stopBtn) {
+                if (state.isPaused) {
+                    playBtn.classList.remove('hidden');
+                    pauseBtn.classList.add('hidden');
+                    stopBtn.classList.remove('hidden');
+                } else {
+                    playBtn.classList.add('hidden');
+                    pauseBtn.classList.remove('hidden');
+                    stopBtn.classList.remove('hidden');
+                }
+            }
         } else {
             resetCardToIdle(card);
         }
@@ -365,13 +387,7 @@ function pauseRestTimer(req_event) {
     state.endTimestamp = null;
     state.completeHandled = false;
     localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
-
-    const ownerCard = document.querySelector(
-        `.exercise-card[data-exercise-id="${state.exerciseId}"]`
-    );
-    if (ownerCard) {
-        setCardTimerDisplay(ownerCard, remaining);
-    }
+    syncRestTimerDisplay();
 }
 
 function stopRestTimer(req_event) {

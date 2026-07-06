@@ -7,6 +7,8 @@
     --text: #1f2430;
     --muted: #687084;
     --border: #d8dce6;
+    --border-subtle: #e2e6ef;
+    --indicator-inactive: #c8cedd;
     --primary: #3b57e8;
     --success: #198754;
     --warning: #f59f00;
@@ -25,7 +27,9 @@
     --toast-danger-border: #f0b8cc;
     --toast-danger-text: #7a1035;
     --radius: 12px;
+    --radius-md: 8px;
     --shadow: 0 6px 18px rgba(20, 25, 40, 0.08);
+    --shadow-sm: 0 4px 12px rgba(20, 25, 40, 0.12);
     --space-1: 0.25rem;
     --space-2: 0.5rem;
     --space-3: 0.75rem;
@@ -568,6 +572,83 @@ textarea.form-control {
     content: "";
     clear: both;
     display: table;
+}
+
+/* ── Set modal fields + value picker ─────────── */
+
+.set-modal-fields-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.set-modal-fields-row .form-control {
+    flex: 1;
+    min-width: 0;
+}
+
+.set-modal-times {
+    flex-shrink: 0;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--muted);
+}
+
+.set-modal-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.value-picker {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+.value-picker-window {
+    height: 132px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    border-radius: var(--radius-md);
+    background: var(--surface-soft);
+    mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        #000 18%,
+        #000 82%,
+        transparent 100%
+    );
+}
+
+.value-picker-list {
+    list-style: none;
+    margin: 0;
+    padding: 44px 0;
+    scroll-snap-type: y mandatory;
+}
+
+.value-picker-item {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.value-picker-item.is-near {
+    opacity: 0.45;
+}
+
+.value-picker-item.is-center {
+    opacity: 1;
+    font-weight: 700;
 }
 
 /* ── Toast ───────────────────────────────────── */

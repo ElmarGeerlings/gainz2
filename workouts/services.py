@@ -439,7 +439,7 @@ def new_workout(user):
 
 
 def get_workout_exercise(workout_exercise_id):
-    return WorkoutExercise.objects.select_related("exercise").prefetch_related(
+    return WorkoutExercise.objects.select_related("exercise", "workout").prefetch_related(
         Prefetch(
             "sets",
             queryset=ExerciseSet.objects.order_by("set_number"),
@@ -886,3 +886,63 @@ def attach_rest_times(session, user_settings):
         else:
             session_exercise.rest_seconds = user_settings.accessory_rest_time
     return session
+
+
+def attach_prior_set_trends(user, workout_exercise):
+    prior_we = find_prior_workout_exercise(
+        user,
+        workout_exercise.exercise,
+        workout_exercise.effective_exercise_type(),
+        workout_exercise.workout.routine,
+        program=get_active_program(user),
+        exclude_workout=workout_exercise.workout,
+    )
+    if not prior_we:
+        return workout_exercise
+
+    current_sets = list(workout_exercise.sets.all())
+    prior_sets = list(prior_we.sets.all())
+    current_warmups = [exercise_set for exercise_set in current_sets if exercise_set.is_warmup]
+    current_work = [exercise_set for exercise_set in current_sets if not exercise_set.is_warmup]
+    prior_warmups = [exercise_set for exercise_set in prior_sets if exercise_set.is_warmup]
+    prior_work = [exercise_set for exercise_set in prior_sets if not exercise_set.is_warmup]
+
+    for index, exercise_set in enumerate(current_warmups):
+        if index >= len(prior_warmups):
+            exercise_set.weight_trend = None
+            exercise_set.reps_trend = None
+            continue
+        prior_set = prior_warmups[index]
+        if exercise_set.weight > prior_set.weight:
+            exercise_set.weight_trend = "up"
+        elif exercise_set.weight < prior_set.weight:
+            exercise_set.weight_trend = "down"
+        else:
+            exercise_set.weight_trend = None
+        if exercise_set.reps > prior_set.reps:
+            exercise_set.reps_trend = "up"
+        elif exercise_set.reps < prior_set.reps:
+            exercise_set.reps_trend = "down"
+        else:
+            exercise_set.reps_trend = None
+
+    for index, exercise_set in enumerate(current_work):
+        if index >= len(prior_work):
+            exercise_set.weight_trend = None
+            exercise_set.reps_trend = None
+            continue
+        prior_set = prior_work[index]
+        if exercise_set.weight > prior_set.weight:
+            exercise_set.weight_trend = "up"
+        elif exercise_set.weight < prior_set.weight:
+            exercise_set.weight_trend = "down"
+        else:
+            exercise_set.weight_trend = None
+        if exercise_set.reps > prior_set.reps:
+            exercise_set.reps_trend = "up"
+        elif exercise_set.reps < prior_set.reps:
+            exercise_set.reps_trend = "down"
+        else:
+            exercise_set.reps_trend = None
+
+    return workout_exercise
