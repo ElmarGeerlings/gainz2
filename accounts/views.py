@@ -82,3 +82,18 @@ def logout_page(req_event):
         logout(req_event)
         return redirect(settings.LOGOUT_REDIRECT_URL)
     return redirect(settings.LOGIN_URL)
+
+
+def settings_page(req_event):
+    user_settings = req_event.user.settings
+    response = {
+        "title": "Settings",
+        "user_settings": user_settings,
+        "primary_rest_minutes": user_settings.primary_rest_time // 60,
+        "primary_rest_seconds": user_settings.primary_rest_time % 60,
+        "secondary_rest_minutes": user_settings.secondary_rest_time // 60,
+        "secondary_rest_seconds": user_settings.secondary_rest_time % 60,
+        "accessory_rest_minutes": user_settings.accessory_rest_time // 60,
+        "accessory_rest_seconds": user_settings.accessory_rest_time % 60,
+    }
+    return render(req_event, "accounts/settings.html", response)

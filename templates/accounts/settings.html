@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+{% endblock %}
+
+{% block content %}
+<main id="settings-page" class="page page-narrow">
+    <header class="mb-4">
+        <h1 class="title-lg m-0">Settings</h1>
+    </header>
+
+    <div class="stack-md">
+        <section class="panel stack-sm">
+            <h2 class="title-md m-0">Rest timer</h2>
+            <p class="text-sm text-muted m-0">Default rest between sets, by exercise type.</p>
+            <div class="stack-sm mt-2">
+                <div class="row-between gap-sm settings-rest-row">
+                    <span class="row-center gap-sm text-sm">
+                        {% include "components/exercise_type_badge.html" with exercise_type="primary" %}
+                        Primary
+                    </span>
+                    <form class="settings-rest-form row-center gap-sm settings-rest-inputs">
+                        <input
+                            type="number"
+                            name="rest_minutes"
+                            class="form-control settings-rest-input"
+                            inputmode="numeric"
+                            min="0"
+                            max="10"
+                            value="{{ primary_rest_minutes }}"
+                            aria-label="Primary rest minutes"
+                            data-endpoint="blur->accounts/update_user_setting"
+                            data-setting="primary_rest_time"
+                        >
+                        <span class="text-sm text-muted">min</span>
+                        <input
+                            type="number"
+                            name="rest_seconds"
+                            class="form-control settings-rest-input"
+                            inputmode="numeric"
+                            min="0"
+                            max="59"
+                            value="{{ primary_rest_seconds }}"
+                            aria-label="Primary rest seconds"
+                            data-endpoint="blur->accounts/update_user_setting"
+                            data-setting="primary_rest_time"
+                        >
+                        <span class="text-sm text-muted">sec</span>
+                    </form>
+                </div>
+                <div class="row-between gap-sm settings-rest-row">
+                    <span class="row-center gap-sm text-sm">
+                        {% include "components/exercise_type_badge.html" with exercise_type="secondary" %}
+                        Secondary
+                    </span>
+                    <form class="settings-rest-form row-center gap-sm settings-rest-inputs">
+                        <input
+                            type="number"
+                            name="rest_minutes"
+                            class="form-control settings-rest-input"
+                            inputmode="numeric"
+                            min="0"
+                            max="10"
+                            value="{{ secondary_rest_minutes }}"
+                            aria-label="Secondary rest minutes"
+                            data-endpoint="blur->accounts/update_user_setting"
+                            data-setting="secondary_rest_time"
+                        >
+                        <span class="text-sm text-muted">min</span>
+                        <input
+                            type="number"
+                            name="rest_seconds"
+                            class="form-control settings-rest-input"
+                            inputmode="numeric"
+                            min="0"
+                            max="59"
+                            value="{{ secondary_rest_seconds }}"
+                            aria-label="Secondary rest seconds"
+                            data-endpoint="blur->accounts/update_user_setting"
+                            data-setting="secondary_rest_time"
+                        >
+                        <span class="text-sm text-muted">sec</span>
+                    </form>
+                </div>
+                <div class="row-between gap-sm settings-rest-row">
+                    <span class="row-center gap-sm text-sm">
+                        {% include "components/exercise_type_badge.html" with exercise_type="accessory" %}
+                        Accessory
+                    </span>
+                    <form class="settings-rest-form row-center gap-sm settings-rest-inputs">
+                        <input
+                            type="number"
+                            name="rest_minutes"
+                            class="form-control settings-rest-input"
+                            inputmode="numeric"
+                            min="0"
+                            max="10"
+                            value="{{ accessory_rest_minutes }}"
+                            aria-label="Accessory rest minutes"
+                            data-endpoint="blur->accounts/update_user_setting"
+                            data-setting="accessory_rest_time"
+                        >
+                        <span class="text-sm text-muted">min</span>
+                        <input
+                            type="number"
+                            name="rest_seconds"
+                            class="form-control settings-rest-input"
+                            inputmode="numeric"
+                            min="0"
+                            max="59"
+                            value="{{ accessory_rest_seconds }}"
+                            aria-label="Accessory rest seconds"
+                            data-endpoint="blur->accounts/update_user_setting"
+                            data-setting="accessory_rest_time"
+                        >
+                        <span class="text-sm text-muted">sec</span>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel stack-sm">
+            <h2 class="title-md m-0">Notifications</h2>
+            <div class="stack-sm mt-2">
+                <div class="row-between gap-sm">
+                    <span class="text-sm">Sound</span>
+                    <label class="gainz-toggle-switch">
+                        <input
+                            type="checkbox"
+                            class="gainz-toggle-input"
+                            data-endpoint="change->accounts/update_user_setting"
+                            data-setting="notification_sound_enabled"
+                            {% if user_settings.notification_sound_enabled %}checked{% endif %}
+                        >
+                        <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+                <div class="row-between gap-sm">
+                    <span class="text-sm">Vibration</span>
+                    <label class="gainz-toggle-switch">
+                        <input
+                            type="checkbox"
+                            class="gainz-toggle-input"
+                            data-endpoint="change->accounts/update_user_setting"
+                            data-setting="notification_vibration_enabled"
+                            {% if user_settings.notification_vibration_enabled %}checked{% endif %}
+                        >
+                        <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel stack-sm">
+            <h2 class="title-md m-0">Set logging</h2>
+            <div class="stack-sm mt-2">
+                <div class="row-between gap-sm settings-toggle-row">
+                    <span class="stack-xs">
+                        <span class="text-sm">Copy sets from last workout</span>
+                    </span>
+                    <label class="gainz-toggle-switch">
+                        <input
+                            type="checkbox"
+                            class="gainz-toggle-input"
+                            data-endpoint="change->accounts/update_user_setting"
+                            data-setting="set_carryover"
+                            {% if user_settings.set_carryover %}checked{% endif %}
+                        >
+                        <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+                <div class="row-between gap-sm settings-toggle-row">
+                    <span class="stack-xs">
+                        <span class="text-sm">Smart change includes warmups</span>
+                    </span>
+                    <label class="gainz-toggle-switch">
+                        <input
+                            type="checkbox"
+                            class="gainz-toggle-input"
+                            data-endpoint="change->accounts/update_user_setting"
+                            data-setting="smartchange_warmup"
+                            {% if user_settings.smartchange_warmup %}checked{% endif %}
+                        >
+                        <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

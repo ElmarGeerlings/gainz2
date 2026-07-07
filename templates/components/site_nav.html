@@ -59,6 +59,11 @@
                 </li>
                 {% endif %}
                 <li class="site-nav-item">
+                    <a class="site-nav-link{% if request.resolver_match.url_name == 'settings' %} is-active{% endif %}" href="{% url 'settings' %}">
+                        <i class="fas fa-gear" aria-hidden="true"></i> Settings
+                    </a>
+                </li>
+                <li class="site-nav-item">
                     <form method="post" action="{% url 'logout' %}" class="m-0">
                         {% csrf_token %}
                         <button type="submit" class="site-nav-link site-nav-link-btn">

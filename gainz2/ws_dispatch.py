@@ -9,6 +9,7 @@ Handlers are sync callables: (user, attributes) -> response dict matching app.js
 
 from typing import Any, Callable
 
+from accounts.ws_handlers import handle_update_user_setting
 from programs.ws_handlers import (
     handle_activate_program,
     handle_create_progression_step,
@@ -83,6 +84,7 @@ def handle_ping(user, attributes):
 
 WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "ping": handle_ping,
+    "accounts/update_user_setting": handle_update_user_setting,
     "exercises/exercise_form": handle_exercise_form,
     "exercises/create_exercise": handle_create_exercise,
     "exercises/update_exercise": handle_update_exercise,

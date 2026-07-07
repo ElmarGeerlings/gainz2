@@ -128,7 +128,7 @@ function ws_request(event, endpoint) {
         hideGainzModal(modal);
       }
     }
-    if (response.status === 200 && response.json_content?.toast_html) {
+    if (response.json_content?.toast_html) {
       appendToast(
         response.json_content.toast_html,
         response.json_content.toast_delay_ms

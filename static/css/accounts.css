@@ -1,0 +1,26 @@
+#settings-page .settings-rest-input {
+    width: 3.5rem;
+    padding-inline: 0.5rem;
+    text-align: center;
+}
+
+#settings-page .settings-rest-row {
+    flex-wrap: wrap;
+}
+
+#settings-page .settings-rest-form {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+#settings-page .settings-rest-inputs {
+    flex-shrink: 0;
+}
+
+#settings-page .settings-toggle-row {
+    align-items: flex-start;
+}
+
+#settings-page .settings-toggle-row .gainz-toggle-switch {
+    margin-top: 0.15rem;
+}

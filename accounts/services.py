@@ -10,6 +10,38 @@ from programs.models import Program, ProgramRoutine, ProgressionTemplate
 from routines.models import Routine, RoutineExercise, RoutineSet
 from workouts.models import ExerciseSet, Workout, WorkoutExercise
 
+USER_SETTING_BOOLEAN_KEYS = (
+    "notification_sound_enabled",
+    "notification_vibration_enabled",
+    "set_carryover",
+    "smartchange_warmup",
+)
+
+USER_SETTING_REST_KEYS = (
+    "primary_rest_time",
+    "secondary_rest_time",
+    "accessory_rest_time",
+)
+
+REST_TIME_MIN_SECONDS = 10
+REST_TIME_MAX_SECONDS = 600
+
+
+def update_user_setting(user, setting_key, value):
+    settings = user.settings
+    if setting_key in USER_SETTING_BOOLEAN_KEYS:
+        setattr(settings, setting_key, bool(value))
+        settings.save(update_fields=[setting_key])
+        return settings
+    if setting_key in USER_SETTING_REST_KEYS:
+        total_seconds = int(value)
+        if total_seconds < REST_TIME_MIN_SECONDS or total_seconds > REST_TIME_MAX_SECONDS:
+            raise ValueError("Rest time must be between 0:10 and 10:00.")
+        setattr(settings, setting_key, total_seconds)
+        settings.save(update_fields=[setting_key])
+        return settings
+    raise ValueError("Unknown setting.")
+
 
 def create_user_with_settings(username, password, **extra_user_fields):
     user = User.objects.create_user(username=username, password=password, **extra_user_fields)
