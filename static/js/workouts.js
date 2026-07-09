@@ -142,6 +142,22 @@ function initWorkoutCardsPage(activeIndex) {
             }
         }
     }
+    if (targetExerciseIndex == null) {
+        targetExerciseIndex = workoutCards.findIndex((card) => {
+            const setDoneButtons = Array.from(
+                card.querySelectorAll('[data-function="click->toggleSetDone"]')
+            );
+            if (!setDoneButtons.length) {
+                return true;
+            }
+            return setDoneButtons.some(
+                (button) => !button.classList.contains("btn-success")
+            );
+        });
+        if (targetExerciseIndex < 0) {
+            targetExerciseIndex = null;
+        }
+    }
     if (targetExerciseIndex != null) {
         workoutCurrentCardIndex = targetExerciseIndex;
         sessionStorage.removeItem("gainz-rest-deeplink-workout");

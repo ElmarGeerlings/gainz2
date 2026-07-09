@@ -41,6 +41,7 @@ def find_prior_workout_exercise(
     routine,
     program=None,
     exclude_workout=None,
+    before_workout=None,
     global_fallback=False,
 ):
     exercise_id = exercise.pk if hasattr(exercise, "pk") else exercise
@@ -71,6 +72,14 @@ def find_prior_workout_exercise(
     )
     if exclude_workout:
         base_qs = base_qs.exclude(workout=exclude_workout)
+    if before_workout:
+        base_qs = base_qs.filter(
+            Q(workout__date__lt=before_workout.date)
+            | Q(
+                workout__date=before_workout.date,
+                workout__pk__lt=before_workout.pk,
+            )
+        )
 
     if carryover and program:
         routine_ids = ProgramRoutine.objects.filter(program=program).values_list(
@@ -284,6 +293,7 @@ def new_workout_from_routine(user, routine):
                 workout.routine,
                 program=program,
                 exclude_workout=workout,
+                before_workout=workout,
             )
             notes = routine_exercise.notes or (prior.notes if prior else "")
             template, step_to_apply, reverse, new_step, feedback = resolve_progression(
@@ -621,6 +631,7 @@ def add_exercise_to_workout(
             workout_for_lookup.routine,
             program=get_active_program(user),
             exclude_workout=workout_for_lookup,
+            before_workout=workout_for_lookup,
         )
         if prior:
             notes = prior.notes
@@ -834,6 +845,7 @@ def get_add_set_defaults(user, workout_exercise_id):
             we.workout.routine,
             program=get_active_program(user),
             exclude_workout=we.workout,
+            before_workout=we.workout,
             global_fallback=True,
         )
         if prior_we:
@@ -896,6 +908,7 @@ def attach_prior_set_trends(user, workout_exercise):
         workout_exercise.workout.routine,
         program=get_active_program(user),
         exclude_workout=workout_exercise.workout,
+        before_workout=workout_exercise.workout,
     )
     if not prior_we:
         return workout_exercise
