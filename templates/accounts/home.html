@@ -27,6 +27,8 @@
             <a href="{% url 'login' %}" class="btn btn-outline">Log in</a>
         </div>
         {% endif %}
+        <br>
+        <a href="/anime/" class="text-muted">... or do you prefer anime?</a>
     </section>
     {% if not user.is_authenticated %}
     <section class="home-demo-card stack-md">
