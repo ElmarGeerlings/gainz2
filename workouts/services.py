@@ -16,7 +16,7 @@ def get_active_program(user):
     return Program.objects.filter(user=user, is_active=True).first()
 
 
-def get_next_routine_for_program(program):
+def get_next_routine_for_program(user, program):
     program_routines = list(
         ProgramRoutine.objects.filter(program=program)
         .select_related("routine")
@@ -24,13 +24,18 @@ def get_next_routine_for_program(program):
     )
     if not program_routines:
         return None
-    last = program.last_used_routine
-    if last is None:
-        return program_routines[0].routine
     current_ids = [pr.routine_id for pr in program_routines]
-    if last.pk not in current_ids:
-        return program_routines[0].routine
-    next_index = (current_ids.index(last.pk) + 1) % len(program_routines)
+    first_routine = program_routines[0].routine
+    last_workout = (
+        Workout.objects.filter(user=user).order_by("-date", "-pk").first()
+    )
+    if not last_workout or not last_workout.routine_id:
+        return first_routine
+    if last_workout.routine_id not in current_ids:
+        return first_routine
+    next_index = (current_ids.index(last_workout.routine_id) + 1) % len(
+        program_routines
+    )
     return program_routines[next_index].routine
 
 
@@ -105,6 +110,43 @@ def find_prior_workout(user, routine, exclude_workout=None):
     if exclude_workout:
         workouts = workouts.exclude(pk=exclude_workout.pk)
     return workouts.first()
+
+
+def seed_set_values(sets, prior):
+    if not prior:
+        return [(s.weight, s.reps, s.is_warmup) for s in sets]
+    prior_sets = list(prior.sets.order_by("set_number"))
+    prior_warmups = [s for s in prior_sets if s.is_warmup]
+    prior_work = [s for s in prior_sets if not s.is_warmup]
+    set_values = []
+    warmup_index = 0
+    work_index = 0
+    for set in sets:
+        if set.is_warmup:
+            if warmup_index < len(prior_warmups):
+                source = prior_warmups[warmup_index]
+                warmup_index += 1
+            elif prior_warmups:
+                source = prior_warmups[-1]
+            else:
+                set_values.append(
+                    (set.weight, set.reps, True)
+                )
+                continue
+            set_values.append((source.weight, source.reps, True))
+        else:
+            if work_index < len(prior_work):
+                source = prior_work[work_index]
+                work_index += 1
+            elif prior_work:
+                source = prior_work[-1]
+            else:
+                set_values.append(
+                    (set.weight, set.reps, False)
+                )
+                continue
+            set_values.append((source.weight, source.reps, False))
+    return set_values
 
 
 def resolve_progression(
@@ -304,42 +346,7 @@ def new_workout_from_routine(user, routine):
                 routine_exercise.effective_exercise_type(),
             )
             routine_sets = list(routine_exercise.sets.order_by("set_number"))
-            if prior:
-                prior_sets = list(prior.sets.order_by("set_number"))
-                prior_warmups = [s for s in prior_sets if s.is_warmup]
-                prior_work = [s for s in prior_sets if not s.is_warmup]
-                set_values = []
-                warmup_index = 0
-                work_index = 0
-                for routine_set in routine_sets:
-                    if routine_set.is_warmup:
-                        if warmup_index < len(prior_warmups):
-                            source = prior_warmups[warmup_index]
-                            warmup_index += 1
-                        elif prior_warmups:
-                            source = prior_warmups[-1]
-                        else:
-                            set_values.append(
-                                (routine_set.weight, routine_set.reps, True)
-                            )
-                            continue
-                        set_values.append((source.weight, source.reps, True))
-                    else:
-                        if work_index < len(prior_work):
-                            source = prior_work[work_index]
-                            work_index += 1
-                        elif prior_work:
-                            source = prior_work[-1]
-                        else:
-                            set_values.append(
-                                (routine_set.weight, routine_set.reps, False)
-                            )
-                            continue
-                        set_values.append((source.weight, source.reps, False))
-            else:
-                set_values = [
-                    (rs.weight, rs.reps, rs.is_warmup) for rs in routine_sets
-                ]
+            set_values = seed_set_values(routine_sets, prior)
             set_values = apply_progression_to_set_values(
                 set_values,
                 step_to_apply,
@@ -377,16 +384,24 @@ def new_workout_from_routine(user, routine):
                 routine=routine,
                 exercise_id=prior_we.exercise_id,
             ).first()
+            prior = find_prior_workout_exercise(
+                user,
+                prior_we.exercise,
+                prior_we.effective_exercise_type(),
+                workout.routine,
+                program=program,
+                exclude_workout=workout,
+                before_workout=workout,
+            )
             template, step_to_apply, reverse, new_step, feedback = resolve_progression(
                 program,
                 program_includes_routine,
                 routine_exercise,
-                prior_we,
+                prior,
                 prior_we.effective_exercise_type(),
             )
-            set_values = [
-                (s.weight, s.reps, s.is_warmup) for s in prior_we.sets.all()
-            ]
+            structure_sets = list(prior_we.sets.order_by("set_number"))
+            set_values = seed_set_values(structure_sets, prior)
             set_values = apply_progression_to_set_values(
                 set_values,
                 step_to_apply,

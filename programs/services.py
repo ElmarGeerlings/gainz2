@@ -72,8 +72,7 @@ def get_program(user, program_id):
 def activate_program(user, program_id):
     program = Program.objects.get(pk=program_id, user=user)
     program.is_active = True
-    program.last_used_routine = None
-    program.save(update_fields=["is_active", "last_used_routine"])
+    program.save(update_fields=["is_active"])
     return program
 
 

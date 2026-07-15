@@ -44,11 +44,9 @@ from workouts.services import (
 
 def handle_start_workout(user, attributes):
     program = get_active_program(user)
-    routine = get_next_routine_for_program(program) if program else None
+    routine = get_next_routine_for_program(user, program) if program else None
     if routine:
         workout = new_workout_from_routine(user, routine)
-        program.last_used_routine = routine
-        program.save(update_fields=["last_used_routine"])
     else:
         workout = new_workout(user)
     return {
@@ -59,15 +57,10 @@ def handle_start_workout(user, attributes):
 
 
 def handle_start_routine_workout(user, attributes):
-    from programs.models import ProgramRoutine
     from routines.models import Routine
     routine_id = int(attributes["data-routine-id"])
     routine = Routine.objects.get(pk=routine_id, user=user)
     workout = new_workout_from_routine(user, routine)
-    program = get_active_program(user)
-    if program and ProgramRoutine.objects.filter(program=program, routine=routine).exists():
-        program.last_used_routine = routine
-        program.save(update_fields=["last_used_routine"])
     return {
         "status": 302,
         "headers": [["Location", f"/workouts/{workout.pk}/"]],
@@ -428,6 +421,11 @@ def handle_update_set(user, attributes):
     user.settings.smartchange_enabled = smartchange
     user.settings.save(update_fields=["smartchange_enabled"])
     attach_prior_set_trends(user, workout_exercise)
+    exercise_set = next(
+        workout_set
+        for workout_set in workout_exercise.sets.all()
+        if workout_set.pk == exercise_set.pk
+    )
     if warmup_changed or siblings_updated_count > 0:
         html = render_to_string(
             "workouts/exercise_sets_block.html",

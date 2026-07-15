@@ -12,13 +12,6 @@ class Program(models.Model):
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=False)
     weekly_scheduling = models.BooleanField(default=False)
-    last_used_routine = models.ForeignKey(
-        "routines.Routine",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="+",
-    )
     primary_carryover = models.BooleanField(default=False)
     secondary_carryover = models.BooleanField(default=False)
     accessory_carryover = models.BooleanField(default=True)

@@ -77,9 +77,13 @@ function scheduleNativeRestNotification(state) {
     if (!LocalNotifications || !state || state.isPaused || !state.endTimestamp) {
         return Promise.resolve();
     }
-    const body = state.exerciseName
+    const restCount = Number(state.restCount) || 1;
+    let body = state.exerciseName
         ? `${state.exerciseName} — start your next set.`
         : 'Time to start your next set.';
+    if (restCount >= 2) {
+        body = `Rest ${restCount} · ${body}`;
+    }
     return ensureNativeNotificationPermission()
         .then(() => ensureRestTimerNotificationChannel())
         .then((channelId) => LocalNotifications.cancel({
@@ -98,6 +102,7 @@ function scheduleNativeRestNotification(state) {
                     exerciseId: state.exerciseId,
                     exerciseName: state.exerciseName,
                     durationSeconds: state.durationSeconds,
+                    restCount,
                 },
                 schedule: {
                     at: new Date(state.endTimestamp),
@@ -363,6 +368,7 @@ function startRestTimer(req_event) {
         isPaused: false,
         pausedRemaining: 0,
         completeHandled: false,
+        restCount: 1,
     };
     localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
     syncRestTimerDisplay();
@@ -431,6 +437,7 @@ function initNativeRestNotificationListeners() {
             if (durationSeconds <= 0) {
                 return;
             }
+            const restCount = (Number(extra.restCount) || 1) + 1;
             const state = {
                 workoutId: String(extra.workoutId),
                 exerciseId: String(extra.exerciseId),
@@ -440,6 +447,7 @@ function initNativeRestNotificationListeners() {
                 isPaused: false,
                 pausedRemaining: 0,
                 completeHandled: false,
+                restCount,
             };
             localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
             scheduleNativeRestNotification(state);
