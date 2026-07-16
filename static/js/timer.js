@@ -114,14 +114,6 @@ function syncNativeRestNotification(state) {
     if (!state || state.isPaused || !state.endTimestamp) {
         return cancelNativeRestNotification();
     }
-    const workoutUi = document.getElementById('workout-exercise-ui');
-    const onThisWorkoutVisible = workoutUi
-        && workoutUi.dataset.workoutId
-        && String(workoutUi.dataset.workoutId) === String(state.workoutId)
-        && !document.hidden;
-    if (onThisWorkoutVisible) {
-        return cancelNativeRestNotification();
-    }
     return scheduleNativeRestNotification(state);
 }
 
@@ -198,9 +190,9 @@ function finalizeExpiredTimer(state, showForegroundAlert) {
     state.completeHandled = true;
     localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
     stopRestTimerTick();
+    cancelNativeRestNotification();
 
     if (showForegroundAlert && !document.hidden && typeof notifyUser === 'function') {
-        cancelNativeRestNotification();
         const workoutUi = document.getElementById('workout-exercise-ui');
         const sound = !workoutUi || workoutUi.dataset.notificationSoundEnabled === 'true';
         const vibrate = !workoutUi || workoutUi.dataset.notificationVibrationEnabled === 'true';
