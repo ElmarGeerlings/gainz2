@@ -97,14 +97,26 @@ function initWorkoutCardsPage(activeIndex) {
 
     workoutCards = Array.from(container.querySelectorAll(".exercise-card"));
     workoutIndicators = Array.from(document.querySelectorAll(".carousel-indicator"));
-    const exerciseParam = new URLSearchParams(window.location.search).get("exercise");
     let targetExerciseIndex = null;
-    if (exerciseParam) {
-        targetExerciseIndex = workoutCards.findIndex(
-            (card) => card.dataset.exerciseId === String(exerciseParam)
-        );
-        if (targetExerciseIndex < 0) {
+    if (activeIndex != null) {
+        targetExerciseIndex = Number(activeIndex);
+        if (
+            Number.isNaN(targetExerciseIndex)
+            || targetExerciseIndex < 0
+            || targetExerciseIndex >= workoutCards.length
+        ) {
             targetExerciseIndex = null;
+        }
+    }
+    if (targetExerciseIndex == null) {
+        const exerciseParam = new URLSearchParams(window.location.search).get("exercise");
+        if (exerciseParam) {
+            targetExerciseIndex = workoutCards.findIndex(
+                (card) => card.dataset.exerciseId === String(exerciseParam)
+            );
+            if (targetExerciseIndex < 0) {
+                targetExerciseIndex = null;
+            }
         }
     }
     if (targetExerciseIndex == null) {
@@ -162,8 +174,6 @@ function initWorkoutCardsPage(activeIndex) {
         workoutCurrentCardIndex = targetExerciseIndex;
         sessionStorage.removeItem("gainz-rest-deeplink-workout");
         sessionStorage.removeItem("gainz-rest-deeplink-exercise");
-    } else if (activeIndex != null) {
-        workoutCurrentCardIndex = activeIndex;
     } else if (!workoutCards.length) {
         workoutCurrentCardIndex = 0;
     } else if (workoutCurrentCardIndex > workoutCards.length - 1) {
@@ -769,10 +779,10 @@ function removeExercise(req_event) {
             document.querySelector(response.json_content.target).innerHTML =
                 response.json_content.html;
         }
-        initWorkoutCardsPage();
-        if (response.json_content?.active_exercise_index != null) {
-            setWorkoutCardIndex(Number(response.json_content.active_exercise_index));
-        }
+        const activeIndex = response.json_content?.active_exercise_index;
+        initWorkoutCardsPage(
+            activeIndex != null ? Number(activeIndex) : undefined
+        );
         if (exerciseViewMode === "overview") {
             initOverviewSortable();
             initOverviewRowTap();
@@ -795,10 +805,10 @@ function addExercise(req_event) {
             document.querySelector(response.json_content.target).innerHTML =
                 response.json_content.html;
         }
-        initWorkoutCardsPage();
-        if (response.json_content?.new_exercise_index != null) {
-            setWorkoutCardIndex(Number(response.json_content.new_exercise_index));
-        }
+        const newIndex = response.json_content?.new_exercise_index;
+        initWorkoutCardsPage(
+            newIndex != null ? Number(newIndex) : undefined
+        );
         if (exerciseViewMode === "overview") {
             initOverviewSortable();
             initOverviewRowTap();
