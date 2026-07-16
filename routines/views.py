@@ -55,7 +55,7 @@ def routine_detail_page(req_event, routine_id):
         "title": routine.name,
         "routine": routine,
         "programs_for_routine": programs_for_routine,
-        "add_exercise_options": list_add_exercise_options(),
+        "add_exercise_options": list_add_exercise_options(req_event.user),
         "bodypart_choices": Exercise.BODYPART_CHOICES,
         "exercise_type_choices": [
             {"value": value, "label": label}

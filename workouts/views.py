@@ -36,7 +36,7 @@ def workout_detail_page(req_event, workout_id):
         attach_prior_set_trends(req_event.user, workout_exercise)
     response = {
         "workout": workout,
-        "add_exercise_options": list_add_exercise_options(),
+        "add_exercise_options": list_add_exercise_options(req_event.user),
         "bodypart_choices": Exercise.BODYPART_CHOICES,
         "exercise_type_choices": [
             {"value": value, "label": label}

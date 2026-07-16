@@ -539,8 +539,10 @@ def update_workout_exercise_notes(user, workout_exercise_id, notes):
     return workout_exercise
 
 
-def list_add_exercise_options(primary_bodypart=None):
-    exercises = Exercise.objects.filter(user__isnull=True)
+def list_add_exercise_options(user, primary_bodypart=None):
+    exercises = Exercise.objects.filter(
+        Q(is_custom=False) | Q(is_custom=True, user=user)
+    )
     if primary_bodypart:
         exercises = exercises.filter(primary_bodypart=primary_bodypart)
     return exercises.order_by("name")

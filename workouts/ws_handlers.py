@@ -200,7 +200,7 @@ def handle_refresh_add_exercise_options(user, attributes):
     html = render_to_string(
         "workouts/add_exercise_select.html",
         {
-            "add_exercise_options": list_add_exercise_options(primary_bodypart),
+            "add_exercise_options": list_add_exercise_options(user, primary_bodypart),
             "session_pk": session_pk,
         },
     )

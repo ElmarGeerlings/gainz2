@@ -78,12 +78,10 @@ function scheduleNativeRestNotification(state) {
         return Promise.resolve();
     }
     const restCount = Number(state.restCount) || 1;
-    let body = state.exerciseName
+    const title = restCount >= 2 ? `Rest ${restCount} over` : 'Rest over';
+    const body = state.exerciseName
         ? `${state.exerciseName} — start your next set.`
         : 'Time to start your next set.';
-    if (restCount >= 2) {
-        body = `Rest ${restCount} · ${body}`;
-    }
     return ensureNativeNotificationPermission()
         .then(() => ensureRestTimerNotificationChannel())
         .then((channelId) => LocalNotifications.cancel({
@@ -92,7 +90,7 @@ function scheduleNativeRestNotification(state) {
         .then((channelId) => LocalNotifications.schedule({
             notifications: [{
                 id: REST_TIMER_NOTIFICATION_ID,
-                title: 'Rest over',
+                title,
                 body,
                 channelId,
                 autoCancel: true,
