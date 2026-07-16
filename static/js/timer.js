@@ -2,6 +2,7 @@ const REST_TIMER_STORAGE_KEY = 'gainz-active-rest-timer';
 const REST_TIMER_CHANNEL_STORAGE_KEY = 'gainz-rest-timer-channel-id';
 const REST_TIMER_DEEPLINK_WORKOUT_KEY = 'gainz-rest-deeplink-workout';
 const REST_TIMER_DEEPLINK_EXERCISE_KEY = 'gainz-rest-deeplink-exercise';
+const REST_EXACT_ALARM_PROMPTED_KEY = 'gainz-rest-exact-alarm-prompted';
 const REST_TIMER_NOTIFICATION_ID = 1;
 const REST_TIMER_ACTION_TYPE = 'REST_TIMER';
 
@@ -40,6 +41,53 @@ function ensureNativeNotificationPermission() {
             return;
         }
         return LocalNotifications.requestPermissions();
+    });
+}
+
+function promptExactAlarmSetting() {
+    if (sessionStorage.getItem(REST_EXACT_ALARM_PROMPTED_KEY) === '1') {
+        return;
+    }
+    sessionStorage.setItem(REST_EXACT_ALARM_PROMPTED_KEY, '1');
+    const LocalNotifications = getLocalNotifications();
+    const toastContainer = document.querySelector('.toast-container');
+    if (!LocalNotifications || !toastContainer) {
+        return;
+    }
+    const toast = document.createElement('div');
+    toast.className = 'gainz-toast gainz-toast-warning';
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML =
+        '<button type="button" class="gainz-toast-close" aria-label="Close">×</button>' +
+        '<p class="gainz-toast-message"></p>' +
+        '<div class="gainz-toast-actions mt-2">' +
+        '<button type="button" class="btn btn-primary btn-sm">Allow</button>' +
+        '</div>';
+    toast.querySelector('.gainz-toast-message').textContent =
+        'Turn on Alarms & reminders so rest alerts fire on time.';
+    toast.querySelector('.gainz-toast-close').addEventListener('click', () => {
+        toast.remove();
+    });
+    toast.querySelector('.btn').addEventListener('click', () => {
+        LocalNotifications.changeExactNotificationSetting();
+        toast.remove();
+    });
+    toastContainer.appendChild(toast);
+    setTimeout(() => {
+        toast.remove();
+    }, 8000);
+}
+
+function ensureExactAlarmForRestTimer() {
+    const LocalNotifications = getLocalNotifications();
+    if (!LocalNotifications || !LocalNotifications.checkExactNotificationSetting) {
+        return Promise.resolve();
+    }
+    return LocalNotifications.checkExactNotificationSetting().then((status) => {
+        if (status.exact_alarm === 'granted') {
+            return;
+        }
+        promptExactAlarmSetting();
     });
 }
 
@@ -117,6 +165,14 @@ function scheduleNativeRestNotification(state) {
 
 function syncNativeRestNotification(state) {
     if (!state || state.isPaused || !state.endTimestamp) {
+        return cancelNativeRestNotification();
+    }
+    const workoutUi = document.getElementById('workout-exercise-ui');
+    const onThisWorkoutVisible = workoutUi
+        && workoutUi.dataset.workoutId
+        && String(workoutUi.dataset.workoutId) === String(state.workoutId)
+        && !document.hidden;
+    if (onThisWorkoutVisible) {
         return cancelNativeRestNotification();
     }
     return scheduleNativeRestNotification(state);
@@ -331,6 +387,8 @@ function startRestTimer(req_event) {
         return;
     }
 
+    ensureExactAlarmForRestTimer();
+
     const existing = getWorkoutTimerState();
     if (
         existing
@@ -448,6 +506,7 @@ function initNativeRestNotificationListeners() {
                 restCount,
             };
             localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
+            ensureExactAlarmForRestTimer();
             scheduleNativeRestNotification(state);
             const App = (Capacitor.Plugins && Capacitor.Plugins.App)
                 || (window.capacitorApp && window.capacitorApp.App);
