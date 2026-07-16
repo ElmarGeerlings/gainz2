@@ -8,6 +8,7 @@ const REST_TIMER_ACTION_TYPE = 'REST_TIMER';
 let restTimerTickIntervalId = null;
 let restTimerActiveChannelId = null;
 let restTimerNativeListenersInitialized = false;
+let restTimerScheduledEndTimestamp = null;
 
 function formatMinutes(seconds) {
     const total = Math.max(0, Math.floor(Number(seconds)));
@@ -77,6 +78,10 @@ function scheduleNativeRestNotification(state) {
     if (!LocalNotifications || !state || state.isPaused || !state.endTimestamp) {
         return Promise.resolve();
     }
+    if (restTimerScheduledEndTimestamp === state.endTimestamp) {
+        return Promise.resolve();
+    }
+    restTimerScheduledEndTimestamp = state.endTimestamp;
     const restCount = Number(state.restCount) || 1;
     const title = restCount >= 2 ? `Rest ${restCount} over` : 'Rest over';
     const body = state.exerciseName
@@ -118,6 +123,7 @@ function syncNativeRestNotification(state) {
 }
 
 function cancelNativeRestNotification() {
+    restTimerScheduledEndTimestamp = null;
     const LocalNotifications = getLocalNotifications();
     if (!LocalNotifications) {
         return Promise.resolve();
@@ -190,9 +196,9 @@ function finalizeExpiredTimer(state, showForegroundAlert) {
     state.completeHandled = true;
     localStorage.setItem(REST_TIMER_STORAGE_KEY, JSON.stringify(state));
     stopRestTimerTick();
-    cancelNativeRestNotification();
 
     if (showForegroundAlert && !document.hidden && typeof notifyUser === 'function') {
+        cancelNativeRestNotification();
         const workoutUi = document.getElementById('workout-exercise-ui');
         const sound = !workoutUi || workoutUi.dataset.notificationSoundEnabled === 'true';
         const vibrate = !workoutUi || workoutUi.dataset.notificationVibrationEnabled === 'true';
@@ -202,6 +208,8 @@ function finalizeExpiredTimer(state, showForegroundAlert) {
             vibrate,
             delayMs: 2500,
         });
+    } else {
+        restTimerScheduledEndTimestamp = null;
     }
 
     resetCardToIdle(
