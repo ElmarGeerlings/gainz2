@@ -1,0 +1,9 @@
+{% for message in messages %}
+{% if message.role == "user" or message.role == "assistant" %}
+<div class="ai-chat-bubble ai-chat-bubble-{{ message.role }}">
+    <div class="ai-chat-bubble-body">{{ message.content }}</div>
+</div>
+{% endif %}
+{% empty %}
+<p class="text-muted text-sm m-0 ai-chat-empty">Say hi to get started.</p>
+{% endfor %}

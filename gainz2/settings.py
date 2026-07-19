@@ -44,7 +44,12 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 # Application definition
 
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini')
+AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.1-flash-lite')
+
 INSTALLED_APPS = [
+    'ai',
     'accounts',
     'channels',
     'django.contrib.admin',
@@ -53,6 +58,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_rq',
     'exercises',
     'workouts',
     'routines',
@@ -124,6 +130,26 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),          # or '5433' if that is your Postgres port
     }
+}
+
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+    },
+}
+
+RQ_QUEUES = {
+    'default': {
+        'URL': REDIS_URL,
+        'DEFAULT_TIMEOUT': 500,
+        'DEFAULT_RESULT_TTL': 500,
+    },
 }
 
 
