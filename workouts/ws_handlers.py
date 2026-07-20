@@ -18,6 +18,7 @@ from workouts.models import ExerciseSet, Workout
 from workouts.services import (
     add_exercise_to_workout,
     attach_prior_set_trends,
+    attach_set_trend,
     attach_rest_times,
     create_exercise_set,
     delete_exercise_set,
@@ -420,13 +421,8 @@ def handle_update_set(user, attributes):
     )
     user.settings.smartchange_enabled = smartchange
     user.settings.save(update_fields=["smartchange_enabled"])
-    attach_prior_set_trends(user, workout_exercise)
-    exercise_set = next(
-        workout_set
-        for workout_set in workout_exercise.sets.all()
-        if workout_set.pk == exercise_set.pk
-    )
     if warmup_changed or siblings_updated_count > 0:
+        attach_prior_set_trends(user, workout_exercise)
         html = render_to_string(
             "workouts/exercise_sets_block.html",
             {
@@ -436,6 +432,7 @@ def handle_update_set(user, attributes):
         )
         target = f'[data-exercise-sets-for="{workout_exercise.pk}"]'
     else:
+        attach_set_trend(user, exercise_set)
         html = render_to_string(
             "workouts/set_row_cells.html",
             {
