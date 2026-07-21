@@ -1,0 +1,45 @@
+{% if draft %}
+<section class="panel ai-draft-panel stack-sm">
+    <div class="row-between row-center gap-sm">
+        <h2 class="title-md m-0">Program preview</h2>
+        <div class="row-center gap-sm">
+            <button
+                type="button"
+                class="btn btn-outline"
+                data-endpoint="click->ai/discard_draft"
+                data-session-id="{{ session_id }}"
+            >Discard</button>
+            <button
+                type="button"
+                class="btn btn-primary"
+                data-endpoint="click->ai/accept_draft"
+                data-session-id="{{ session_id }}"
+            >Accept</button>
+        </div>
+    </div>
+    <p class="title-sm m-0">{{ draft.name }}</p>
+    {% if draft.description %}
+    <p class="text-sm text-muted m-0">{{ draft.description }}</p>
+    {% endif %}
+
+    <div class="stack-md">
+        {% for routine in draft.routines %}
+        <div class="ai-draft-routine stack-xs">
+            <p class="fw-700 m-0">{{ routine.name }}</p>
+            <ul class="ai-draft-exercise-list m-0">
+                {% for item in routine.exercises %}
+                <li class="text-sm">
+                    <span class="fw-700">{{ item.exercise_name }}</span>
+                    <span class="text-muted">({{ item.exercise_type }})</span>
+                    —
+                    {% for set in item.sets %}
+                        {% if set.is_warmup %}W{% endif %}{{ set.reps }}{% if set.weight %}@{{ set.weight }}{% endif %}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}

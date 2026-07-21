@@ -85,7 +85,6 @@ function sendAiChatMessage(event) {
   appendAiChatLoading();
   scrollAiChatToBottom();
 
-  // FormData skips disabled fields — collect the request before locking the UI.
   const pending = sendWsRequest("ai/send_message", trigger);
   setAiChatSending(true);
   input.value = "";
@@ -96,6 +95,12 @@ function sendAiChatMessage(event) {
     if (response.json_content?.target && response.json_content?.html) {
       document.querySelector(response.json_content.target).innerHTML =
         response.json_content.html;
+    }
+    if (response.json_content?.draft_target && "draft_html" in (response.json_content || {})) {
+      const draftEl = document.querySelector(response.json_content.draft_target);
+      if (draftEl) {
+        draftEl.innerHTML = response.json_content.draft_html || "";
+      }
     }
     scrollAiChatToBottom();
     input.focus();
