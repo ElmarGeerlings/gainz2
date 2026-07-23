@@ -207,6 +207,36 @@ def get_user_logged_exercises(user, primary_bodypart=None):
     return exercises.distinct().order_by("name")
 
 
+def get_user_lift_history(user):
+    work_sets = (
+        ExerciseSet.objects.filter(
+            workout_exercise__workout__user=user,
+            is_warmup=False,
+        )
+        .select_related(
+            "workout_exercise__exercise",
+            "workout_exercise__workout",
+        )
+        .order_by(
+            "-workout_exercise__workout__date",
+            "-set_number",
+        )
+    )
+    lifts = []
+    seen_exercise_ids = set()
+    for exercise_set in work_sets:
+        exercise_id = exercise_set.workout_exercise.exercise_id
+        if exercise_id in seen_exercise_ids:
+            continue
+        seen_exercise_ids.add(exercise_id)
+        lifts.append({
+            "name": exercise_set.workout_exercise.exercise.name,
+            "weight": float(exercise_set.weight),
+            "reps": exercise_set.reps,
+        })
+    return lifts
+
+
 def get_exercise_chart_data(
     user,
     exercise_id,
