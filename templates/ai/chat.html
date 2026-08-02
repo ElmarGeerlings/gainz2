@@ -16,14 +16,14 @@
         </div>
         <p class="text-sm text-muted m-0">Chat to design a program, then accept the preview when ready.</p>
     </header>
-
     <div id="ai-program-draft" class="mb-3"></div>
-
     <section class="panel ai-chat-panel stack-sm">
         <div id="ai-chat-messages" class="ai-chat-messages">
             {% include "ai/chat_messages.html" %}
         </div>
-
+        <div id="ai-chat-choices" class="ai-chat-choices">
+            {% include "ai/chat_choices.html" %}
+        </div>
         <form id="ai-chat-form" class="ai-chat-composer row-center gap-sm">
             <input type="hidden" name="session_id" value="{{ session_id }}">
             <textarea

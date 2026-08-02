@@ -46,7 +46,8 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini')
-AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.1-flash-lite')
+AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.5-flash-lite')
+AI_MODEL_GENERATE = os.getenv('AI_MODEL_GENERATE', 'gemini-3.6-flash')
 
 INSTALLED_APPS = [
     'ai',

@@ -93,6 +93,25 @@
     align-items: flex-end;
 }
 
+.ai-chat-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.25rem 0 0.75rem;
+}
+
+.ai-chat-choices-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ai-chat-choice-btn {
+    width: 100%;
+    text-align: left;
+    justify-content: flex-start;
+}
+
 .ai-chat-composer .ai-chat-input {
     flex: 1;
     min-height: 2.5rem;

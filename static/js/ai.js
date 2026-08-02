@@ -60,12 +60,60 @@ function setAiChatSending(isSending) {
   aiChatSending = isSending;
   const sendButton = document.querySelector("#ai-chat-send");
   const input = document.querySelector("#ai-chat-input");
+  const choiceButtons = document.querySelectorAll(".ai-chat-choice-btn");
   if (sendButton) {
     sendButton.disabled = isSending;
   }
   if (input) {
     input.readOnly = isSending;
   }
+  for (const button of choiceButtons) {
+    button.disabled = isSending;
+  }
+}
+
+function applyAiChatResponse(response) {
+  if (response.json_content?.target && response.json_content?.html) {
+    document.querySelector(response.json_content.target).innerHTML =
+      response.json_content.html;
+  }
+  if (response.json_content?.choices_target && "choices_html" in (response.json_content || {})) {
+    const choicesEl = document.querySelector(response.json_content.choices_target);
+    if (choicesEl) {
+      choicesEl.innerHTML = response.json_content.choices_html || "";
+    }
+  }
+  if (response.json_content?.draft_target && "draft_html" in (response.json_content || {})) {
+    const draftEl = document.querySelector(response.json_content.draft_target);
+    if (draftEl) {
+      draftEl.innerHTML = response.json_content.draft_html || "";
+    }
+  }
+  scrollAiChatToBottom();
+}
+
+function sendAiIntakeChoice(event) {
+  if (aiChatSending) {
+    return;
+  }
+
+  const trigger = event.currentTarget;
+  const label = trigger.textContent.trim();
+  appendOptimisticUserMessage(label);
+  appendAiChatLoading();
+  scrollAiChatToBottom();
+
+  setAiChatSending(true);
+  const pending = sendWsRequest("ai/intake_choice", trigger);
+
+  pending.then((response) => {
+    setAiChatSending(false);
+    applyAiChatResponse(response);
+    const input = document.querySelector("#ai-chat-input");
+    if (input) {
+      input.focus();
+    }
+  });
 }
 
 function sendAiChatMessage(event) {
@@ -92,17 +140,7 @@ function sendAiChatMessage(event) {
 
   pending.then((response) => {
     setAiChatSending(false);
-    if (response.json_content?.target && response.json_content?.html) {
-      document.querySelector(response.json_content.target).innerHTML =
-        response.json_content.html;
-    }
-    if (response.json_content?.draft_target && "draft_html" in (response.json_content || {})) {
-      const draftEl = document.querySelector(response.json_content.draft_target);
-      if (draftEl) {
-        draftEl.innerHTML = response.json_content.draft_html || "";
-      }
-    }
-    scrollAiChatToBottom();
+    applyAiChatResponse(response);
     input.focus();
   });
 }

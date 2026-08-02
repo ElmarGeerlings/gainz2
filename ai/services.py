@@ -3,6 +3,19 @@ import json
 from django.conf import settings
 from django_redis import get_redis_connection
 
+from ai.intake import (
+    DEMOGRAPHICS_PROMPT,
+    INTAKE_STEPS,
+    OFF_SCRIPT_PROMPT,
+    WEIGHTS_PROMPT,
+    build_profile_context,
+    find_choice,
+    format_history_summary,
+    get_choices_context,
+    get_current_step,
+    new_intake,
+    resolve_weight_path,
+)
 from ai.providers.gemini import generate_reply as gemini_generate_reply
 from ai.providers.gemini import generate_with_tools as gemini_generate_with_tools
 from ai.tools import TOOL_DECLARATIONS, run_get_exercise_catalog, run_get_lift_history
@@ -11,27 +24,26 @@ from exercises.services import list_exercises_for_user
 
 CHAT_HISTORY_TTL_SECONDS = 3600
 VALID_EXERCISE_TYPES = {"primary", "secondary", "accessory"}
+MIN_EXERCISES_PER_ROUTINE = 4
 
 CHAT_SYSTEM_PROMPT = (
     "You are a personal fitness coach helping the user design a workout program. "
     "Write in plain text only: no markdown, no bold (**), no italics, no headings with #. "
-    "Ask one short question at a time. "
-    "Gather goals, experience, training days, and equipment. "
-    "Early on (once you know they want a program), call get_lift_history before asking "
-    "for lifting numbers or body details. Use logged work sets for exercise preference "
-    "and starting loads when present. "
-    "If history is missing or thin and they have training experience, ask for a few "
-    "typical working weights. "
-    "Ask age, sex, or bodyweight as fallback for total beginners with no "
-    "history and no useful numbers — never block generation on those. "
+    "Never mention tools, catalogs, lift-history lookups, tracking status, or how you chose weights. "
+    "Speak only as a coach to the user. "
+    "Use the user profile provided in context. Ask only for missing information when the user goes off-script. "
     "Match the program to their stated goal; do not default to a powerlifting template. "
-    "When ready, call get_exercise_catalog (and get_lift_history if not yet called), "
+    "When ready, call get_exercise_catalog (and get_lift_history if useful), "
     "then submit_program_draft using only catalog exercise names (case may differ). "
     "Never invent exercise names; substitute from the catalog if needed. "
     "Prefer lift-history exercises when they fit. "
     "Every set needs a deliberate weight: use history or user numbers when you can; "
+    "when age, sex, and bodyweight are provided, use them for conservative novice starting loads; "
     "infer related lifts cautiously; use 0 only for true bodyweight moves; "
     "prefer slightly light when unsure. "
+    "Each routine must be a complete session: under 45 min needs at least 4 exercises; "
+    "about 60 min needs at least 5 exercises; 75+ min needs at least 6 exercises. "
+    "Never submit a routine with fewer than 4 exercises unless the user explicitly asked for a short minimal session. "
     "After a successful draft, tell them to review the preview and accept or ask for changes."
 )
 
@@ -63,6 +75,36 @@ def save_history(user_id, session_id, history):
 def clear_history(user_id, session_id):
     redis = get_redis_connection("default")
     redis.delete(f"ai_chat:{user_id}:{session_id}")
+
+
+def get_intake(user_id, session_id):
+    redis = get_redis_connection("default")
+    raw = redis.get(f"ai_intake:{user_id}:{session_id}")
+    if not raw:
+        return None
+    return json.loads(raw.decode("utf-8"))
+
+
+def save_intake(user_id, session_id, intake):
+    redis = get_redis_connection("default")
+    redis.set(
+        f"ai_intake:{user_id}:{session_id}",
+        json.dumps(intake),
+        ex=CHAT_HISTORY_TTL_SECONDS,
+    )
+
+
+def clear_intake(user_id, session_id):
+    redis = get_redis_connection("default")
+    redis.delete(f"ai_intake:{user_id}:{session_id}")
+
+
+def init_chat_session(user_id, session_id):
+    intake = new_intake()
+    save_intake(user_id, session_id, intake)
+    history = [{"role": "assistant", "content": INTAKE_STEPS[0]["question"]}]
+    save_history(user_id, session_id, history)
+    return intake, history
 
 
 def get_draft(user_id, session_id):
@@ -139,6 +181,13 @@ def validate_program_draft(user, draft):
         exercises = routine.get("exercises")
         if not isinstance(exercises, list) or not exercises:
             return None, f"Routine {routine_name} needs at least one exercise.", []
+
+        if len(exercises) < MIN_EXERCISES_PER_ROUTINE:
+            return (
+                None,
+                f"Routine {routine_name} needs at least {MIN_EXERCISES_PER_ROUTINE} exercises.",
+                [],
+            )
 
         cleaned_exercises = []
         for exercise_index, item in enumerate(exercises, start=1):
@@ -257,16 +306,138 @@ def execute_tool(name, args, user, session_id):
     return {"ok": False, "error": f"Unknown tool: {name}"}
 
 
+def build_gemini_messages(user, session_id, history):
+    intake = get_intake(user.id, session_id)
+    messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
+
+    if intake and intake.get("answers"):
+        lifts = run_get_lift_history(user, {})["lifts"]
+        history_summary = format_history_summary(lifts) if lifts else ""
+        profile = build_profile_context(intake, history_summary)
+        messages.append({"role": "system", "content": profile})
+
+    messages.extend(history)
+    return messages
+
+
+def start_generation(user, session_id, intake, history):
+    path, lifts = resolve_weight_path(user, intake)
+    history_summary = format_history_summary(lifts) if path == "use_history" else ""
+    profile = build_profile_context(intake, history_summary)
+    messages = [
+        {"role": "system", "content": CHAT_SYSTEM_PROMPT},
+        {"role": "system", "content": profile},
+    ] + history
+
+    reply = gemini_generate_with_tools(
+        messages,
+        TOOL_DECLARATIONS,
+        user,
+        session_id,
+        model=settings.AI_MODEL_GENERATE,
+    )
+    history.append({"role": "assistant", "content": reply})
+    save_history(user.id, session_id, history)
+    intake["phase"] = "chat"
+    save_intake(user.id, session_id, intake)
+    return history
+
+
+def finish_intake(user, session_id, intake, history):
+    path, lifts = resolve_weight_path(user, intake)
+    if path == "use_history":
+        history = start_generation(user, session_id, intake, history)
+        return history, intake
+
+    if path == "ask_weights":
+        intake["phase"] = "awaiting_weights"
+        history.append({"role": "assistant", "content": WEIGHTS_PROMPT})
+        save_intake(user.id, session_id, intake)
+        save_history(user.id, session_id, history)
+        return history, intake
+
+    intake["phase"] = "awaiting_demographics"
+    history.append({"role": "assistant", "content": DEMOGRAPHICS_PROMPT})
+    save_intake(user.id, session_id, intake)
+    save_history(user.id, session_id, history)
+    return history, intake
+
+
+def apply_intake_choice(user, session_id, choice_id):
+    intake = get_intake(user.id, session_id)
+    if not intake or intake.get("phase") != "intake":
+        return get_history(user.id, session_id), intake
+
+    step_index = intake["step"]
+    step = get_current_step(intake)
+    if not step:
+        return get_history(user.id, session_id), intake
+
+    choice = find_choice(step_index, choice_id)
+    if not choice:
+        return get_history(user.id, session_id), intake
+
+    history = get_history(user.id, session_id)
+    history.append({"role": "user", "content": choice["label"]})
+    intake["answers"][step["key"]] = choice["id"]
+
+    if choice["id"] == "other":
+        intake["off_script"] = True
+        intake["phase"] = "chat"
+        history.append({"role": "assistant", "content": OFF_SCRIPT_PROMPT})
+        save_intake(user.id, session_id, intake)
+        save_history(user.id, session_id, history)
+        return history, intake
+
+    intake["step"] = step_index + 1
+    if intake["step"] >= len(INTAKE_STEPS):
+        save_intake(user.id, session_id, intake)
+        return finish_intake(user, session_id, intake, history)
+
+    next_step = INTAKE_STEPS[intake["step"]]
+    history.append({"role": "assistant", "content": next_step["question"]})
+    save_intake(user.id, session_id, intake)
+    save_history(user.id, session_id, history)
+    return history, intake
+
+
 def send_chat_message(user, session_id, message):
     message = (message or "").strip()
     if not message:
         return get_history(user.id, session_id)
 
+    intake = get_intake(user.id, session_id)
     history = get_history(user.id, session_id)
     history.append({"role": "user", "content": message})
 
+    if intake and intake.get("phase") == "intake":
+        intake["off_script"] = True
+        intake["phase"] = "chat"
+        save_intake(user.id, session_id, intake)
+        reply = gemini_generate_with_tools(
+            build_gemini_messages(user, session_id, history),
+            TOOL_DECLARATIONS,
+            user,
+            session_id,
+        )
+        history.append({"role": "assistant", "content": reply})
+        save_history(user.id, session_id, history)
+        return history
+
+    if intake and intake.get("phase") == "awaiting_weights":
+        intake["weight_notes"] = message
+        intake["phase"] = "chat"
+        save_intake(user.id, session_id, intake)
+        return start_generation(user, session_id, intake, history)
+
+    if intake and intake.get("phase") == "awaiting_demographics":
+        intake["demographics_notes"] = message
+        intake["phase"] = "chat"
+        save_intake(user.id, session_id, intake)
+        return start_generation(user, session_id, intake, history)
+
     reply = gemini_generate_with_tools(
-        [{"role": "system", "content": CHAT_SYSTEM_PROMPT}] + history,
+        build_gemini_messages(user, session_id, history),
         TOOL_DECLARATIONS,
         user,
         session_id,
@@ -288,4 +459,5 @@ def accept_draft(user, session_id):
     program = create_program_from_ai_draft(user, cleaned)
     clear_draft(user.id, session_id)
     clear_history(user.id, session_id)
+    clear_intake(user.id, session_id)
     return program

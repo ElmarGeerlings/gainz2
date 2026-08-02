@@ -1,10 +1,13 @@
 from django.template.loader import render_to_string
 
+from ai.intake import get_choices_context
 from ai.services import (
     accept_draft,
+    apply_intake_choice,
     clear_draft,
     enrich_draft_for_preview,
     get_draft,
+    get_intake,
     send_chat_message,
 )
 from gainz2.utils import render_toast
@@ -22,24 +25,48 @@ def render_draft_html(user, session_id):
     )
 
 
-def handle_send_message(user, attributes):
-    session_id = attributes.get("session_id") or attributes.get("data-session-id", "")
-    message = attributes.get("message", "")
-    history = send_chat_message(user, session_id, message)
-    html = render_to_string(
-        "ai/chat_messages.html",
-        {"messages": history},
+def render_choices_html(user, session_id):
+    intake = get_intake(user.id, session_id)
+    choices = get_choices_context(intake)
+    return render_to_string(
+        "ai/chat_choices.html",
+        {
+            "choices": choices,
+            "session_id": session_id,
+        },
     )
+
+
+def build_ai_chat_response(user, session_id, history):
     return {
         "status": 200,
         "headers": [],
         "json_content": {
             "target": "#ai-chat-messages",
-            "html": html,
+            "html": render_to_string(
+                "ai/chat_messages.html",
+                {"messages": history},
+            ),
+            "choices_target": "#ai-chat-choices",
+            "choices_html": render_choices_html(user, session_id),
             "draft_target": "#ai-program-draft",
             "draft_html": render_draft_html(user, session_id),
         },
     }
+
+
+def handle_send_message(user, attributes):
+    session_id = attributes.get("session_id") or attributes.get("data-session-id", "")
+    message = attributes.get("message", "")
+    history = send_chat_message(user, session_id, message)
+    return build_ai_chat_response(user, session_id, history)
+
+
+def handle_intake_choice(user, attributes):
+    session_id = attributes.get("session_id") or attributes.get("data-session-id", "")
+    choice_id = attributes.get("choice") or attributes.get("data-choice", "")
+    history, intake = apply_intake_choice(user, session_id, choice_id)
+    return build_ai_chat_response(user, session_id, history)
 
 
 def handle_accept_draft(user, attributes):

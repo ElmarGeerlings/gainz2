@@ -21,12 +21,13 @@ def messages_to_gemini_contents(messages):
     return system_instruction, contents
 
 
-def post_generate_content(payload):
+def post_generate_content(payload, model=None):
     api_key = settings.GEMINI_API_KEY
     if not api_key:
         raise ValueError("GEMINI_API_KEY not set")
 
-    model = settings.AI_MODEL
+    if model is None:
+        model = settings.AI_MODEL
     url = (
         f"https://generativelanguage.googleapis.com/v1beta/models/"
         f"{model}:generateContent?key={api_key}"
@@ -57,7 +58,7 @@ def function_calls_from_parts(parts):
     return calls
 
 
-def generate_reply(messages):
+def generate_reply(messages, model=None):
     system_instruction, contents = messages_to_gemini_contents(messages)
     payload = {"contents": contents}
     if system_instruction:
@@ -65,7 +66,7 @@ def generate_reply(messages):
             "parts": [{"text": system_instruction}],
         }
 
-    res = post_generate_content(payload)
+    res = post_generate_content(payload, model=model)
     candidates = res.get("candidates") or []
     if not candidates:
         return "I didn't get a reply just now. Try sending that again."
@@ -77,7 +78,7 @@ def generate_reply(messages):
     return text
 
 
-def generate_with_tools(messages, tools, user, session_id):
+def generate_with_tools(messages, tools, user, session_id, model=None):
     from ai.services import execute_tool
 
     system_instruction, contents = messages_to_gemini_contents(messages)
@@ -93,7 +94,7 @@ def generate_with_tools(messages, tools, user, session_id):
                 "parts": [{"text": system_instruction}],
             }
 
-        res = post_generate_content(payload)
+        res = post_generate_content(payload, model=model)
         candidates = res.get("candidates") or []
         if not candidates:
             return "I didn't get a reply just now. Try sending that again."

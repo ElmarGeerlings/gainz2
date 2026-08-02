@@ -1,0 +1,13 @@
+{% if choices %}
+<div class="ai-chat-choices-stack">
+    {% for choice in choices.choices %}
+    <button
+        type="button"
+        class="btn btn-outline ai-chat-choice-btn"
+        data-session-id="{{ session_id }}"
+        data-choice="{{ choice.id }}"
+        data-function="click->sendAiIntakeChoice"
+    >{{ choice.label }}</button>
+    {% endfor %}
+</div>
+{% endif %}
