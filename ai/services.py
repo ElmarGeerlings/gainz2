@@ -4,55 +4,46 @@ from django.conf import settings
 from django_redis import get_redis_connection
 
 from ai.intake import (
+    CONSTRAINTS_PROMPT,
     DEMOGRAPHICS_PROMPT,
     INTAKE_STEPS,
-    OFF_SCRIPT_PROMPT,
+    OTHER_TYPE_PROMPT,
     WEIGHTS_PROMPT,
+    apply_parsed_intake,
     build_profile_context,
-    find_choice,
+    first_missing_step_index,
     format_history_summary,
-    get_choices_context,
     get_current_step,
     new_intake,
     resolve_weight_path,
 )
-from ai.providers.gemini import generate_reply as gemini_generate_reply
+from ai.intake_parse import parse_intake_message
+from ai.prompts import (
+    CHAT_SYSTEM_PROMPT,
+    GOAL_PROMPT_ADDONS,
+    REPAIR_PROMPT,
+    STAGE1_SYSTEM_PROMPT,
+    STAGE2_SYSTEM_PROMPT,
+)
 from ai.providers.gemini import generate_with_tools as gemini_generate_with_tools
-from ai.tools import TOOL_DECLARATIONS, run_get_exercise_catalog, run_get_lift_history
+from ai.rubrics import validate_exercise_plan_structure, validate_program_loads
+from ai.tools import (
+    CHAT_TOOL_DECLARATIONS,
+    STAGE1_TOOL_DECLARATIONS,
+    STAGE2_TOOL_DECLARATIONS,
+    run_get_exercise_catalog,
+    run_get_lift_history,
+)
+from exercises.catalog_metadata import (
+    allowed_equipment_for_intake,
+    exercise_passes_equipment_filter,
+)
 from exercises.models import Exercise
 from exercises.services import list_exercises_for_user
 
 CHAT_HISTORY_TTL_SECONDS = 3600
 VALID_EXERCISE_TYPES = {"primary", "secondary", "accessory"}
 MIN_EXERCISES_PER_ROUTINE = 4
-
-CHAT_SYSTEM_PROMPT = (
-    "You are a personal fitness coach helping the user design a workout program. "
-    "Write in plain text only: no markdown, no bold (**), no italics, no headings with #. "
-    "Never mention tools, catalogs, lift-history lookups, tracking status, or how you chose weights. "
-    "Speak only as a coach to the user. "
-    "Use the user profile provided in context. Ask only for missing information when the user goes off-script. "
-    "Match the program to their stated goal; do not default to a powerlifting template. "
-    "When ready, call get_exercise_catalog (and get_lift_history if useful), "
-    "then submit_program_draft using only catalog exercise names (case may differ). "
-    "Never invent exercise names; substitute from the catalog if needed. "
-    "Prefer lift-history exercises when they fit. "
-    "Every set needs a deliberate weight: use history or user numbers when you can; "
-    "when age, sex, and bodyweight are provided, use them for conservative novice starting loads; "
-    "infer related lifts cautiously; use 0 only for true bodyweight moves; "
-    "prefer slightly light when unsure. "
-    "Each routine must be a complete session: under 45 min needs at least 4 exercises; "
-    "about 60 min needs at least 5 exercises; 75+ min needs at least 6 exercises. "
-    "Never submit a routine with fewer than 4 exercises unless the user explicitly asked for a short minimal session. "
-    "After a successful draft, tell them to review the preview and accept or ask for changes."
-)
-
-
-def generate_reply(messages):
-    provider = settings.AI_PROVIDER
-    if provider == "gemini":
-        return gemini_generate_reply(messages)
-    raise ValueError(f"Unsupported AI provider: {provider}")
 
 
 def get_history(user_id, session_id):
@@ -99,14 +90,6 @@ def clear_intake(user_id, session_id):
     redis.delete(f"ai_intake:{user_id}:{session_id}")
 
 
-def init_chat_session(user_id, session_id):
-    intake = new_intake()
-    save_intake(user_id, session_id, intake)
-    history = [{"role": "assistant", "content": INTAKE_STEPS[0]["question"]}]
-    save_history(user_id, session_id, history)
-    return intake, history
-
-
 def get_draft(user_id, session_id):
     redis = get_redis_connection("default")
     raw = redis.get(f"ai_draft:{user_id}:{session_id}")
@@ -129,6 +112,56 @@ def clear_draft(user_id, session_id):
     redis.delete(f"ai_draft:{user_id}:{session_id}")
 
 
+def get_exercise_plan(user_id, session_id):
+    redis = get_redis_connection("default")
+    raw = redis.get(f"ai_exercise_plan:{user_id}:{session_id}")
+    if not raw:
+        return None
+    return json.loads(raw.decode("utf-8"))
+
+
+def save_exercise_plan(user_id, session_id, plan):
+    redis = get_redis_connection("default")
+    redis.set(
+        f"ai_exercise_plan:{user_id}:{session_id}",
+        json.dumps(plan),
+        ex=CHAT_HISTORY_TTL_SECONDS,
+    )
+
+
+def clear_exercise_plan(user_id, session_id):
+    redis = get_redis_connection("default")
+    redis.delete(f"ai_exercise_plan:{user_id}:{session_id}")
+
+
+def get_enforce_plan(user_id, session_id):
+    redis = get_redis_connection("default")
+    raw = redis.get(f"ai_enforce_plan:{user_id}:{session_id}")
+    if not raw:
+        return False
+    return raw.decode("utf-8") == "1"
+
+
+def set_enforce_plan(user_id, session_id, enforce):
+    redis = get_redis_connection("default")
+    if enforce:
+        redis.set(
+            f"ai_enforce_plan:{user_id}:{session_id}",
+            "1",
+            ex=CHAT_HISTORY_TTL_SECONDS,
+        )
+    else:
+        redis.delete(f"ai_enforce_plan:{user_id}:{session_id}")
+
+
+def init_chat_session(user_id, session_id):
+    intake = new_intake()
+    save_intake(user_id, session_id, intake)
+    history = [{"role": "assistant", "content": INTAKE_STEPS[0]["question"]}]
+    save_history(user_id, session_id, history)
+    return intake, history
+
+
 def build_exercise_name_lookup(user):
     exercises = list_exercises_for_user(
         user,
@@ -145,6 +178,25 @@ def build_exercise_name_lookup(user):
     return lookup
 
 
+def build_filtered_exercise_lookup(user, intake):
+    exercises = list_exercises_for_user(
+        user,
+        search_query="",
+        exercise_type="",
+        primary_bodypart="",
+        custom_filter="",
+    )
+    allowed_tags = allowed_equipment_for_intake(intake)
+    lookup = {}
+    for exercise in exercises:
+        if not exercise_passes_equipment_filter(exercise, allowed_tags):
+            continue
+        key = exercise.name.strip().lower()
+        if key not in lookup or not exercise.is_custom:
+            lookup[key] = exercise
+    return lookup
+
+
 def resolve_allowed_exercise(user, exercise_id):
     exercise = Exercise.objects.filter(pk=exercise_id).first()
     if not exercise:
@@ -152,6 +204,96 @@ def resolve_allowed_exercise(user, exercise_id):
     if exercise.is_custom and exercise.user_id != user.id:
         return None
     return exercise
+
+
+def clean_exercise_plan(user, plan, intake):
+    if not isinstance(plan, dict):
+        return None, ["Exercise plan must be an object."]
+
+    name = (plan.get("name") or "").strip()
+    if not name:
+        return None, ["Program name is required."]
+
+    routines = plan.get("routines")
+    if not isinstance(routines, list) or not routines:
+        return None, ["At least one routine is required."]
+
+    lookup = build_filtered_exercise_lookup(user, intake)
+    unknown_names = []
+    cleaned_routines = []
+
+    for routine in routines:
+        if not isinstance(routine, dict):
+            return None, ["A routine entry is invalid."]
+
+        routine_name = (routine.get("name") or "").strip()
+        if not routine_name:
+            return None, ["Each routine needs a name."]
+
+        exercises = routine.get("exercises")
+        if not isinstance(exercises, list) or not exercises:
+            return None, [f"Routine {routine_name} needs exercises."]
+
+        cleaned_exercises = []
+        for item in exercises:
+            if not isinstance(item, dict):
+                return None, [f"Routine {routine_name} has an invalid exercise."]
+
+            exercise_name = (item.get("exercise_name") or "").strip()
+            if not exercise_name:
+                return None, [f"Routine {routine_name} has an exercise without a name."]
+
+            exercise = lookup.get(exercise_name.lower())
+            if not exercise:
+                unknown_names.append(exercise_name)
+                continue
+
+            exercise_type = item.get("exercise_type") or "accessory"
+            if exercise_type not in VALID_EXERCISE_TYPES:
+                return None, [f"Invalid exercise_type for {exercise.name}."]
+
+            cleaned_exercises.append({
+                "exercise_id": exercise.pk,
+                "exercise_name": exercise.name,
+                "exercise_type": exercise_type,
+            })
+
+        cleaned_routines.append({
+            "name": routine_name,
+            "exercises": cleaned_exercises,
+        })
+
+    if unknown_names:
+        unique_unknown = sorted(set(unknown_names), key=str.lower)
+        return None, [f"Unknown exercise names: {', '.join(unique_unknown)}"]
+
+    cleaned = {
+        "name": name,
+        "description": (plan.get("description") or "").strip(),
+        "routines": cleaned_routines,
+    }
+    structure_errors = validate_exercise_plan_structure(cleaned, lookup, intake)
+    if structure_errors:
+        return None, structure_errors
+    return cleaned, []
+
+
+def draft_matches_exercise_plan(draft, plan):
+    if len(draft.get("routines", [])) != len(plan.get("routines", [])):
+        return False
+    for draft_routine, plan_routine in zip(draft["routines"], plan["routines"]):
+        if draft_routine.get("name") != plan_routine.get("name"):
+            return False
+        draft_items = draft_routine.get("exercises", [])
+        plan_items = plan_routine.get("exercises", [])
+        if len(draft_items) != len(plan_items):
+            return False
+        for draft_item, plan_item in zip(draft_items, plan_items):
+            if draft_item.get("exercise_name", "").lower() != plan_item.get("exercise_name", "").lower():
+                return False
+            if draft_item.get("exercise_type") != plan_item.get("exercise_type"):
+                return False
+    return True
 
 
 def validate_program_draft(user, draft):
@@ -253,30 +395,39 @@ def validate_program_draft(user, draft):
     return cleaned, None, []
 
 
-def enrich_draft_for_preview(draft):
-    if not draft:
-        return None
-    routines = []
-    for routine in draft["routines"]:
-        exercises = []
-        for item in routine["exercises"]:
-            exercises.append({
-                "exercise_name": item["exercise_name"],
-                "exercise_type": item["exercise_type"],
-                "sets": item["sets"],
-            })
-        routines.append({
-            "name": routine["name"],
-            "exercises": exercises,
-        })
+def submit_exercise_plan_tool(user, session_id, args, intake):
+    cleaned, errors = clean_exercise_plan(user, args, intake)
+    if errors:
+        return {"ok": False, "error": "; ".join(errors), "errors": errors}
+    save_exercise_plan(user.id, session_id, cleaned)
+    exercise_count = sum(
+        len(routine["exercises"]) for routine in cleaned["routines"]
+    )
     return {
-        "name": draft["name"],
-        "description": draft.get("description") or "",
-        "routines": routines,
+        "ok": True,
+        "summary": (
+            f"{cleaned['name']}: {len(cleaned['routines'])} routine(s), "
+            f"{exercise_count} exercise(s)."
+        ),
     }
 
 
-def submit_program_draft_tool(user, session_id, args):
+def submit_program_draft_tool(user, session_id, args, intake, enforce_plan=False):
+    if enforce_plan:
+        plan = get_exercise_plan(user.id, session_id)
+        if plan:
+            cleaned_preview, error, unknown_names = validate_program_draft(user, args)
+            if error:
+                return {"ok": False, "error": error, "unknown_names": unknown_names or []}
+            if not draft_matches_exercise_plan(cleaned_preview, plan):
+                return {
+                    "ok": False,
+                    "error": (
+                        "Program draft must use the same routines, exercises, "
+                        "and order as the locked exercise plan."
+                    ),
+                }
+
     cleaned, error, unknown_names = validate_program_draft(user, args)
     if error:
         result = {"ok": False, "error": error}
@@ -297,12 +448,18 @@ def submit_program_draft_tool(user, session_id, args):
 
 
 def execute_tool(name, args, user, session_id):
+    intake = get_intake(user.id, session_id)
     if name == "get_exercise_catalog":
-        return run_get_exercise_catalog(user, args)
+        return run_get_exercise_catalog(user, args, intake)
     if name == "get_lift_history":
         return run_get_lift_history(user, args)
+    if name == "submit_exercise_plan":
+        return submit_exercise_plan_tool(user, session_id, args, intake)
     if name == "submit_program_draft":
-        return submit_program_draft_tool(user, session_id, args)
+        enforce_plan = get_enforce_plan(user.id, session_id)
+        return submit_program_draft_tool(
+            user, session_id, args, intake, enforce_plan=enforce_plan
+        )
     return {"ok": False, "error": f"Unknown tool: {name}"}
 
 
@@ -310,7 +467,20 @@ def build_gemini_messages(user, session_id, history):
     intake = get_intake(user.id, session_id)
     messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
 
-    if intake and intake.get("answers"):
+    include_profile = False
+    if intake:
+        if intake.get("answers"):
+            include_profile = True
+        elif (intake.get("constraints") or "").strip():
+            include_profile = True
+        elif (intake.get("weight_notes") or "").strip():
+            include_profile = True
+        elif (intake.get("demographics_notes") or "").strip():
+            include_profile = True
+        elif intake.get("off_script"):
+            include_profile = True
+
+    if include_profile:
         lifts = run_get_lift_history(user, {})["lifts"]
         history_summary = format_history_summary(lifts) if lifts else ""
         profile = build_profile_context(intake, history_summary)
@@ -320,27 +490,125 @@ def build_gemini_messages(user, session_id, history):
     return messages
 
 
-def start_generation(user, session_id, intake, history):
-    path, lifts = resolve_weight_path(user, intake)
-    history_summary = format_history_summary(lifts) if path == "use_history" else ""
-    profile = build_profile_context(intake, history_summary)
-    messages = [
-        {"role": "system", "content": CHAT_SYSTEM_PROMPT},
-        {"role": "system", "content": profile},
-    ] + history
-
-    reply = gemini_generate_with_tools(
+def run_stage_with_repair(user, session_id, base_history, system_prompt, tools):
+    messages = [{"role": "system", "content": system_prompt}] + base_history
+    gemini_generate_with_tools(
         messages,
-        TOOL_DECLARATIONS,
+        tools,
         user,
         session_id,
         model=settings.AI_MODEL_GENERATE,
     )
+    return messages
+
+
+def start_generation(user, session_id, intake, history):
+    clear_draft(user.id, session_id)
+    clear_exercise_plan(user.id, session_id)
+    set_enforce_plan(user.id, session_id, False)
+
+    path, lifts = resolve_weight_path(user, intake)
+    history_summary = format_history_summary(lifts) if path == "use_history" else ""
+    profile = build_profile_context(intake, history_summary)
+    goal = intake.get("answers", {}).get("goal")
+    addon = GOAL_PROMPT_ADDONS.get(goal)
+    if addon:
+        profile = profile + "\n\n" + addon
+    base_history = list(history)
+
+    stage1_prompt = STAGE1_SYSTEM_PROMPT + "\n\n" + profile
+    run_stage_with_repair(
+        user, session_id, base_history, stage1_prompt, STAGE1_TOOL_DECLARATIONS
+    )
+    plan = get_exercise_plan(user.id, session_id)
+    if not plan:
+        errors = ["Submit an exercise plan with submit_exercise_plan."]
+    else:
+        lookup = build_filtered_exercise_lookup(user, intake)
+        errors = validate_exercise_plan_structure(plan, lookup, intake)
+    if errors:
+        repair_text = REPAIR_PROMPT + "\n" + "\n".join(f"- {item}" for item in errors)
+        repair_history = base_history + [{"role": "user", "content": repair_text}]
+        run_stage_with_repair(
+            user,
+            session_id,
+            repair_history,
+            stage1_prompt,
+            STAGE1_TOOL_DECLARATIONS,
+        )
+        plan = get_exercise_plan(user.id, session_id)
+        if not plan:
+            errors = ["Submit an exercise plan with submit_exercise_plan."]
+        else:
+            lookup = build_filtered_exercise_lookup(user, intake)
+            errors = validate_exercise_plan_structure(plan, lookup, intake)
+
+    plan = get_exercise_plan(user.id, session_id)
+    if not plan or errors:
+        reply = (
+            "I couldn't put together a program just now. "
+            "Try again or tell me what you want changed."
+        )
+        history.append({"role": "assistant", "content": reply})
+        save_history(user.id, session_id, history)
+        intake["phase"] = "chat"
+        save_intake(user.id, session_id, intake)
+        return history
+
+    set_enforce_plan(user.id, session_id, True)
+    locked_plan = json.dumps(plan, indent=2)
+    stage2_prompt = (
+        STAGE2_SYSTEM_PROMPT
+        + "\n\n"
+        + profile
+        + "\n\nLocked exercise plan (do not change exercises):\n"
+        + locked_plan
+    )
+    run_stage_with_repair(
+        user, session_id, base_history, stage2_prompt, STAGE2_TOOL_DECLARATIONS
+    )
+    draft = get_draft(user.id, session_id)
+    if not draft:
+        errors = ["Submit the full program with submit_program_draft."]
+    else:
+        errors = validate_program_loads(draft, intake)
+    if errors:
+        repair_text = REPAIR_PROMPT + "\n" + "\n".join(f"- {item}" for item in errors)
+        repair_history = base_history + [{"role": "user", "content": repair_text}]
+        run_stage_with_repair(
+            user,
+            session_id,
+            repair_history,
+            stage2_prompt,
+            STAGE2_TOOL_DECLARATIONS,
+        )
+
+    set_enforce_plan(user.id, session_id, False)
+
+    draft = get_draft(user.id, session_id)
+    if draft:
+        reply = (
+            "I've put together a program preview for you. "
+            "Review it above and accept when ready, or tell me what to change."
+        )
+    else:
+        reply = (
+            "I couldn't finish the program details just now. "
+            "Tell me what to adjust and we can try again."
+        )
     history.append({"role": "assistant", "content": reply})
     save_history(user.id, session_id, history)
     intake["phase"] = "chat"
     save_intake(user.id, session_id, intake)
     return history
+
+
+def begin_constraints(user, session_id, intake, history):
+    intake["phase"] = "awaiting_constraints"
+    history.append({"role": "assistant", "content": CONSTRAINTS_PROMPT})
+    save_intake(user.id, session_id, intake)
+    save_history(user.id, session_id, history)
+    return history, intake
 
 
 def finish_intake(user, session_id, intake, history):
@@ -373,32 +641,80 @@ def apply_intake_choice(user, session_id, choice_id):
     if not step:
         return get_history(user.id, session_id), intake
 
-    choice = find_choice(step_index, choice_id)
+    choice = None
+    for item in step["choices"]:
+        if item["id"] == choice_id:
+            choice = item
+            break
     if not choice:
         return get_history(user.id, session_id), intake
 
     history = get_history(user.id, session_id)
     history.append({"role": "user", "content": choice["label"]})
-    intake["answers"][step["key"]] = choice["id"]
 
     if choice["id"] == "other":
-        intake["off_script"] = True
-        intake["phase"] = "chat"
-        history.append({"role": "assistant", "content": OFF_SCRIPT_PROMPT})
+        intake["awaiting_free_text_for"] = step["key"]
+        history.append({"role": "assistant", "content": OTHER_TYPE_PROMPT})
         save_intake(user.id, session_id, intake)
         save_history(user.id, session_id, history)
         return history, intake
 
+    intake["answers"][step["key"]] = choice["id"]
     intake["step"] = step_index + 1
     if intake["step"] >= len(INTAKE_STEPS):
         save_intake(user.id, session_id, intake)
-        return finish_intake(user, session_id, intake, history)
+        return begin_constraints(user, session_id, intake, history)
 
     next_step = INTAKE_STEPS[intake["step"]]
     history.append({"role": "assistant", "content": next_step["question"]})
     save_intake(user.id, session_id, intake)
     save_history(user.id, session_id, history)
     return history, intake
+
+
+def handle_intake_typed_message(user, session_id, intake, history, message):
+    awaiting = (intake.get("awaiting_free_text_for") or "").strip()
+    if awaiting:
+        current_key = awaiting
+    else:
+        current_step = get_current_step(intake)
+        current_key = current_step["key"] if current_step else INTAKE_STEPS[0]["key"]
+    parsed = parse_intake_message(intake, message, current_key)
+
+    if parsed["constraints"]:
+        intake["constraints"] = parsed["constraints"]
+    apply_parsed_intake(intake, parsed)
+
+    if (intake.get("awaiting_free_text_for") or "").strip():
+        history.append({"role": "assistant", "content": OTHER_TYPE_PROMPT})
+        save_intake(user.id, session_id, intake)
+        save_history(user.id, session_id, history)
+        return history
+
+    if parsed["off_script"]:
+        intake["off_script"] = True
+        intake["phase"] = "chat"
+        save_intake(user.id, session_id, intake)
+        reply = gemini_generate_with_tools(
+            build_gemini_messages(user, session_id, history),
+            CHAT_TOOL_DECLARATIONS,
+            user,
+            session_id,
+        )
+        history.append({"role": "assistant", "content": reply})
+        save_history(user.id, session_id, history)
+        return history
+
+    intake["step"] = first_missing_step_index(intake)
+    if intake["step"] >= len(INTAKE_STEPS):
+        save_intake(user.id, session_id, intake)
+        return begin_constraints(user, session_id, intake, history)[0]
+
+    next_step = INTAKE_STEPS[intake["step"]]
+    history.append({"role": "assistant", "content": next_step["question"]})
+    save_intake(user.id, session_id, intake)
+    save_history(user.id, session_id, history)
+    return history
 
 
 def send_chat_message(user, session_id, message):
@@ -411,34 +727,26 @@ def send_chat_message(user, session_id, message):
     history.append({"role": "user", "content": message})
 
     if intake and intake.get("phase") == "intake":
-        intake["off_script"] = True
-        intake["phase"] = "chat"
+        return handle_intake_typed_message(user, session_id, intake, history, message)
+
+    if intake and intake.get("phase") == "awaiting_constraints":
+        intake["constraints"] = message
         save_intake(user.id, session_id, intake)
-        reply = gemini_generate_with_tools(
-            build_gemini_messages(user, session_id, history),
-            TOOL_DECLARATIONS,
-            user,
-            session_id,
-        )
-        history.append({"role": "assistant", "content": reply})
-        save_history(user.id, session_id, history)
-        return history
+        return finish_intake(user, session_id, intake, history)[0]
 
     if intake and intake.get("phase") == "awaiting_weights":
         intake["weight_notes"] = message
-        intake["phase"] = "chat"
         save_intake(user.id, session_id, intake)
         return start_generation(user, session_id, intake, history)
 
     if intake and intake.get("phase") == "awaiting_demographics":
         intake["demographics_notes"] = message
-        intake["phase"] = "chat"
         save_intake(user.id, session_id, intake)
         return start_generation(user, session_id, intake, history)
 
     reply = gemini_generate_with_tools(
         build_gemini_messages(user, session_id, history),
-        TOOL_DECLARATIONS,
+        CHAT_TOOL_DECLARATIONS,
         user,
         session_id,
     )
@@ -458,6 +766,8 @@ def accept_draft(user, session_id):
         return None
     program = create_program_from_ai_draft(user, cleaned)
     clear_draft(user.id, session_id)
+    clear_exercise_plan(user.id, session_id)
+    set_enforce_plan(user.id, session_id, False)
     clear_history(user.id, session_id)
     clear_intake(user.id, session_id)
     return program

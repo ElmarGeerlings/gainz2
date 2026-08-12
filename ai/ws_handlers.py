@@ -5,30 +5,19 @@ from ai.services import (
     accept_draft,
     apply_intake_choice,
     clear_draft,
-    enrich_draft_for_preview,
     get_draft,
     get_intake,
     send_chat_message,
 )
 from gainz2.utils import render_toast
 
-
-def render_draft_html(user, session_id):
-    draft = get_draft(user.id, session_id)
-    preview = enrich_draft_for_preview(draft)
-    return render_to_string(
-        "ai/program_draft.html",
-        {
-            "draft": preview,
-            "session_id": session_id,
-        },
-    )
+DEFAULT_COMPOSER_PLACEHOLDER = "Type a message..."
 
 
-def render_choices_html(user, session_id):
+def build_ai_chat_response(user, session_id, history):
     intake = get_intake(user.id, session_id)
     choices = get_choices_context(intake)
-    return render_to_string(
+    choices_html = render_to_string(
         "ai/chat_choices.html",
         {
             "choices": choices,
@@ -36,8 +25,39 @@ def render_choices_html(user, session_id):
         },
     )
 
+    draft = get_draft(user.id, session_id)
+    preview = None
+    if draft:
+        routines = []
+        for routine in draft["routines"]:
+            exercises = []
+            for item in routine["exercises"]:
+                exercises.append({
+                    "exercise_name": item["exercise_name"],
+                    "exercise_type": item["exercise_type"],
+                    "sets": item["sets"],
+                })
+            routines.append({
+                "name": routine["name"],
+                "exercises": exercises,
+            })
+        preview = {
+            "name": draft["name"],
+            "description": draft.get("description") or "",
+            "routines": routines,
+        }
+    draft_html = render_to_string(
+        "ai/program_draft.html",
+        {
+            "draft": preview,
+            "session_id": session_id,
+        },
+    )
 
-def build_ai_chat_response(user, session_id, history):
+    composer_placeholder = DEFAULT_COMPOSER_PLACEHOLDER
+    if intake and (intake.get("awaiting_free_text_for") or "").strip():
+        composer_placeholder = "Type your answer..."
+
     return {
         "status": 200,
         "headers": [],
@@ -48,9 +68,10 @@ def build_ai_chat_response(user, session_id, history):
                 {"messages": history},
             ),
             "choices_target": "#ai-chat-choices",
-            "choices_html": render_choices_html(user, session_id),
+            "choices_html": choices_html,
             "draft_target": "#ai-program-draft",
-            "draft_html": render_draft_html(user, session_id),
+            "draft_html": draft_html,
+            "composer_placeholder": composer_placeholder,
         },
     }
 
@@ -92,12 +113,19 @@ def handle_accept_draft(user, attributes):
 def handle_discard_draft(user, attributes):
     session_id = attributes.get("session_id") or attributes.get("data-session-id", "")
     clear_draft(user.id, session_id)
+    draft_html = render_to_string(
+        "ai/program_draft.html",
+        {
+            "draft": None,
+            "session_id": session_id,
+        },
+    )
     return {
         "status": 200,
         "headers": [],
         "json_content": {
             "target": "#ai-program-draft",
-            "html": render_draft_html(user, session_id),
+            "html": draft_html,
             "toast_html": render_toast("Draft discarded", variant="success"),
             "toast_delay_ms": 1500,
         },

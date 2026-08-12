@@ -25,11 +25,13 @@ INTAKE_STEPS = [
         "key": "days",
         "question": "How many days per week do you want to train?",
         "choices": [
+            {"id": "1", "label": "1 day"},
             {"id": "2", "label": "2 days"},
             {"id": "3", "label": "3 days"},
             {"id": "4", "label": "4 days"},
-            {"id": "5_plus", "label": "5+ days"},
-            {"id": "other", "label": "Other"},
+            {"id": "5", "label": "5 days"},
+            {"id": "6", "label": "6 days"},
+            {"id": "7", "label": "7 days"},
         ],
     },
     {
@@ -54,6 +56,14 @@ INTAKE_STEPS = [
     },
 ]
 
+INTAKE_STEP_KEYS = {step["key"] for step in INTAKE_STEPS}
+
+CONSTRAINTS_PROMPT = (
+    "Anything you want to avoid or must include? "
+    "For example injuries, lifts you skip, or exercises you always want. "
+    "Optional — reply with none or leave blank to skip."
+)
+
 WEIGHTS_PROMPT = (
     "What are your typical working weights for a few main lifts — "
     "for example squat, bench press, and overhead press? Rough numbers are fine."
@@ -63,7 +73,7 @@ DEMOGRAPHICS_PROMPT = (
     "To set sensible starting weights, what is your age, sex, and bodyweight in kg?"
 )
 
-OFF_SCRIPT_PROMPT = "Tell me in your own words."
+OTHER_TYPE_PROMPT = "Other — type your answer below."
 
 GOAL_LABELS = {
     "hypertrophy": "Hypertrophy",
@@ -78,10 +88,13 @@ LEVEL_LABELS = {
 }
 
 DAYS_LABELS = {
+    "1": "1 day per week",
     "2": "2 days per week",
     "3": "3 days per week",
     "4": "4 days per week",
-    "5_plus": "5+ days per week",
+    "5": "5 days per week",
+    "6": "6 days per week",
+    "7": "7 days per week",
 }
 
 DURATION_LABELS = {
@@ -96,29 +109,34 @@ EQUIPMENT_LABELS = {
     "bodyweight": "Bodyweight only",
 }
 
+PROFILE_ANSWER_LABELS = {
+    "goal": "Goal",
+    "level": "Experience",
+    "days": "Training frequency",
+    "duration": "Session length",
+    "equipment": "Equipment",
+}
+
 
 def new_intake():
     return {
         "phase": "intake",
         "step": 0,
         "answers": {},
+        "other_notes": {},
+        "awaiting_free_text_for": "",
+        "constraints": "",
         "weight_notes": "",
         "demographics_notes": "",
         "off_script": False,
     }
 
 
-def find_choice(step_index, choice_id):
-    step = INTAKE_STEPS[step_index]
-    for choice in step["choices"]:
-        if choice["id"] == choice_id:
-            return choice
-    return None
-
-
-def choice_label_for_answer(step_key, answer_value):
-    if answer_value == "other":
-        return "Other"
+def profile_answer_text(intake, step_key):
+    answers = intake.get("answers") or {}
+    value = answers.get(step_key)
+    if not value:
+        return None
     label_maps = {
         "goal": GOAL_LABELS,
         "level": LEVEL_LABELS,
@@ -126,7 +144,11 @@ def choice_label_for_answer(step_key, answer_value):
         "duration": DURATION_LABELS,
         "equipment": EQUIPMENT_LABELS,
     }
-    return label_maps.get(step_key, {}).get(answer_value, answer_value)
+    label = label_maps.get(step_key, {}).get(value, value)
+    other_notes = intake.get("other_notes") or {}
+    if value == "other" and other_notes.get(step_key):
+        label = f"{other_notes[step_key]} (Other)"
+    return label
 
 
 def format_history_summary(lifts):
@@ -146,28 +168,16 @@ def format_history_summary(lifts):
 
 
 def build_profile_context(intake, history_summary):
-    answers = intake.get("answers") or {}
     lines = ["User program profile:"]
 
-    goal = answers.get("goal")
-    if goal:
-        lines.append(f"- Goal: {choice_label_for_answer('goal', goal)}")
+    for step_key, prefix in PROFILE_ANSWER_LABELS.items():
+        text = profile_answer_text(intake, step_key)
+        if text:
+            lines.append(f"- {prefix}: {text}")
 
-    level = answers.get("level")
-    if level:
-        lines.append(f"- Experience: {choice_label_for_answer('level', level)}")
-
-    days = answers.get("days")
-    if days:
-        lines.append(f"- Training frequency: {choice_label_for_answer('days', days)}")
-
-    duration = answers.get("duration")
-    if duration:
-        lines.append(f"- Session length: {choice_label_for_answer('duration', duration)}")
-
-    equipment = answers.get("equipment")
-    if equipment:
-        lines.append(f"- Equipment: {choice_label_for_answer('equipment', equipment)}")
+    constraints = (intake.get("constraints") or "").strip()
+    if constraints:
+        lines.append(f"- Constraints: {constraints}")
 
     if intake.get("off_script"):
         lines.append("- User went off-script for one or more intake answers; respect their free-text replies in the chat.")
@@ -212,7 +222,41 @@ def get_current_step(intake):
     return INTAKE_STEPS[step_index]
 
 
+def first_missing_step_index(intake):
+    answers = intake.get("answers") or {}
+    for index, step in enumerate(INTAKE_STEPS):
+        if step["key"] not in answers:
+            return index
+    return len(INTAKE_STEPS)
+
+
+def apply_parsed_intake(intake, parsed):
+    answers = intake.setdefault("answers", {})
+    overwrite_fields = parsed.get("overwrite_fields") or []
+    fields = parsed.get("fields") or {}
+    for key, value in fields.items():
+        if key not in answers or key in overwrite_fields:
+            answers[key] = value
+
+    other_notes = parsed.get("other_notes") or {}
+    intake_notes = intake.setdefault("other_notes", {})
+    for key, note in other_notes.items():
+        if key not in INTAKE_STEP_KEYS:
+            continue
+        note_text = str(note).strip()
+        if note_text:
+            intake_notes[key] = note_text
+
+    awaiting = (intake.get("awaiting_free_text_for") or "").strip()
+    if awaiting and awaiting in answers:
+        intake["awaiting_free_text_for"] = ""
+
+
 def get_choices_context(intake):
+    if not intake or intake.get("phase") != "intake":
+        return None
+    if (intake.get("awaiting_free_text_for") or "").strip():
+        return None
     step = get_current_step(intake)
     if not step:
         return None

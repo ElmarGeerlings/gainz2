@@ -21,6 +21,19 @@ class Exercise(models.Model):
         ('other', 'Other'),
     ]
 
+    EQUIPMENT_TAG_CHOICES = [
+        ('barbell', 'Barbell'),
+        ('dumbbell', 'Dumbbell'),
+        ('bodyweight', 'Bodyweight'),
+        ('machine', 'Machine'),
+        ('cable', 'Cable'),
+    ]
+
+    MOVEMENT_KIND_CHOICES = [
+        ('compound', 'Compound'),
+        ('isolation', 'Isolation'),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -57,6 +70,13 @@ class Exercise(models.Model):
         help_text="Weight increment in kg for this exercise (0.5, 1, 2.5, or 5)",
     )
     alternative_names = models.JSONField(default=list, blank=True)
+    
+    equipment_tags = models.JSONField(default=list, blank=True)
+    movement_kind = models.CharField(
+        max_length=20,
+        choices=MOVEMENT_KIND_CHOICES,
+        default='compound',
+    )
 
     def __str__(self):
         return self.name

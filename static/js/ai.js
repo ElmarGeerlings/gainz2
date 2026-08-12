@@ -89,6 +89,10 @@ function applyAiChatResponse(response) {
       draftEl.innerHTML = response.json_content.draft_html || "";
     }
   }
+  const input = document.querySelector("#ai-chat-input");
+  if (input && response.json_content?.composer_placeholder) {
+    input.placeholder = response.json_content.composer_placeholder;
+  }
   scrollAiChatToBottom();
 }
 

@@ -51,6 +51,7 @@ AI_MODEL_GENERATE = os.getenv('AI_MODEL_GENERATE', 'gemini-3.6-flash')
 
 INSTALLED_APPS = [
     'ai',
+    'seeding',
     'accounts',
     'channels',
     'django.contrib.admin',

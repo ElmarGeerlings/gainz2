@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from ai.services import generate_reply
+from ai.providers.gemini import generate_reply
 
 
 class Command(BaseCommand):
