@@ -48,6 +48,8 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini')
 AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.5-flash-lite')
 AI_MODEL_GENERATE = os.getenv('AI_MODEL_GENERATE', 'gemini-3.6-flash')
+# Used only when AI_MODEL_GENERATE returns HTTP 429.
+AI_MODEL_GENERATE_FALLBACK = os.getenv('AI_MODEL_GENERATE_FALLBACK', 'gemini-3.5-flash')
 
 INSTALLED_APPS = [
     'ai',
@@ -134,7 +136,13 @@ DATABASES = {
     }
 }
 
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+def default_redis_url():
+    from subprocess import check_output
+    ip = check_output(['wsl', '-d', 'Ubuntu', 'hostname', '-I'], text=True).strip().split()[0]
+    return f'redis://{ip}:6379/0'
+
+
+REDIS_URL = os.getenv('REDIS_URL') or default_redis_url()
 
 CACHES = {
     'default': {

@@ -4,7 +4,7 @@ from seeding.exercise_metadata import seed_builtin_exercise_metadata
 
 
 class Command(BaseCommand):
-    help = "Seed equipment_tags and movement_kind on built-in exercises"
+    help = "Seed equipment_tags, movement_kind, and push_pull on built-in exercises"
 
     def handle(self, *args, **options):
         updated = seed_builtin_exercise_metadata()

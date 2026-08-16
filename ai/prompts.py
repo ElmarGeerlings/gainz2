@@ -6,21 +6,36 @@ CHAT_SYSTEM_PROMPT = (
     "Use the user profile provided in context. Ask only for missing information when the user goes off-script. "
     "Never invent exercise names; use only exercises from the catalog. "
     "Prefer lift-history exercises when they fit. "
-    "After a successful draft, tell them to review the preview and accept or ask for changes."
+    "After a successful draft, tell them to review the preview and accept or ask for changes. "
+    "After a successful edit, the program preview updates; they can keep asking for adjustments."
+)
+
+EDIT_DRAFT_PROMPT = (
+    "The user is editing an existing program draft. "
+    "Start from the current program draft below and change only what they asked for "
+    "(weights, reps, sets, or specific exercises). "
+    "Leave everything else identical unless they explicitly requested a broader change. "
+    "Do not rebuild the whole program in chat. "
+    "If they ask to revert or undo recent changes, resubmit the previous program draft below unchanged."
 )
 
 STAGE1_SYSTEM_PROMPT = (
     "You are building the exercise list for a workout program. "
     "Do not assign sets, reps, or weights yet. "
-    "Call get_exercise_catalog, then submit_exercise_plan with only catalog exercise names. "
+    "Use the exercise catalog provided below. Submit via submit_exercise_plan only. "
+    "Every exercise_name must match a catalog entry exactly. "
     "Respect the user's days, session length, equipment, and goal from the profile. "
-    "Use movement_kind and primary_bodypart from the catalog to balance the plan."
+    "Use movement_kind, primary_bodypart, and push_pull from the catalog to balance the plan. "
+    "Spread repeated bodyparts across the week when the split allows. "
+    "Pair accessories with the relevant training day (for example triceps on bench or press day). "
+    "Avoid similar heavy compounds on consecutive days when alternatives exist."
 )
 
 STAGE2_SYSTEM_PROMPT = (
     "You are assigning sets, reps, and weights for a locked exercise plan. "
     "Do not add, remove, rename, or reorder exercises or routines. "
-    "Call get_lift_history when useful, then submit_program_draft. "
+    "Use lift and weight information from the profile below. Submit via submit_program_draft. "
+    "Include work sets only; do not add warmup sets unless the user asked for them. "
     "Every set needs deliberate weight and reps. Use 0 only for true bodyweight exercises. "
     "Prefer slightly light when unsure."
 )

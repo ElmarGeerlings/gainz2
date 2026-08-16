@@ -1,4 +1,4 @@
-{% for message in messages %}
+{% for message in chat_messages %}
 {% if message.role == "user" or message.role == "assistant" %}
 <div class="ai-chat-bubble ai-chat-bubble-{{ message.role }}">
     <div class="ai-chat-bubble-body">{{ message.content }}</div>

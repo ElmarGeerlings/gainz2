@@ -1,7 +1,20 @@
+import re
+
 import requests
 from django.conf import settings
 
 MAX_TOOL_ROUNDS = 8
+RATE_LIMIT_REPLY = "I've hit the API rate limit. Wait a minute and try again."
+
+
+def strip_markdown(text):
+    if not text:
+        return text
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
+    text = re.sub(r"`(.+?)`", r"\1", text)
+    text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
+    return text
 
 
 def messages_to_gemini_contents(messages):
@@ -21,25 +34,47 @@ def messages_to_gemini_contents(messages):
     return system_instruction, contents
 
 
-def post_generate_content(payload, model=None):
+def generate_content_url(model):
+    api_key = settings.GEMINI_API_KEY
+    return (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{model}:generateContent?key={api_key}"
+    )
+
+
+def post_generate_content(payload, model=None, use_generate_fallback=False):
     api_key = settings.GEMINI_API_KEY
     if not api_key:
         raise ValueError("GEMINI_API_KEY not set")
 
     if model is None:
         model = settings.AI_MODEL
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{model}:generateContent?key={api_key}"
-    )
+
     response = requests.post(
-        url,
+        generate_content_url(model),
         headers={"Content-Type": "application/json"},
         json=payload,
         timeout=60,
     )
-    response.raise_for_status()
-    return response.json()
+
+    if response.status_code == 429 and use_generate_fallback:
+        fallback = settings.AI_MODEL_GENERATE_FALLBACK
+        if fallback and model != fallback:
+            response = requests.post(
+                generate_content_url(fallback),
+                headers={"Content-Type": "application/json"},
+                json=payload,
+                timeout=60,
+            )
+            model = fallback
+
+    if response.status_code == 429:
+        return None, "rate_limit"
+
+    if response.status_code >= 400:
+        response.raise_for_status()
+
+    return response.json(), None
 
 
 def text_from_parts(parts):
@@ -66,7 +101,15 @@ def generate_reply(messages, model=None):
             "parts": [{"text": system_instruction}],
         }
 
-    res = post_generate_content(payload, model=model)
+    use_generate_fallback = model == settings.AI_MODEL_GENERATE
+    res, err = post_generate_content(
+        payload,
+        model=model,
+        use_generate_fallback=use_generate_fallback,
+    )
+    if err == "rate_limit":
+        return RATE_LIMIT_REPLY
+
     candidates = res.get("candidates") or []
     if not candidates:
         return "I didn't get a reply just now. Try sending that again."
@@ -75,7 +118,7 @@ def generate_reply(messages, model=None):
     text = text_from_parts(parts)
     if not text:
         return "I didn't get a reply just now. Try sending that again."
-    return text
+    return strip_markdown(text)
 
 
 def generate_with_tools(messages, tools, user, session_id, model=None):
@@ -83,6 +126,7 @@ def generate_with_tools(messages, tools, user, session_id, model=None):
 
     system_instruction, contents = messages_to_gemini_contents(messages)
     tools_payload = [{"functionDeclarations": tools}]
+    use_generate_fallback = model == settings.AI_MODEL_GENERATE
 
     for round_index in range(MAX_TOOL_ROUNDS):
         payload = {
@@ -94,7 +138,14 @@ def generate_with_tools(messages, tools, user, session_id, model=None):
                 "parts": [{"text": system_instruction}],
             }
 
-        res = post_generate_content(payload, model=model)
+        res, err = post_generate_content(
+            payload,
+            model=model,
+            use_generate_fallback=use_generate_fallback,
+        )
+        if err == "rate_limit":
+            return RATE_LIMIT_REPLY
+
         candidates = res.get("candidates") or []
         if not candidates:
             return "I didn't get a reply just now. Try sending that again."
@@ -107,7 +158,7 @@ def generate_with_tools(messages, tools, user, session_id, model=None):
             text = text_from_parts(parts)
             if not text:
                 return "I didn't get a reply just now. Try sending that again."
-            return text
+            return strip_markdown(text)
 
         if "role" not in model_content:
             model_content = {

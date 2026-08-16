@@ -1,5 +1,6 @@
 from django.shortcuts import redirect, render
 
+from exercises.bodypart_metadata import BODYPART_DISPLAY_FILTER_CHOICES
 from exercises.models import Exercise
 from workouts.models import WorkoutExercise
 from workouts.services import (
@@ -37,7 +38,7 @@ def workout_detail_page(req_event, workout_id):
     response = {
         "workout": workout,
         "add_exercise_options": list_add_exercise_options(req_event.user),
-        "bodypart_choices": Exercise.BODYPART_CHOICES,
+        "bodypart_choices": BODYPART_DISPLAY_FILTER_CHOICES,
         "exercise_type_choices": [
             {"value": value, "label": label}
             for value, label in WorkoutExercise.EXERCISE_TYPE_CHOICES

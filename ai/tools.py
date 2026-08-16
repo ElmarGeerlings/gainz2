@@ -1,3 +1,5 @@
+import json
+
 from exercises.catalog_metadata import (
     allowed_equipment_for_intake,
     exercise_passes_equipment_filter,
@@ -9,7 +11,7 @@ EXERCISE_PLAN_TOOL = {
     "name": "submit_exercise_plan",
     "description": (
         "Submit the exercise list for the program (no sets yet). "
-        "Every exercise_name must match get_exercise_catalog."
+        "Every exercise_name must match an entry in the exercise catalog."
     ),
     "parameters": {
         "type": "object",
@@ -148,13 +150,10 @@ HISTORY_TOOL = {
 }
 
 STAGE1_TOOL_DECLARATIONS = [
-    CATALOG_TOOL,
-    HISTORY_TOOL,
     EXERCISE_PLAN_TOOL,
 ]
 
 STAGE2_TOOL_DECLARATIONS = [
-    HISTORY_TOOL,
     PROGRAM_DRAFT_TOOL,
 ]
 
@@ -167,7 +166,7 @@ CHAT_TOOL_DECLARATIONS = [
 TOOL_DECLARATIONS = CHAT_TOOL_DECLARATIONS
 
 
-def run_get_exercise_catalog(user, args, intake=None):
+def build_filtered_catalog(user, intake):
     exercises = list_exercises_for_user(
         user,
         search_query="",
@@ -184,9 +183,19 @@ def run_get_exercise_catalog(user, args, intake=None):
             "name": exercise.name,
             "primary_bodypart": exercise.primary_bodypart or "",
             "movement_kind": exercise.movement_kind,
+            "push_pull": exercise.push_pull or "na",
         })
     items.sort(key=lambda item: item["name"].lower())
     return {"exercises": items}
+
+
+def format_catalog_for_prompt(user, intake):
+    catalog = build_filtered_catalog(user, intake)
+    return json.dumps(catalog, separators=(",", ":"))
+
+
+def run_get_exercise_catalog(user, args, intake=None):
+    return build_filtered_catalog(user, intake)
 
 
 def run_get_lift_history(user, args):

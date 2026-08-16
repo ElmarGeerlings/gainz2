@@ -32,10 +32,14 @@ def build_ai_chat_response(user, session_id, history):
         for routine in draft["routines"]:
             exercises = []
             for item in routine["exercises"]:
+                work_sets = [
+                    set_data for set_data in item["sets"]
+                    if not set_data.get("is_warmup")
+                ]
                 exercises.append({
                     "exercise_name": item["exercise_name"],
                     "exercise_type": item["exercise_type"],
-                    "sets": item["sets"],
+                    "sets": work_sets,
                 })
             routines.append({
                 "name": routine["name"],
@@ -65,7 +69,7 @@ def build_ai_chat_response(user, session_id, history):
             "target": "#ai-chat-messages",
             "html": render_to_string(
                 "ai/chat_messages.html",
-                {"messages": history},
+                {"chat_messages": history},
             ),
             "choices_target": "#ai-chat-choices",
             "choices_html": choices_html,

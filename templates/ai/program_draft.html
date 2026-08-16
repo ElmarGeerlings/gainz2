@@ -33,7 +33,7 @@
                     <span class="text-muted">({{ item.exercise_type }})</span>
                     —
                     {% for set in item.sets %}
-                        {% if set.is_warmup %}W{% endif %}{{ set.reps }}{% if set.weight %}@{{ set.weight }}{% endif %}{% if not forloop.last %}, {% endif %}
+                        {% if not set.is_warmup %}{{ set.reps }}×{{ set.weight }} kg{% if not forloop.last %}, {% endif %}{% endif %}
                     {% endfor %}
                 </li>
                 {% endfor %}

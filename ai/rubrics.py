@@ -1,8 +1,86 @@
-MIN_EXERCISES_BY_DURATION = {
-    "under_45": 4,
-    "about_60": 5,
-    "75_plus": 6,
-}
+from exercises.bodypart_metadata import (
+    COVERAGE_GROUP_1_DISPLAY,
+    MIN_EXERCISES_BY_DURATION,
+    TAG_TO_DISPLAY_GROUP,
+    coverage_group_number,
+    required_fine_tags_for_group,
+)
+
+
+def validate_push_pull_balance(plan, lookup):
+    errors = []
+    push_count = 0
+    pull_count = 0
+    for routine in plan.get("routines", []):
+        for item in routine.get("exercises", []):
+            name = (item.get("exercise_name") or "").strip().lower()
+            exercise = lookup.get(name)
+            if not exercise:
+                continue
+            if exercise.push_pull == "push":
+                push_count += 1
+            elif exercise.push_pull == "pull":
+                pull_count += 1
+
+    total = push_count + pull_count
+    if total < 2:
+        return errors
+
+    if push_count < 1:
+        errors.append("Program needs at least one pushing exercise.")
+    if pull_count < 1:
+        errors.append("Program needs at least one pulling exercise.")
+
+    if push_count >= 1 and pull_count >= 1:
+        ratio = push_count / total
+        diff = abs(push_count - pull_count)
+        ratio_ok = 0.4 <= ratio <= 0.6
+        diff_ok = diff <= 1
+        if not ratio_ok and not diff_ok:
+            errors.append(
+                "Push and pull exercises should be roughly balanced "
+                f"(got {push_count} push, {pull_count} pull)."
+            )
+    return errors
+
+
+def validate_bodypart_coverage(plan, lookup, intake):
+    errors = []
+    goal = None
+    if intake:
+        goal = intake.get("answers", {}).get("goal")
+    slots = 0
+    for routine in plan.get("routines", []):
+        exercises = routine.get("exercises")
+        if isinstance(exercises, list):
+            slots += len(exercises)
+    group = coverage_group_number(slots, goal)
+
+    seen_display_groups = set()
+    seen_primary_tags = set()
+    for routine in plan.get("routines", []):
+        for item in routine.get("exercises", []):
+            name = (item.get("exercise_name") or "").strip().lower()
+            exercise = lookup.get(name)
+            if not exercise or not exercise.primary_bodypart:
+                continue
+            tag = exercise.primary_bodypart
+            seen_primary_tags.add(tag)
+            seen_display_groups.add(
+                TAG_TO_DISPLAY_GROUP.get(tag, "Other") if tag else "Other"
+            )
+
+    for display_group in COVERAGE_GROUP_1_DISPLAY:
+        if display_group not in seen_display_groups:
+            errors.append(f"Program needs at least one {display_group.lower()} exercise.")
+
+    for tag in required_fine_tags_for_group(group):
+        if tag not in seen_primary_tags:
+            errors.append(
+                f"Program needs at least one exercise targeting {tag.replace('_', ' ')}."
+            )
+
+    return errors
 
 
 def validate_exercise_plan_structure(plan, lookup, intake):
@@ -36,6 +114,9 @@ def validate_exercise_plan_structure(plan, lookup, intake):
                 continue
             if exercise_name.lower() not in lookup:
                 errors.append(f"Unknown exercise: {exercise_name}.")
+
+    errors.extend(validate_push_pull_balance(plan, lookup))
+    errors.extend(validate_bodypart_coverage(plan, lookup, intake))
 
     goal = None
     if intake:

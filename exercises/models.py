@@ -12,11 +12,28 @@ class Exercise(models.Model):
     
     BODYPART_CHOICES = [
         ('chest', 'Chest'),
+        ('upper_chest', 'Upper chest'),
+        ('lower_chest', 'Lower chest'),
         ('back', 'Back'),
+        ('lats', 'Lats'),
+        ('traps', 'Traps'),
+        ('lower_back', 'Lower back'),
         ('shoulders', 'Shoulders'),
+        ('front_delts', 'Front delts'),
+        ('lateral_delts', 'Lateral delts'),
+        ('rear_delts', 'Rear delts'),
         ('arms', 'Arms'),
+        ('biceps', 'Biceps'),
+        ('triceps', 'Triceps'),
+        ('forearms', 'Forearms'),
         ('legs', 'Legs'),
+        ('quads', 'Quads'),
+        ('glutes', 'Glutes'),
+        ('hamstrings', 'Hamstrings'),
+        ('calves', 'Calves'),
         ('core', 'Core'),
+        ('abs', 'Abs'),
+        ('obliques', 'Obliques'),
         ('cardio', 'Cardio'),
         ('other', 'Other'),
     ]
@@ -32,6 +49,12 @@ class Exercise(models.Model):
     MOVEMENT_KIND_CHOICES = [
         ('compound', 'Compound'),
         ('isolation', 'Isolation'),
+    ]
+
+    PUSH_PULL_CHOICES = [
+        ('push', 'Push'),
+        ('pull', 'Pull'),
+        ('na', 'N/A'),
     ]
 
     user = models.ForeignKey(
@@ -62,6 +85,11 @@ class Exercise(models.Model):
         null=True,
         blank=True,
         help_text="Secondary muscle group targeted by this exercise"
+    )
+    push_pull = models.CharField(
+        max_length=10,
+        choices=PUSH_PULL_CHOICES,
+        default='na',
     )
     weight_increment = models.DecimalField(
         max_digits=4,

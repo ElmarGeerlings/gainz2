@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect, render
 
+from exercises.bodypart_metadata import BODYPART_DISPLAY_FILTER_CHOICES
 from exercises.models import Exercise
 from programs.services import list_programs_for_filter, list_programs_for_routine
 from routines.models import Routine, RoutineExercise
@@ -56,7 +57,7 @@ def routine_detail_page(req_event, routine_id):
         "routine": routine,
         "programs_for_routine": programs_for_routine,
         "add_exercise_options": list_add_exercise_options(req_event.user),
-        "bodypart_choices": Exercise.BODYPART_CHOICES,
+        "bodypart_choices": BODYPART_DISPLAY_FILTER_CHOICES,
         "exercise_type_choices": [
             {"value": value, "label": label}
             for value, label in RoutineExercise.EXERCISE_TYPE_CHOICES

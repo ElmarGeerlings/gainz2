@@ -20,20 +20,24 @@ from ai.intake import (
 from ai.intake_parse import parse_intake_message
 from ai.prompts import (
     CHAT_SYSTEM_PROMPT,
+    EDIT_DRAFT_PROMPT,
     GOAL_PROMPT_ADDONS,
     REPAIR_PROMPT,
     STAGE1_SYSTEM_PROMPT,
     STAGE2_SYSTEM_PROMPT,
 )
+from ai.providers.gemini import RATE_LIMIT_REPLY
 from ai.providers.gemini import generate_with_tools as gemini_generate_with_tools
 from ai.rubrics import validate_exercise_plan_structure, validate_program_loads
 from ai.tools import (
     CHAT_TOOL_DECLARATIONS,
     STAGE1_TOOL_DECLARATIONS,
     STAGE2_TOOL_DECLARATIONS,
+    format_catalog_for_prompt,
     run_get_exercise_catalog,
     run_get_lift_history,
 )
+from exercises.bodypart_metadata import build_coverage_prompt_section
 from exercises.catalog_metadata import (
     allowed_equipment_for_intake,
     exercise_passes_equipment_filter,
@@ -112,6 +116,28 @@ def clear_draft(user_id, session_id):
     redis.delete(f"ai_draft:{user_id}:{session_id}")
 
 
+def get_previous_draft(user_id, session_id):
+    redis = get_redis_connection("default")
+    raw = redis.get(f"ai_draft_previous:{user_id}:{session_id}")
+    if not raw:
+        return None
+    return json.loads(raw.decode("utf-8"))
+
+
+def save_previous_draft(user_id, session_id, draft):
+    redis = get_redis_connection("default")
+    redis.set(
+        f"ai_draft_previous:{user_id}:{session_id}",
+        json.dumps(draft),
+        ex=CHAT_HISTORY_TTL_SECONDS,
+    )
+
+
+def clear_previous_draft(user_id, session_id):
+    redis = get_redis_connection("default")
+    redis.delete(f"ai_draft_previous:{user_id}:{session_id}")
+
+
 def get_exercise_plan(user_id, session_id):
     redis = get_redis_connection("default")
     raw = redis.get(f"ai_exercise_plan:{user_id}:{session_id}")
@@ -162,6 +188,28 @@ def init_chat_session(user_id, session_id):
     return intake, history
 
 
+def build_edit_draft_context(user_id, session_id, intake):
+    if not intake or intake.get("phase") != "chat":
+        return None
+    draft = get_draft(user_id, session_id)
+    if not draft:
+        return None
+    lines = [
+        EDIT_DRAFT_PROMPT,
+        "",
+        "Current program draft (JSON):",
+        json.dumps(draft, separators=(",", ":")),
+    ]
+    previous = get_previous_draft(user_id, session_id)
+    if previous:
+        lines.extend([
+            "",
+            "Previous program draft (resubmit unchanged if user asks to revert):",
+            json.dumps(previous, separators=(",", ":")),
+        ])
+    return "\n".join(lines)
+
+
 def build_exercise_name_lookup(user):
     exercises = list_exercises_for_user(
         user,
@@ -206,11 +254,17 @@ def resolve_allowed_exercise(user, exercise_id):
     return exercise
 
 
+def text_field(value):
+    if not isinstance(value, str):
+        return ""
+    return value.strip()
+
+
 def clean_exercise_plan(user, plan, intake):
     if not isinstance(plan, dict):
         return None, ["Exercise plan must be an object."]
 
-    name = (plan.get("name") or "").strip()
+    name = text_field(plan.get("name"))
     if not name:
         return None, ["Program name is required."]
 
@@ -269,7 +323,7 @@ def clean_exercise_plan(user, plan, intake):
 
     cleaned = {
         "name": name,
-        "description": (plan.get("description") or "").strip(),
+        "description": text_field(plan.get("description")),
         "routines": cleaned_routines,
     }
     structure_errors = validate_exercise_plan_structure(cleaned, lookup, intake)
@@ -300,7 +354,7 @@ def validate_program_draft(user, draft):
     if not isinstance(draft, dict):
         return None, "Draft must be an object.", []
 
-    name = (draft.get("name") or "").strip()
+    name = text_field(draft.get("name"))
     if not name:
         return None, "Program name is required.", []
 
@@ -389,10 +443,18 @@ def validate_program_draft(user, draft):
 
     cleaned = {
         "name": name,
-        "description": (draft.get("description") or "").strip(),
+        "description": text_field(draft.get("description")),
         "routines": cleaned_routines,
     }
     return cleaned, None, []
+
+
+def save_rate_limit_reply(user_id, session_id, intake, history):
+    history.append({"role": "assistant", "content": RATE_LIMIT_REPLY})
+    save_history(user_id, session_id, history)
+    intake["phase"] = "chat"
+    save_intake(user_id, session_id, intake)
+    return history
 
 
 def submit_exercise_plan_tool(user, session_id, args, intake):
@@ -434,6 +496,9 @@ def submit_program_draft_tool(user, session_id, args, intake, enforce_plan=False
         if unknown_names:
             result["unknown_names"] = unknown_names
         return result
+    current = get_draft(user.id, session_id)
+    if current:
+        save_previous_draft(user.id, session_id, current)
     save_draft(user.id, session_id, cleaned)
     exercise_count = sum(
         len(routine["exercises"]) for routine in cleaned["routines"]
@@ -486,24 +551,28 @@ def build_gemini_messages(user, session_id, history):
         profile = build_profile_context(intake, history_summary)
         messages.append({"role": "system", "content": profile})
 
+    edit_context = build_edit_draft_context(user.id, session_id, intake)
+    if edit_context:
+        messages.append({"role": "system", "content": edit_context})
+
     messages.extend(history)
     return messages
 
 
 def run_stage_with_repair(user, session_id, base_history, system_prompt, tools):
     messages = [{"role": "system", "content": system_prompt}] + base_history
-    gemini_generate_with_tools(
+    return gemini_generate_with_tools(
         messages,
         tools,
         user,
         session_id,
         model=settings.AI_MODEL_GENERATE,
     )
-    return messages
 
 
 def start_generation(user, session_id, intake, history):
     clear_draft(user.id, session_id)
+    clear_previous_draft(user.id, session_id)
     clear_exercise_plan(user.id, session_id)
     set_enforce_plan(user.id, session_id, False)
 
@@ -516,10 +585,19 @@ def start_generation(user, session_id, intake, history):
         profile = profile + "\n\n" + addon
     base_history = list(history)
 
-    stage1_prompt = STAGE1_SYSTEM_PROMPT + "\n\n" + profile
-    run_stage_with_repair(
+    stage1_prompt = (
+        STAGE1_SYSTEM_PROMPT
+        + "\n\n"
+        + profile
+        + "\n\nExercise catalog (JSON):\n"
+        + format_catalog_for_prompt(user, intake)
+    )
+    stage1_prompt = stage1_prompt + "\n\n" + build_coverage_prompt_section(intake)
+    reply = run_stage_with_repair(
         user, session_id, base_history, stage1_prompt, STAGE1_TOOL_DECLARATIONS
     )
+    if reply == RATE_LIMIT_REPLY:
+        return save_rate_limit_reply(user.id, session_id, intake, history)
     plan = get_exercise_plan(user.id, session_id)
     if not plan:
         errors = ["Submit an exercise plan with submit_exercise_plan."]
@@ -529,13 +607,15 @@ def start_generation(user, session_id, intake, history):
     if errors:
         repair_text = REPAIR_PROMPT + "\n" + "\n".join(f"- {item}" for item in errors)
         repair_history = base_history + [{"role": "user", "content": repair_text}]
-        run_stage_with_repair(
+        reply = run_stage_with_repair(
             user,
             session_id,
             repair_history,
             stage1_prompt,
             STAGE1_TOOL_DECLARATIONS,
         )
+        if reply == RATE_LIMIT_REPLY:
+            return save_rate_limit_reply(user.id, session_id, intake, history)
         plan = get_exercise_plan(user.id, session_id)
         if not plan:
             errors = ["Submit an exercise plan with submit_exercise_plan."]
@@ -564,9 +644,12 @@ def start_generation(user, session_id, intake, history):
         + "\n\nLocked exercise plan (do not change exercises):\n"
         + locked_plan
     )
-    run_stage_with_repair(
+    reply = run_stage_with_repair(
         user, session_id, base_history, stage2_prompt, STAGE2_TOOL_DECLARATIONS
     )
+    if reply == RATE_LIMIT_REPLY:
+        set_enforce_plan(user.id, session_id, False)
+        return save_rate_limit_reply(user.id, session_id, intake, history)
     draft = get_draft(user.id, session_id)
     if not draft:
         errors = ["Submit the full program with submit_program_draft."]
@@ -575,13 +658,16 @@ def start_generation(user, session_id, intake, history):
     if errors:
         repair_text = REPAIR_PROMPT + "\n" + "\n".join(f"- {item}" for item in errors)
         repair_history = base_history + [{"role": "user", "content": repair_text}]
-        run_stage_with_repair(
+        reply = run_stage_with_repair(
             user,
             session_id,
             repair_history,
             stage2_prompt,
             STAGE2_TOOL_DECLARATIONS,
         )
+        if reply == RATE_LIMIT_REPLY:
+            set_enforce_plan(user.id, session_id, False)
+            return save_rate_limit_reply(user.id, session_id, intake, history)
 
     set_enforce_plan(user.id, session_id, False)
 
@@ -766,6 +852,7 @@ def accept_draft(user, session_id):
         return None
     program = create_program_from_ai_draft(user, cleaned)
     clear_draft(user.id, session_id)
+    clear_previous_draft(user.id, session_id)
     clear_exercise_plan(user.id, session_id)
     set_enforce_plan(user.id, session_id, False)
     clear_history(user.id, session_id)

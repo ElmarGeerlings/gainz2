@@ -14,7 +14,7 @@ def chat_page(req_event):
         {
             "title": "AI Chat",
             "session_id": session_id,
-            "messages": messages,
+            "chat_messages": messages,
             "choices": choices,
         },
     )

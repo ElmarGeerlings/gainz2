@@ -194,11 +194,6 @@ def build_profile_context(intake, history_summary):
         lines.append("")
         lines.append(history_summary)
 
-    lines.append("")
-    lines.append(
-        "Design a complete program matching this profile. "
-        "Use get_exercise_catalog and submit_program_draft when ready."
-    )
     return "\n".join(lines)
 
 

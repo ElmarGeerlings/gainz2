@@ -198,12 +198,18 @@ def estimate_1rm(weight, reps):
 
 
 def get_user_logged_exercises(user, primary_bodypart=None):
+    from exercises.bodypart_metadata import BODYPART_DISPLAY_GROUPS
+
     exercises = Exercise.objects.filter(
         workoutexercise__workout__user=user,
         workoutexercise__sets__isnull=False,
     )
     if primary_bodypart:
-        exercises = exercises.filter(primary_bodypart=primary_bodypart)
+        tags = BODYPART_DISPLAY_GROUPS.get(primary_bodypart)
+        if tags:
+            exercises = exercises.filter(primary_bodypart__in=tags)
+        else:
+            exercises = exercises.filter(primary_bodypart=primary_bodypart)
     return exercises.distinct().order_by("name")
 
 

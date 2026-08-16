@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from exercises.models import Exercise
+from exercises.bodypart_metadata import BODYPART_DISPLAY_FILTER_CHOICES
 from progress.services import (
     PERIOD_CHOICES,
     get_progress_records,
@@ -23,7 +23,7 @@ def progress_page(req_event):
         "exercises": exercises,
         "selected_exercise_id": exercise_id,
         "selected_bodypart": selected_bodypart,
-        "bodypart_choices": Exercise.BODYPART_CHOICES,
+        "bodypart_choices": BODYPART_DISPLAY_FILTER_CHOICES,
         "period_days": period_days,
         "chart_type": chart_type,
         "period_choices": PERIOD_CHOICES,
