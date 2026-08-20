@@ -26,7 +26,7 @@ from ai.prompts import (
     STAGE1_SYSTEM_PROMPT,
     STAGE2_SYSTEM_PROMPT,
 )
-from ai.providers.gemini import RATE_LIMIT_REPLY
+from ai.providers.gemini import API_ERROR_REPLY, RATE_LIMIT_REPLY
 from ai.providers.gemini import generate_with_tools as gemini_generate_with_tools
 from ai.rubrics import validate_exercise_plan_structure, validate_program_loads
 from ai.tools import (
@@ -48,6 +48,16 @@ from exercises.services import list_exercises_for_user
 CHAT_HISTORY_TTL_SECONDS = 3600
 VALID_EXERCISE_TYPES = {"primary", "secondary", "accessory"}
 MIN_EXERCISES_PER_ROUTINE = 4
+GENERATING_PROGRAM_MESSAGE = (
+    "Generating your program. This can take up to a few minutes..."
+)
+INTERRUPT_REPLIES = frozenset({RATE_LIMIT_REPLY, API_ERROR_REPLY})
+
+
+def begin_program_generation(user_id, session_id, history):
+    history.append({"role": "assistant", "content": GENERATING_PROGRAM_MESSAGE})
+    save_history(user_id, session_id, history)
+    return history
 
 
 def get_history(user_id, session_id):
@@ -449,8 +459,8 @@ def validate_program_draft(user, draft):
     return cleaned, None, []
 
 
-def save_rate_limit_reply(user_id, session_id, intake, history):
-    history.append({"role": "assistant", "content": RATE_LIMIT_REPLY})
+def save_interrupt_reply(user_id, session_id, intake, history, reply):
+    history.append({"role": "assistant", "content": reply})
     save_history(user_id, session_id, history)
     intake["phase"] = "chat"
     save_intake(user_id, session_id, intake)
@@ -570,7 +580,8 @@ def run_stage_with_repair(user, session_id, base_history, system_prompt, tools):
     )
 
 
-def start_generation(user, session_id, intake, history):
+def run_generation_stages(user, session_id, history):
+    intake = get_intake(user.id, session_id)
     clear_draft(user.id, session_id)
     clear_previous_draft(user.id, session_id)
     clear_exercise_plan(user.id, session_id)
@@ -583,7 +594,10 @@ def start_generation(user, session_id, intake, history):
     addon = GOAL_PROMPT_ADDONS.get(goal)
     if addon:
         profile = profile + "\n\n" + addon
-    base_history = list(history)
+    base_history = [
+        message for message in history
+        if message.get("content") != GENERATING_PROGRAM_MESSAGE
+    ]
 
     stage1_prompt = (
         STAGE1_SYSTEM_PROMPT
@@ -596,8 +610,8 @@ def start_generation(user, session_id, intake, history):
     reply = run_stage_with_repair(
         user, session_id, base_history, stage1_prompt, STAGE1_TOOL_DECLARATIONS
     )
-    if reply == RATE_LIMIT_REPLY:
-        return save_rate_limit_reply(user.id, session_id, intake, history)
+    if reply in INTERRUPT_REPLIES:
+        return save_interrupt_reply(user.id, session_id, intake, history, reply)
     plan = get_exercise_plan(user.id, session_id)
     if not plan:
         errors = ["Submit an exercise plan with submit_exercise_plan."]
@@ -614,8 +628,8 @@ def start_generation(user, session_id, intake, history):
             stage1_prompt,
             STAGE1_TOOL_DECLARATIONS,
         )
-        if reply == RATE_LIMIT_REPLY:
-            return save_rate_limit_reply(user.id, session_id, intake, history)
+        if reply in INTERRUPT_REPLIES:
+            return save_interrupt_reply(user.id, session_id, intake, history, reply)
         plan = get_exercise_plan(user.id, session_id)
         if not plan:
             errors = ["Submit an exercise plan with submit_exercise_plan."]
@@ -647,9 +661,9 @@ def start_generation(user, session_id, intake, history):
     reply = run_stage_with_repair(
         user, session_id, base_history, stage2_prompt, STAGE2_TOOL_DECLARATIONS
     )
-    if reply == RATE_LIMIT_REPLY:
+    if reply in INTERRUPT_REPLIES:
         set_enforce_plan(user.id, session_id, False)
-        return save_rate_limit_reply(user.id, session_id, intake, history)
+        return save_interrupt_reply(user.id, session_id, intake, history, reply)
     draft = get_draft(user.id, session_id)
     if not draft:
         errors = ["Submit the full program with submit_program_draft."]
@@ -665,9 +679,9 @@ def start_generation(user, session_id, intake, history):
             stage2_prompt,
             STAGE2_TOOL_DECLARATIONS,
         )
-        if reply == RATE_LIMIT_REPLY:
+        if reply in INTERRUPT_REPLIES:
             set_enforce_plan(user.id, session_id, False)
-            return save_rate_limit_reply(user.id, session_id, intake, history)
+            return save_interrupt_reply(user.id, session_id, intake, history, reply)
 
     set_enforce_plan(user.id, session_id, False)
 
@@ -692,26 +706,6 @@ def start_generation(user, session_id, intake, history):
 def begin_constraints(user, session_id, intake, history):
     intake["phase"] = "awaiting_constraints"
     history.append({"role": "assistant", "content": CONSTRAINTS_PROMPT})
-    save_intake(user.id, session_id, intake)
-    save_history(user.id, session_id, history)
-    return history, intake
-
-
-def finish_intake(user, session_id, intake, history):
-    path, lifts = resolve_weight_path(user, intake)
-    if path == "use_history":
-        history = start_generation(user, session_id, intake, history)
-        return history, intake
-
-    if path == "ask_weights":
-        intake["phase"] = "awaiting_weights"
-        history.append({"role": "assistant", "content": WEIGHTS_PROMPT})
-        save_intake(user.id, session_id, intake)
-        save_history(user.id, session_id, history)
-        return history, intake
-
-    intake["phase"] = "awaiting_demographics"
-    history.append({"role": "assistant", "content": DEMOGRAPHICS_PROMPT})
     save_intake(user.id, session_id, intake)
     save_history(user.id, session_id, history)
     return history, intake
@@ -803,32 +797,61 @@ def handle_intake_typed_message(user, session_id, intake, history, message):
     return history
 
 
-def send_chat_message(user, session_id, message):
+def prepare_chat_send(user, session_id, message):
     message = (message or "").strip()
     if not message:
-        return get_history(user.id, session_id)
+        return {"phase": "complete", "history": get_history(user.id, session_id)}
 
     intake = get_intake(user.id, session_id)
     history = get_history(user.id, session_id)
     history.append({"role": "user", "content": message})
 
     if intake and intake.get("phase") == "intake":
-        return handle_intake_typed_message(user, session_id, intake, history, message)
+        history = handle_intake_typed_message(user, session_id, intake, history, message)
+        return {"phase": "complete", "history": history}
 
     if intake and intake.get("phase") == "awaiting_constraints":
         intake["constraints"] = message
         save_intake(user.id, session_id, intake)
-        return finish_intake(user, session_id, intake, history)[0]
+        path, lifts = resolve_weight_path(user, intake)
+        if path == "use_history":
+            history = begin_program_generation(user.id, session_id, history)
+            return {
+                "phase": "generating",
+                "session_id": session_id,
+                "history": history,
+            }
+        if path == "ask_weights":
+            intake["phase"] = "awaiting_weights"
+            history.append({"role": "assistant", "content": WEIGHTS_PROMPT})
+            save_intake(user.id, session_id, intake)
+            save_history(user.id, session_id, history)
+            return {"phase": "complete", "history": history}
+        intake["phase"] = "awaiting_demographics"
+        history.append({"role": "assistant", "content": DEMOGRAPHICS_PROMPT})
+        save_intake(user.id, session_id, intake)
+        save_history(user.id, session_id, history)
+        return {"phase": "complete", "history": history}
 
     if intake and intake.get("phase") == "awaiting_weights":
         intake["weight_notes"] = message
         save_intake(user.id, session_id, intake)
-        return start_generation(user, session_id, intake, history)
+        history = begin_program_generation(user.id, session_id, history)
+        return {
+            "phase": "generating",
+            "session_id": session_id,
+            "history": history,
+        }
 
     if intake and intake.get("phase") == "awaiting_demographics":
         intake["demographics_notes"] = message
         save_intake(user.id, session_id, intake)
-        return start_generation(user, session_id, intake, history)
+        history = begin_program_generation(user.id, session_id, history)
+        return {
+            "phase": "generating",
+            "session_id": session_id,
+            "history": history,
+        }
 
     reply = gemini_generate_with_tools(
         build_gemini_messages(user, session_id, history),
@@ -838,7 +861,14 @@ def send_chat_message(user, session_id, message):
     )
     history.append({"role": "assistant", "content": reply})
     save_history(user.id, session_id, history)
-    return history
+    return {"phase": "complete", "history": history}
+
+
+def send_chat_message(user, session_id, message):
+    prep = prepare_chat_send(user, session_id, message)
+    if prep["phase"] == "generating":
+        return run_generation_stages(user, prep["session_id"], prep["history"])
+    return prep["history"]
 
 
 def accept_draft(user, session_id):

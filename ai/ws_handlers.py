@@ -7,7 +7,8 @@ from ai.services import (
     clear_draft,
     get_draft,
     get_intake,
-    send_chat_message,
+    prepare_chat_send,
+    run_generation_stages,
 )
 from gainz2.utils import render_toast
 
@@ -80,10 +81,25 @@ def build_ai_chat_response(user, session_id, history):
     }
 
 
-def handle_send_message(user, attributes):
+def prepare_send_message(user, attributes):
     session_id = attributes.get("session_id") or attributes.get("data-session-id", "")
     message = attributes.get("message", "")
-    history = send_chat_message(user, session_id, message)
+    prep = prepare_chat_send(user, session_id, message)
+    if prep["phase"] == "generating":
+        return {
+            "phase": "generating",
+            "session_id": prep["session_id"],
+            "history": prep["history"],
+            "payload": build_ai_chat_response(user, session_id, prep["history"]),
+        }
+    return {
+        "phase": "complete",
+        "payload": build_ai_chat_response(user, session_id, prep["history"]),
+    }
+
+
+def run_send_message_generation(user, session_id, history):
+    history = run_generation_stages(user, session_id, history)
     return build_ai_chat_response(user, session_id, history)
 
 

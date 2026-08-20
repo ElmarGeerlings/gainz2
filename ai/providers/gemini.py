@@ -5,6 +5,7 @@ from django.conf import settings
 
 MAX_TOOL_ROUNDS = 8
 RATE_LIMIT_REPLY = "I've hit the API rate limit. Wait a minute and try again."
+API_ERROR_REPLY = "Sorry, something went wrong. Please try again later."
 
 
 def strip_markdown(text):
@@ -42,37 +43,43 @@ def generate_content_url(model):
     )
 
 
+def post_generate_request(payload, model):
+    try:
+        return requests.post(
+            generate_content_url(model),
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=60,
+        )
+    except requests.RequestException:
+        return None
+
+
 def post_generate_content(payload, model=None, use_generate_fallback=False):
     api_key = settings.GEMINI_API_KEY
     if not api_key:
-        raise ValueError("GEMINI_API_KEY not set")
+        return None, "api_error"
 
     if model is None:
         model = settings.AI_MODEL
 
-    response = requests.post(
-        generate_content_url(model),
-        headers={"Content-Type": "application/json"},
-        json=payload,
-        timeout=60,
-    )
+    response = post_generate_request(payload, model)
+    if response is None:
+        return None, "api_error"
 
     if response.status_code == 429 and use_generate_fallback:
         fallback = settings.AI_MODEL_GENERATE_FALLBACK
         if fallback and model != fallback:
-            response = requests.post(
-                generate_content_url(fallback),
-                headers={"Content-Type": "application/json"},
-                json=payload,
-                timeout=60,
-            )
+            response = post_generate_request(payload, fallback)
+            if response is None:
+                return None, "api_error"
             model = fallback
 
     if response.status_code == 429:
         return None, "rate_limit"
 
     if response.status_code >= 400:
-        response.raise_for_status()
+        return None, "api_error"
 
     return response.json(), None
 
@@ -109,6 +116,8 @@ def generate_reply(messages, model=None):
     )
     if err == "rate_limit":
         return RATE_LIMIT_REPLY
+    if err == "api_error" or not res:
+        return API_ERROR_REPLY
 
     candidates = res.get("candidates") or []
     if not candidates:
@@ -145,6 +154,8 @@ def generate_with_tools(messages, tools, user, session_id, model=None):
         )
         if err == "rate_limit":
             return RATE_LIMIT_REPLY
+        if err == "api_error" or not res:
+            return API_ERROR_REPLY
 
         candidates = res.get("candidates") or []
         if not candidates:

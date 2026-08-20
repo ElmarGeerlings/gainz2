@@ -34,12 +34,16 @@ function appendOptimisticUserMessage(text) {
   transcript.appendChild(bubble);
 }
 
-function appendAiChatLoading() {
-  const transcript = document.querySelector("#ai-chat-messages");
+function removeAiChatLoading() {
   const existing = document.querySelector("#ai-chat-loading");
   if (existing) {
     existing.remove();
   }
+}
+
+function appendAiChatLoading() {
+  const transcript = document.querySelector("#ai-chat-messages");
+  removeAiChatLoading();
 
   const bubble = document.createElement("div");
   bubble.className = "ai-chat-bubble ai-chat-bubble-assistant ai-chat-loading";
@@ -96,6 +100,17 @@ function applyAiChatResponse(response) {
   scrollAiChatToBottom();
 }
 
+function handleWsInterimResponse(response) {
+  removeAiChatLoading();
+  applyAiChatResponse(response);
+}
+
+function finishAiChatRequest(response) {
+  setAiChatSending(false);
+  removeAiChatLoading();
+  applyAiChatResponse(response);
+}
+
 function sendAiIntakeChoice(event) {
   if (aiChatSending) {
     return;
@@ -111,8 +126,7 @@ function sendAiIntakeChoice(event) {
   const pending = sendWsRequest("ai/intake_choice", trigger);
 
   pending.then((response) => {
-    setAiChatSending(false);
-    applyAiChatResponse(response);
+    finishAiChatRequest(response);
     const input = document.querySelector("#ai-chat-input");
     if (input) {
       input.focus();
@@ -143,8 +157,7 @@ function sendAiChatMessage(event) {
   resizeAiChatInput({ currentTarget: input });
 
   pending.then((response) => {
-    setAiChatSending(false);
-    applyAiChatResponse(response);
+    finishAiChatRequest(response);
     input.focus();
   });
 }
