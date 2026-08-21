@@ -1,7 +1,8 @@
 import re
 
-import requests
 from django.conf import settings
+
+from ai.models import AiChat
 
 MAX_TOOL_ROUNDS = 8
 RATE_LIMIT_REPLY = "I've hit the API rate limit. Wait a minute and try again."
@@ -43,34 +44,42 @@ def generate_content_url(model):
     )
 
 
-def post_generate_request(payload, model):
-    try:
-        return requests.post(
-            generate_content_url(model),
-            headers={"Content-Type": "application/json"},
-            json=payload,
-            timeout=60,
-        )
-    except requests.RequestException:
-        return None
+def post_generate_content(
+    payload,
+    model=settings.AI_MODEL,
+    use_generate_fallback=False,
+    related=None,
+):
+    from apis.client import api_request
 
-
-def post_generate_content(payload, model=None, use_generate_fallback=False):
     api_key = settings.GEMINI_API_KEY
     if not api_key:
         return None, "api_error"
 
-    if model is None:
-        model = settings.AI_MODEL
-
-    response = post_generate_request(payload, model)
+    response = api_request(
+        "gemini",
+        generate_content_url(model),
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        payload=payload,
+        extra={"model": model},
+        related=related,
+    )
     if response is None:
         return None, "api_error"
 
     if response.status_code == 429 and use_generate_fallback:
         fallback = settings.AI_MODEL_GENERATE_FALLBACK
         if fallback and model != fallback:
-            response = post_generate_request(payload, fallback)
+            response = api_request(
+                "gemini",
+                generate_content_url(fallback),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+                payload=payload,
+                extra={"model": fallback},
+                related=related,
+            )
             if response is None:
                 return None, "api_error"
             model = fallback
@@ -133,6 +142,7 @@ def generate_reply(messages, model=None):
 def generate_with_tools(messages, tools, user, session_id, model=None):
     from ai.services import execute_tool
 
+    chat = AiChat.objects.filter(user_id=user.id, session_id=session_id).first()
     system_instruction, contents = messages_to_gemini_contents(messages)
     tools_payload = [{"functionDeclarations": tools}]
     use_generate_fallback = model == settings.AI_MODEL_GENERATE
@@ -151,6 +161,7 @@ def generate_with_tools(messages, tools, user, session_id, model=None):
             payload,
             model=model,
             use_generate_fallback=use_generate_fallback,
+            related=chat,
         )
         if err == "rate_limit":
             return RATE_LIMIT_REPLY

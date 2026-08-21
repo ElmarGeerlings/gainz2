@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load formatting static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ai.css' %}">
+<link rel="stylesheet" href="{% static 'css/dev.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-wide">
+    <header class="stack-sm mb-4">
+        <p class="m-0">
+            <a href="{% url 'dev-ai-chats' %}" class="btn btn-outline">Back to dev chats</a>
+        </p>
+    </header>
+
+    <section class="panel stack-sm mb-4">
+        <h1 class="title-lg m-0">AI Chat #{{ chat.pk }}</h1>
+        <div class="grid-3">
+            <div>
+                <p class="text-sm text-muted m-0">User</p>
+                <p class="title-sm m-0">{{ chat.user.username }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">Session ID</p>
+                <p class="title-sm m-0"><code class="text-sm">{{ chat.session_id }}</code></p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">Phase</p>
+                <p class="title-sm m-0">{{ chat.intake.phase|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">Goal</p>
+                <p class="title-sm m-0">{% if chat.intake.answers.goal %}{{ chat.intake.answers.goal }}{% else %}—{% endif %}</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">Messages</p>
+                <p class="title-sm m-0">{{ message_count }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">Drafts</p>
+                <p class="title-sm m-0">{{ draft_count }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">API calls</p>
+                <p class="title-sm m-0">{{ api_call_count }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">Created</p>
+                <p class="title-sm m-0">{{ chat.created_at|list_datetime_format }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">Updated</p>
+                <p class="title-sm m-0">{{ chat.updated_at|list_datetime_format }}</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="stack-sm mb-4">
+        <h2 class="title-md m-0">Drafts</h2>
+        {% for item in draft_previews %}
+        <div class="stack-xs">
+            <h3 class="title-sm m-0">Draft {{ item.index }}</h3>
+            {% include "ai/program_draft.html" with draft=item.preview dev_page=True %}
+        </div>
+        {% empty %}
+        <p class="text-muted m-0">No drafts saved.</p>
+        {% endfor %}
+    </section>
+
+    <section class="stack-sm mb-4">
+        <h2 class="title-md m-0">Messages</h2>
+        <div class="panel ai-chat-messages">
+            {% include "ai/chat_messages.html" with chat_messages=chat.messages %}
+        </div>
+    </section>
+
+    <section class="stack-sm mb-4">
+        <h2 class="title-md m-0">Intake</h2>
+        <div class="panel">
+            <pre class="dev-json-block m-0">{{ intake_json }}</pre>
+        </div>
+    </section>
+
+    <section class="stack-sm mb-4">
+        <h2 class="title-md m-0">API calls</h2>
+        {% for item in api_calls %}
+        <article class="panel stack-sm">
+            {% with call=item.call %}
+            <p class="text-sm m-0">
+                {{ call.created_at|list_datetime_format }}
+                · {{ call.provider }}
+                · {{ call.method }}
+                · {{ call.response_code|default:"—" }}
+                {% if call.extra.model %}
+                · {{ call.extra.model }}
+                {% endif %}
+            </p>
+            {% if call.exception %}
+            <pre class="dev-json-block m-0">{{ call.exception }}</pre>
+            {% endif %}
+            {% if item.request_json %}
+            <p class="text-sm fw-700 m-0">Request</p>
+            <pre class="dev-json-block m-0">{{ item.request_json }}</pre>
+            {% endif %}
+            {% if item.response_json %}
+            <p class="text-sm fw-700 m-0">Response</p>
+            <pre class="dev-json-block m-0">{{ item.response_json }}</pre>
+            {% endif %}
+            {% endwith %}
+        </article>
+        {% empty %}
+        <p class="text-muted m-0">No API calls linked to this chat.</p>
+        {% endfor %}
+    </section>
+</main>
+{% endblock %}

@@ -2,6 +2,7 @@
 <section class="panel ai-draft-panel stack-sm">
     <div class="row-between row-center gap-sm">
         <h2 class="title-md m-0">Program preview</h2>
+        {% if not dev_page %}
         <div class="row-center gap-sm">
             <button
                 type="button"
@@ -16,6 +17,7 @@
                 data-session-id="{{ session_id }}"
             >Accept</button>
         </div>
+        {% endif %}
     </div>
     <p class="title-sm m-0">{{ draft.name }}</p>
     {% if draft.description %}

@@ -73,6 +73,11 @@ a:hover {
     margin: 0 auto;
 }
 
+.page-wide {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
 .panel {
     background: var(--surface);
     border: 1px solid var(--border);

@@ -18,6 +18,7 @@ from ai.intake import (
     resolve_weight_path,
 )
 from ai.intake_parse import parse_intake_message
+from ai.models import AiChat
 from ai.prompts import (
     CHAT_SYSTEM_PROMPT,
     EDIT_DRAFT_PROMPT,
@@ -51,6 +52,7 @@ MIN_EXERCISES_PER_ROUTINE = 4
 GENERATING_PROGRAM_MESSAGE = (
     "Generating your program. This can take up to a few minutes..."
 )
+SESSION_EXPIRED_MESSAGE = "Your session has expired. Reload to start a new chat."
 INTERRUPT_REPLIES = frozenset({RATE_LIMIT_REPLY, API_ERROR_REPLY})
 
 
@@ -75,6 +77,7 @@ def save_history(user_id, session_id, history):
         json.dumps(history),
         ex=CHAT_HISTORY_TTL_SECONDS,
     )
+    snapshot_aichat(user_id, session_id)
 
 
 def clear_history(user_id, session_id):
@@ -97,6 +100,7 @@ def save_intake(user_id, session_id, intake):
         json.dumps(intake),
         ex=CHAT_HISTORY_TTL_SECONDS,
     )
+    snapshot_aichat(user_id, session_id)
 
 
 def clear_intake(user_id, session_id):
@@ -119,6 +123,7 @@ def save_draft(user_id, session_id, draft):
         json.dumps(draft),
         ex=CHAT_HISTORY_TTL_SECONDS,
     )
+    snapshot_aichat(user_id, session_id, draft)
 
 
 def clear_draft(user_id, session_id):
@@ -190,12 +195,57 @@ def set_enforce_plan(user_id, session_id, enforce):
         redis.delete(f"ai_enforce_plan:{user_id}:{session_id}")
 
 
+def snapshot_aichat(user_id, session_id, draft=None):
+    chat = AiChat.objects.filter(user_id=user_id, session_id=session_id).first()
+    if not chat:
+        return
+    chat.intake = get_intake(user_id, session_id) or {}
+    chat.messages = get_history(user_id, session_id)
+    update_fields = ["intake", "messages", "updated_at"]
+    if draft is not None:
+        drafts = list(chat.drafts or [])
+        drafts.append(draft)
+        chat.drafts = drafts
+        update_fields.append("drafts")
+    chat.save(update_fields=update_fields)
+
+
 def init_chat_session(user_id, session_id):
     intake = new_intake()
     save_intake(user_id, session_id, intake)
     history = [{"role": "assistant", "content": INTAKE_STEPS[0]["question"]}]
     save_history(user_id, session_id, history)
     return intake, history
+
+
+def draft_to_preview(draft):
+    if not draft or not isinstance(draft, dict):
+        return None
+    routines = draft.get("routines")
+    if not isinstance(routines, list) or not routines:
+        return None
+    preview_routines = []
+    for routine in routines:
+        exercises = []
+        for item in routine.get("exercises", []):
+            work_sets = [
+                set_data for set_data in item.get("sets", [])
+                if not set_data.get("is_warmup")
+            ]
+            exercises.append({
+                "exercise_name": item["exercise_name"],
+                "exercise_type": item["exercise_type"],
+                "sets": work_sets,
+            })
+        preview_routines.append({
+            "name": routine["name"],
+            "exercises": exercises,
+        })
+    return {
+        "name": draft["name"],
+        "description": draft.get("description") or "",
+        "routines": preview_routines,
+    }
 
 
 def build_edit_draft_context(user_id, session_id, intake):
@@ -713,13 +763,23 @@ def begin_constraints(user, session_id, intake, history):
 
 def apply_intake_choice(user, session_id, choice_id):
     intake = get_intake(user.id, session_id)
-    if not intake or intake.get("phase") != "intake":
-        return get_history(user.id, session_id), intake
+    if not intake:
+        return {"expired": True}
+    if intake.get("phase") != "intake":
+        return {
+            "expired": False,
+            "history": get_history(user.id, session_id),
+            "intake": intake,
+        }
 
     step_index = intake["step"]
     step = get_current_step(intake)
     if not step:
-        return get_history(user.id, session_id), intake
+        return {
+            "expired": False,
+            "history": get_history(user.id, session_id),
+            "intake": intake,
+        }
 
     choice = None
     for item in step["choices"]:
@@ -727,8 +787,21 @@ def apply_intake_choice(user, session_id, choice_id):
             choice = item
             break
     if not choice:
-        return get_history(user.id, session_id), intake
+        return {
+            "expired": False,
+            "history": get_history(user.id, session_id),
+            "intake": intake,
+        }
 
+    AiChat.objects.get_or_create(
+        user=user,
+        session_id=session_id,
+        defaults={
+            "intake": get_intake(user.id, session_id) or {},
+            "messages": get_history(user.id, session_id),
+            "drafts": [],
+        },
+    )
     history = get_history(user.id, session_id)
     history.append({"role": "user", "content": choice["label"]})
 
@@ -737,19 +810,20 @@ def apply_intake_choice(user, session_id, choice_id):
         history.append({"role": "assistant", "content": OTHER_TYPE_PROMPT})
         save_intake(user.id, session_id, intake)
         save_history(user.id, session_id, history)
-        return history, intake
+        return {"expired": False, "history": history, "intake": intake}
 
     intake["answers"][step["key"]] = choice["id"]
     intake["step"] = step_index + 1
     if intake["step"] >= len(INTAKE_STEPS):
         save_intake(user.id, session_id, intake)
-        return begin_constraints(user, session_id, intake, history)
+        history, intake = begin_constraints(user, session_id, intake, history)
+        return {"expired": False, "history": history, "intake": intake}
 
     next_step = INTAKE_STEPS[intake["step"]]
     history.append({"role": "assistant", "content": next_step["question"]})
     save_intake(user.id, session_id, intake)
     save_history(user.id, session_id, history)
-    return history, intake
+    return {"expired": False, "history": history, "intake": intake}
 
 
 def handle_intake_typed_message(user, session_id, intake, history, message):
@@ -803,6 +877,18 @@ def prepare_chat_send(user, session_id, message):
         return {"phase": "complete", "history": get_history(user.id, session_id)}
 
     intake = get_intake(user.id, session_id)
+    if not intake:
+        return {"phase": "expired"}
+
+    AiChat.objects.get_or_create(
+        user=user,
+        session_id=session_id,
+        defaults={
+            "intake": get_intake(user.id, session_id) or {},
+            "messages": get_history(user.id, session_id),
+            "drafts": [],
+        },
+    )
     history = get_history(user.id, session_id)
     history.append({"role": "user", "content": message})
 
@@ -862,13 +948,6 @@ def prepare_chat_send(user, session_id, message):
     history.append({"role": "assistant", "content": reply})
     save_history(user.id, session_id, history)
     return {"phase": "complete", "history": history}
-
-
-def send_chat_message(user, session_id, message):
-    prep = prepare_chat_send(user, session_id, message)
-    if prep["phase"] == "generating":
-        return run_generation_stages(user, prep["session_id"], prep["history"])
-    return prep["history"]
 
 
 def accept_draft(user, session_id):

@@ -97,6 +97,9 @@ function applyAiChatResponse(response) {
   if (input && response.json_content?.composer_placeholder) {
     input.placeholder = response.json_content.composer_placeholder;
   }
+  if (response.json_content?.composer_disabled) {
+    setAiChatSending(true);
+  }
   scrollAiChatToBottom();
 }
 
@@ -106,9 +109,11 @@ function handleWsInterimResponse(response) {
 }
 
 function finishAiChatRequest(response) {
-  setAiChatSending(false);
   removeAiChatLoading();
   applyAiChatResponse(response);
+  if (!response.json_content?.composer_disabled) {
+    setAiChatSending(false);
+  }
 }
 
 function sendAiIntakeChoice(event) {

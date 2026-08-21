@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load formatting static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dev.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-wide">
+    <header class="stack-sm mb-4">
+        <h1 class="title-lg m-0">Dev AI Chats</h1>
+    </header>
+    {% if chats %}
+    <div class="table-shell">
+        <table class="table table-compact">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Session ID</th>
+                    <th>Phase</th>
+                    <th>Goal</th>
+                    <th>Messages</th>
+                    <th>Drafts</th>
+                    <th>API calls</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chat in chats %}
+                <tr>
+                    <td>{{ chat.user.username }}</td>
+                    <td><code class="text-sm">{{ chat.session_id }}</code></td>
+                    <td>{{ chat.intake.phase|default:"—" }}</td>
+                    <td>{% if chat.intake.answers.goal %}{{ chat.intake.answers.goal }}{% else %}—{% endif %}</td>
+                    <td>{{ chat.messages|length }}</td>
+                    <td>{{ chat.drafts|length }}</td>
+                    <td>{{ chat.api_call_count }}</td>
+                    <td>{{ chat.created_at|list_datetime_format }}</td>
+                    <td>{{ chat.updated_at|list_datetime_format }}</td>
+                    <td>
+                        <a href="{% url 'dev-ai-chat-detail' chat.pk %}" class="btn btn-outline btn-sm">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted text-center m-0">No AI chats saved yet.</p>
+    {% endif %}
+</main>
+{% endblock %}

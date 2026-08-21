@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Page not found{% endblock %}
+
+{% block content %}
+<main class="page page-narrow">
+    <header class="stack-sm mb-4">
+        <h1 class="title-lg m-0">Page not found</h1>
+        <p class="text-muted m-0">The page you requested does not exist.</p>
+        <p class="m-0">
+            <a href="{% url 'home' %}" class="btn btn-primary">Go home</a>
+        </p>
+    </header>
+</main>
+{% endblock %}

@@ -2,9 +2,11 @@ from django.template.loader import render_to_string
 
 from ai.intake import get_choices_context
 from ai.services import (
+    SESSION_EXPIRED_MESSAGE,
     accept_draft,
     apply_intake_choice,
     clear_draft,
+    draft_to_preview,
     get_draft,
     get_intake,
     prepare_chat_send,
@@ -13,6 +15,26 @@ from ai.services import (
 from gainz2.utils import render_toast
 
 DEFAULT_COMPOSER_PLACEHOLDER = "Type a message..."
+
+
+def build_expired_chat_response():
+    history = [{"role": "assistant", "content": SESSION_EXPIRED_MESSAGE}]
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {
+            "target": "#ai-chat-messages",
+            "html": render_to_string(
+                "ai/chat_messages.html",
+                {"chat_messages": history},
+            ),
+            "choices_target": "#ai-chat-choices",
+            "choices_html": "",
+            "draft_target": "#ai-program-draft",
+            "draft_html": "",
+            "composer_disabled": True,
+        },
+    }
 
 
 def build_ai_chat_response(user, session_id, history):
@@ -27,30 +49,7 @@ def build_ai_chat_response(user, session_id, history):
     )
 
     draft = get_draft(user.id, session_id)
-    preview = None
-    if draft:
-        routines = []
-        for routine in draft["routines"]:
-            exercises = []
-            for item in routine["exercises"]:
-                work_sets = [
-                    set_data for set_data in item["sets"]
-                    if not set_data.get("is_warmup")
-                ]
-                exercises.append({
-                    "exercise_name": item["exercise_name"],
-                    "exercise_type": item["exercise_type"],
-                    "sets": work_sets,
-                })
-            routines.append({
-                "name": routine["name"],
-                "exercises": exercises,
-            })
-        preview = {
-            "name": draft["name"],
-            "description": draft.get("description") or "",
-            "routines": routines,
-        }
+    preview = draft_to_preview(draft)
     draft_html = render_to_string(
         "ai/program_draft.html",
         {
@@ -63,21 +62,22 @@ def build_ai_chat_response(user, session_id, history):
     if intake and (intake.get("awaiting_free_text_for") or "").strip():
         composer_placeholder = "Type your answer..."
 
+    json_content = {
+        "target": "#ai-chat-messages",
+        "html": render_to_string(
+            "ai/chat_messages.html",
+            {"chat_messages": history},
+        ),
+        "choices_target": "#ai-chat-choices",
+        "choices_html": choices_html,
+        "draft_target": "#ai-program-draft",
+        "draft_html": draft_html,
+        "composer_placeholder": composer_placeholder,
+    }
     return {
         "status": 200,
         "headers": [],
-        "json_content": {
-            "target": "#ai-chat-messages",
-            "html": render_to_string(
-                "ai/chat_messages.html",
-                {"chat_messages": history},
-            ),
-            "choices_target": "#ai-chat-choices",
-            "choices_html": choices_html,
-            "draft_target": "#ai-program-draft",
-            "draft_html": draft_html,
-            "composer_placeholder": composer_placeholder,
-        },
+        "json_content": json_content,
     }
 
 
@@ -85,6 +85,11 @@ def prepare_send_message(user, attributes):
     session_id = attributes.get("session_id") or attributes.get("data-session-id", "")
     message = attributes.get("message", "")
     prep = prepare_chat_send(user, session_id, message)
+    if prep["phase"] == "expired":
+        return {
+            "phase": "complete",
+            "payload": build_expired_chat_response(),
+        }
     if prep["phase"] == "generating":
         return {
             "phase": "generating",
@@ -106,8 +111,10 @@ def run_send_message_generation(user, session_id, history):
 def handle_intake_choice(user, attributes):
     session_id = attributes.get("session_id") or attributes.get("data-session-id", "")
     choice_id = attributes.get("choice") or attributes.get("data-choice", "")
-    history, intake = apply_intake_choice(user, session_id, choice_id)
-    return build_ai_chat_response(user, session_id, history)
+    result = apply_intake_choice(user, session_id, choice_id)
+    if result.get("expired"):
+        return build_expired_chat_response()
+    return build_ai_chat_response(user, session_id, result["history"])
 
 
 def handle_accept_draft(user, attributes):

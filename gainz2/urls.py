@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from accounts.views import demo_page, design_page, home_page, login_page, logout_page, register_page, settings_page
-from ai.views import chat_page
+from ai.views import chat_page, dev_chat_detail_page, dev_chats_list_page
 from routines.views import (
     import_routine_page,
     new_routine_page,
@@ -44,15 +44,19 @@ from workouts.views import (
 )
 
 urlpatterns = [
-    path("", home_page, name="home"),
+    # dev pages
+    path("dev/ai/chats/", dev_chats_list_page, name="dev-ai-chats"),
+    path("dev/ai/chats/<int:chat_id>/", dev_chat_detail_page, name="dev-ai-chat-detail"),
+    path("admin/", admin.site.urls),
+    path("django-rq/", include("django_rq.urls")),
     path("design/", design_page, name="design"),
+    # user pages
+    path("", home_page, name="home"),
     path("login/", login_page, name="login"),
     path("register/", register_page, name="register"),
     path("demo/", demo_page, name="demo"),
     path("logout/", logout_page, name="logout"),
     path("settings/", settings_page, name="settings"),
-    path("admin/", admin.site.urls),
-    path("django-rq/", include("django_rq.urls")),
     path("progress/", progress_page, name="progress"),
     path("progress/records/", progress_records_page, name="progress-records"),
     path("exercises/", exercise_list_page, name="exercises-list"),
@@ -77,3 +81,5 @@ urlpatterns = [
     path("routines/new/", new_routine_page, name="new-routine"),
     path("routines/<int:routine_id>/", routine_detail_page, name="routine-detail"),
 ]
+
+handler404 = "gainz2.views.page_not_found"

@@ -53,6 +53,7 @@ AI_MODEL_GENERATE_FALLBACK = os.getenv('AI_MODEL_GENERATE_FALLBACK', 'gemini-3.5
 
 INSTALLED_APPS = [
     'ai',
+    'apis',
     'seeding',
     'accounts',
     'channels',
