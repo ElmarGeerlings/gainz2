@@ -871,3 +871,36 @@ textarea.form-control {
 .hidden {
     display: none;
 }
+
+/* ── Pagination ──────────────────────────────── */
+
+.pagination {
+    padding-top: var(--space-2);
+}
+
+.pagination .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1rem;
+}
+
+.pagination a.icon-btn {
+    text-decoration: none;
+    color: var(--text);
+}
+
+.pagination span.icon-btn {
+    cursor: default;
+}
+
+.pagination-status {
+    min-width: 6rem;
+    text-align: center;
+    padding: 0 var(--space-2);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+}

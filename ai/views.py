@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from ai.intake import get_choices_context
 from ai.models import AiChat
 from ai.services import draft_to_preview, init_chat_session
+from utils.pagination import paginate
 
 
 def chat_page(req_event):
@@ -33,12 +34,13 @@ def dev_chats_list_page(req_event):
     chats = AiChat.objects.select_related("user").annotate(
         api_call_count=Count("api_calls"),
     ).order_by("-created_at")
+    page_obj = paginate(req_event, chats)
     return render(
         req_event,
         "ai/dev_chats_list.html",
         {
             "title": "Dev AI Chats",
-            "chats": chats,
+            "page_obj": page_obj,
         },
     )
 

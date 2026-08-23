@@ -48,11 +48,12 @@
         </div>
     </header>
     <div class="stack-sm">
-        {% for workout in workouts %}
+        {% for workout in page_obj %}
         {% include "workouts/workout_list_card.html" with entity="workout" item=workout %}
         {% empty %}
         <p class="text-muted text-center m-0">You haven't created any workouts yet.</p>
         {% endfor %}
     </div>
+    {% include "components/pagination.html" %}
 </main>
 {% endblock %}

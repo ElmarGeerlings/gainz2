@@ -12,7 +12,6 @@
     <header class="stack-sm mb-4">
         <h1 class="title-lg m-0">Dev AI Chats</h1>
     </header>
-    {% if chats %}
     <div class="table-shell">
         <table class="table table-compact">
             <thead>
@@ -30,7 +29,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for chat in chats %}
+                {% for chat in page_obj %}
                 <tr>
                     <td>{{ chat.user.username }}</td>
                     <td><code class="text-sm">{{ chat.session_id }}</code></td>
@@ -45,12 +44,14 @@
                         <a href="{% url 'dev-ai-chat-detail' chat.pk %}" class="btn btn-outline btn-sm">View</a>
                     </td>
                 </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="text-muted text-center">No AI chats saved yet.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    {% else %}
-    <p class="text-muted text-center m-0">No AI chats saved yet.</p>
-    {% endif %}
+    {% include "components/pagination.html" %}
 </main>
 {% endblock %}

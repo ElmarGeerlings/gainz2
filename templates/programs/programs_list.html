@@ -19,11 +19,12 @@
         </div>
     </header>
     <div class="stack-sm">
-        {% for program in programs %}
+        {% for program in page_obj %}
         {% include "programs/program_list_card.html" %}
         {% empty %}
         <p class="text-muted text-center m-0">You haven't created any programs yet.</p>
         {% endfor %}
     </div>
+    {% include "components/pagination.html" %}
 </main>
 {% endblock %}

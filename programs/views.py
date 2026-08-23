@@ -1,6 +1,8 @@
 from types import SimpleNamespace
 
 from django.shortcuts import get_object_or_404, redirect, render
+from utils.pagination import paginate
+
 from programs.models import ProgramExercise, ProgramRoutine
 from programs.services import (
     get_program,
@@ -25,11 +27,15 @@ OHP 3x3 60"""
 
 
 def programs_list_page(req_event):
-    response = {
-        "title": "My Programs",
-        "programs": list_programs(req_event.user),
-    }
-    return render(req_event, "programs/programs_list.html", response)
+    page_obj = paginate(req_event, list_programs(req_event.user))
+    return render(
+        req_event,
+        "programs/programs_list.html",
+        {
+            "title": "My Programs",
+            "page_obj": page_obj,
+        },
+    )
 
 
 def new_program_page(req_event):
@@ -182,11 +188,15 @@ def program_routine_page(req_event, program_id, routine_id):
 
 
 def progression_templates_list_page(req_event):
-    response = {
-        "title": "Progression templates",
-        "templates": list_progression_templates(req_event.user),
-    }
-    return render(req_event, "programs/progression/progression_list.html", response)
+    page_obj = paginate(req_event, list_progression_templates(req_event.user))
+    return render(
+        req_event,
+        "programs/progression/progression_list.html",
+        {
+            "title": "Progression templates",
+            "page_obj": page_obj,
+        },
+    )
 
 
 def new_progression_template_page(req_event):

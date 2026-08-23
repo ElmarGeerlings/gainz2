@@ -28,7 +28,8 @@
         </div>
     </header>
     <div id="routines-list-container" class="stack-sm">
-        {% include "routines/routines_list_items.html" %}
+        {% include "routines/routines_list_items.html" with routines=page_obj %}
+        {% include "components/pagination.html" %}
     </div>
 </main>
 {% endblock %}

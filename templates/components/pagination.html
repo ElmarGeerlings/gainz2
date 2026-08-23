@@ -1,0 +1,21 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="pagination row-center gap-sm justify-center" aria-label="Pagination">
+    {% if page_obj.has_previous %}
+    <a class="icon-btn" href="?page=1" aria-label="First page"><i class="fas fa-angles-left" aria-hidden="true"></i></a>
+    <a class="icon-btn" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous page"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>
+    {% else %}
+    <span class="icon-btn opacity-50" aria-hidden="true"><i class="fas fa-angles-left" aria-hidden="true"></i></span>
+    <span class="icon-btn opacity-50" aria-hidden="true"><i class="fas fa-chevron-left" aria-hidden="true"></i></span>
+    {% endif %}
+
+    <span class="pagination-status">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+    <a class="icon-btn" href="?page={{ page_obj.next_page_number }}" aria-label="Next page"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>
+    <a class="icon-btn" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last page"><i class="fas fa-angles-right" aria-hidden="true"></i></a>
+    {% else %}
+    <span class="icon-btn opacity-50" aria-hidden="true"><i class="fas fa-chevron-right" aria-hidden="true"></i></span>
+    <span class="icon-btn opacity-50" aria-hidden="true"><i class="fas fa-angles-right" aria-hidden="true"></i></span>
+    {% endif %}
+</nav>
+{% endif %}
