@@ -1,23 +1,7 @@
 {% if draft %}
-<section class="panel ai-draft-panel stack-sm">
+<section class="panel stack-sm m-0">
     <div class="row-between row-center gap-sm">
         <h2 class="title-md m-0">Program preview</h2>
-        {% if not dev_page %}
-        <div class="row-center gap-sm">
-            <button
-                type="button"
-                class="btn btn-outline"
-                data-endpoint="click->ai/discard_draft"
-                data-session-id="{{ session_id }}"
-            >Discard</button>
-            <button
-                type="button"
-                class="btn btn-primary"
-                data-endpoint="click->ai/accept_draft"
-                data-session-id="{{ session_id }}"
-            >Accept</button>
-        </div>
-        {% endif %}
     </div>
     <p class="title-sm m-0">{{ draft.name }}</p>
     {% if draft.description %}
@@ -26,7 +10,7 @@
 
     <div class="stack-md">
         {% for routine in draft.routines %}
-        <div class="ai-draft-routine stack-xs">
+        <div class="stack-xs">
             <p class="fw-700 m-0">{{ routine.name }}</p>
             <ul class="ai-draft-exercise-list m-0">
                 {% for item in routine.exercises %}
@@ -43,5 +27,31 @@
         </div>
         {% endfor %}
     </div>
+
+    {% if phase == "review" %}
+    <div class="row-center gap-sm pt-3 mt-3 ai-draft-actions">
+        <button
+            type="button"
+            class="btn btn-primary ai-chat-choice-btn"
+            data-session-id="{{ session_id }}"
+            data-choice="accept"
+            data-function="click->sendAiIntakeChoice"
+        >Accept</button>
+        <button
+            type="button"
+            class="btn btn-outline ai-chat-choice-btn"
+            data-session-id="{{ session_id }}"
+            data-choice="edit"
+            data-function="click->sendAiIntakeChoice"
+        >Edit</button>
+        <button
+            type="button"
+            class="btn btn-outline ai-chat-choice-btn"
+            data-session-id="{{ session_id }}"
+            data-choice="discard"
+            data-function="click->sendAiIntakeChoice"
+        >Discard</button>
+    </div>
+    {% endif %}
 </section>
 {% endif %}

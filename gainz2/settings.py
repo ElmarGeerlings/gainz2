@@ -81,6 +81,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'gainz2.login_middleware.LoginRequiredUnlessExemptMiddleware',
+    'gainz2.middleware.DevAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -95,6 +96,7 @@ LOGIN_EXEMPT_URLS = [
     r'^/register/?$',
     r'^/demo/?$',
     r'^/admin/login/?$',
+    r'^/ai/chat/?$',
 ]
 
 ROOT_URLCONF = 'gainz2.urls'

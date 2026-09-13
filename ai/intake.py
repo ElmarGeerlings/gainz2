@@ -75,6 +75,37 @@ DEMOGRAPHICS_PROMPT = (
 
 OTHER_TYPE_PROMPT = "Other — type your answer below."
 
+PROGRAM_READY_MESSAGE = "Your program is ready — see it above."
+
+EDIT_PROMPT = "Please tell me how you want to change this program."
+
+FEEDBACK_COMMENT_PROMPT = (
+    "Please share any feedback you have and we will use it to improve the program builder!"
+)
+
+FEEDBACK_RATING_PROMPT = "Please rate your experience from 1 to 5."
+
+FEEDBACK_RATING_RETRY_PROMPT = "Please rate your experience from 1 to 5, or tap Skip."
+
+START_OVER_ASK_PROMPT = "Would you like to start over?"
+
+THANK_YOU_MESSAGE = "Thanks for your feedback!"
+
+FEEDBACK_SKIP_CHOICE = {"id": "skip", "label": "Skip"}
+
+FEEDBACK_RATING_CHOICES = [
+    {"id": "1", "label": "1"},
+    {"id": "2", "label": "2"},
+    {"id": "3", "label": "3"},
+    {"id": "4", "label": "4"},
+    {"id": "5", "label": "5"},
+]
+
+START_OVER_CHOICES = [
+    {"id": "yes", "label": "Yes"},
+    {"id": "no", "label": "No"},
+]
+
 GOAL_LABELS = {
     "hypertrophy": "Hypertrophy",
     "strength": "Strength",
@@ -198,7 +229,10 @@ def build_profile_context(intake, history_summary):
 
 
 def resolve_weight_path(user, intake):
-    lifts = get_user_lift_history(user)
+    if not user.is_authenticated:
+        lifts = []
+    else:
+        lifts = get_user_lift_history(user)
     if lifts:
         return "use_history", lifts
 
@@ -248,7 +282,16 @@ def apply_parsed_intake(intake, parsed):
 
 
 def get_choices_context(intake):
-    if not intake or intake.get("phase") != "intake":
+    if not intake:
+        return None
+    phase = intake.get("phase")
+    if phase == "feedback_comment":
+        return {"choices": [FEEDBACK_SKIP_CHOICE]}
+    if phase == "feedback_rating":
+        return {"choices": FEEDBACK_RATING_CHOICES + [FEEDBACK_SKIP_CHOICE]}
+    if phase == "start_over_ask":
+        return {"choices": START_OVER_CHOICES}
+    if phase != "intake":
         return None
     if (intake.get("awaiting_free_text_for") or "").strip():
         return None

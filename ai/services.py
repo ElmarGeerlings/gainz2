@@ -6,8 +6,15 @@ from django_redis import get_redis_connection
 from ai.intake import (
     CONSTRAINTS_PROMPT,
     DEMOGRAPHICS_PROMPT,
+    EDIT_PROMPT,
+    FEEDBACK_COMMENT_PROMPT,
+    FEEDBACK_RATING_PROMPT,
+    FEEDBACK_RATING_RETRY_PROMPT,
     INTAKE_STEPS,
     OTHER_TYPE_PROMPT,
+    PROGRAM_READY_MESSAGE,
+    START_OVER_ASK_PROMPT,
+    THANK_YOU_MESSAGE,
     WEIGHTS_PROMPT,
     apply_parsed_intake,
     build_profile_context,
@@ -18,7 +25,6 @@ from ai.intake import (
     resolve_weight_path,
 )
 from ai.intake_parse import parse_intake_message
-from ai.models import AiChat
 from ai.prompts import (
     CHAT_SYSTEM_PROMPT,
     EDIT_DRAFT_PROMPT,
@@ -30,6 +36,7 @@ from ai.prompts import (
 from ai.providers.gemini import API_ERROR_REPLY, RATE_LIMIT_REPLY
 from ai.providers.gemini import generate_with_tools as gemini_generate_with_tools
 from ai.rubrics import validate_exercise_plan_structure, validate_program_loads
+from ai.session import ensure_aichat, find_aichat
 from ai.tools import (
     CHAT_TOOL_DECLARATIONS,
     STAGE1_TOOL_DECLARATIONS,
@@ -49,6 +56,11 @@ from exercises.services import list_exercises_for_user
 CHAT_HISTORY_TTL_SECONDS = 3600
 VALID_EXERCISE_TYPES = {"primary", "secondary", "accessory"}
 MIN_EXERCISES_PER_ROUTINE = 4
+GUEST_GEN_QUOTA_MAX = 2
+GUEST_GEN_QUOTA_TTL = 86400
+GUEST_GEN_QUOTA_MESSAGE = (
+    "You have reached the limit of 2 program generations per day. Try again tomorrow."
+)
 GENERATING_PROGRAM_MESSAGE = (
     "Generating your program. This can take up to a few minutes..."
 )
@@ -56,151 +68,202 @@ SESSION_EXPIRED_MESSAGE = "Your session has expired. Reload to start a new chat.
 INTERRUPT_REPLIES = frozenset({RATE_LIMIT_REPLY, API_ERROR_REPLY})
 
 
-def begin_program_generation(user_id, session_id, history):
-    history.append({"role": "assistant", "content": GENERATING_PROGRAM_MESSAGE})
-    save_history(user_id, session_id, history)
+def guest_generation_count(ctx):
+    if not ctx.is_guest:
+        return 0
+    redis = get_redis_connection("default")
+    raw = redis.get(f"ai_gen_quota:{ctx.owner_key}")
+    if raw is None:
+        return 0
+    return int(raw.decode("utf-8"))
+
+
+def guest_at_generation_limit(ctx):
+    return guest_generation_count(ctx) >= GUEST_GEN_QUOTA_MAX
+
+
+def check_guest_generation_quota(ctx):
+    if not ctx.is_guest:
+        return None
+    redis = get_redis_connection("default")
+    key = f"ai_gen_quota:{ctx.owner_key}"
+    raw = redis.get(key)
+    if raw is None:
+        redis.set(key, 1, ex=GUEST_GEN_QUOTA_TTL)
+        return None
+    count = int(raw.decode("utf-8"))
+    if count >= GUEST_GEN_QUOTA_MAX:
+        return GUEST_GEN_QUOTA_MESSAGE
+    redis.incr(key)
+    return None
+
+
+def set_last_assistant_message(history, content, replace_if=None):
+    if (
+        replace_if
+        and history
+        and history[-1].get("role") == "assistant"
+        and history[-1].get("content") == replace_if
+    ):
+        history[-1] = {"role": "assistant", "content": content}
+    else:
+        history.append({"role": "assistant", "content": content})
     return history
 
 
-def get_history(user_id, session_id):
+def begin_program_generation(ctx, session_id, history):
+    quota_message = check_guest_generation_quota(ctx)
+    if quota_message:
+        history.append({"role": "assistant", "content": quota_message})
+        save_history(ctx.owner_key, session_id, history)
+        return history
+    history.append({"role": "assistant", "content": GENERATING_PROGRAM_MESSAGE})
+    save_history(ctx.owner_key, session_id, history)
+    return history
+
+
+def get_history(owner_key, session_id):
     redis = get_redis_connection("default")
-    raw = redis.get(f"ai_chat:{user_id}:{session_id}")
+    raw = redis.get(f"ai_chat:{owner_key}:{session_id}")
     if not raw:
         return []
     return json.loads(raw.decode("utf-8"))
 
 
-def save_history(user_id, session_id, history):
+def save_history(owner_key, session_id, history, ctx=None):
     redis = get_redis_connection("default")
     redis.set(
-        f"ai_chat:{user_id}:{session_id}",
+        f"ai_chat:{owner_key}:{session_id}",
         json.dumps(history),
         ex=CHAT_HISTORY_TTL_SECONDS,
     )
-    snapshot_aichat(user_id, session_id)
+    if ctx:
+        snapshot_aichat(ctx, session_id)
 
 
-def clear_history(user_id, session_id):
+def clear_history(owner_key, session_id):
     redis = get_redis_connection("default")
-    redis.delete(f"ai_chat:{user_id}:{session_id}")
+    redis.delete(f"ai_chat:{owner_key}:{session_id}")
 
 
-def get_intake(user_id, session_id):
+def get_intake(owner_key, session_id):
     redis = get_redis_connection("default")
-    raw = redis.get(f"ai_intake:{user_id}:{session_id}")
+    raw = redis.get(f"ai_intake:{owner_key}:{session_id}")
     if not raw:
         return None
     return json.loads(raw.decode("utf-8"))
 
 
-def save_intake(user_id, session_id, intake):
+def save_intake(owner_key, session_id, intake, ctx=None):
     redis = get_redis_connection("default")
     redis.set(
-        f"ai_intake:{user_id}:{session_id}",
+        f"ai_intake:{owner_key}:{session_id}",
         json.dumps(intake),
         ex=CHAT_HISTORY_TTL_SECONDS,
     )
-    snapshot_aichat(user_id, session_id)
+    if ctx:
+        snapshot_aichat(ctx, session_id)
 
 
-def clear_intake(user_id, session_id):
+def clear_intake(owner_key, session_id):
     redis = get_redis_connection("default")
-    redis.delete(f"ai_intake:{user_id}:{session_id}")
+    redis.delete(f"ai_intake:{owner_key}:{session_id}")
 
 
-def get_draft(user_id, session_id):
+def get_draft(owner_key, session_id):
     redis = get_redis_connection("default")
-    raw = redis.get(f"ai_draft:{user_id}:{session_id}")
+    raw = redis.get(f"ai_draft:{owner_key}:{session_id}")
     if not raw:
         return None
     return json.loads(raw.decode("utf-8"))
 
 
-def save_draft(user_id, session_id, draft):
+def save_draft(owner_key, session_id, draft, ctx=None):
     redis = get_redis_connection("default")
     redis.set(
-        f"ai_draft:{user_id}:{session_id}",
+        f"ai_draft:{owner_key}:{session_id}",
         json.dumps(draft),
         ex=CHAT_HISTORY_TTL_SECONDS,
     )
-    snapshot_aichat(user_id, session_id, draft)
+    if ctx:
+        snapshot_aichat(ctx, session_id, draft)
 
 
-def clear_draft(user_id, session_id):
+def clear_draft(owner_key, session_id):
     redis = get_redis_connection("default")
-    redis.delete(f"ai_draft:{user_id}:{session_id}")
+    redis.delete(f"ai_draft:{owner_key}:{session_id}")
 
 
-def get_previous_draft(user_id, session_id):
+def get_previous_draft(owner_key, session_id):
     redis = get_redis_connection("default")
-    raw = redis.get(f"ai_draft_previous:{user_id}:{session_id}")
+    raw = redis.get(f"ai_draft_previous:{owner_key}:{session_id}")
     if not raw:
         return None
     return json.loads(raw.decode("utf-8"))
 
 
-def save_previous_draft(user_id, session_id, draft):
+def save_previous_draft(owner_key, session_id, draft):
     redis = get_redis_connection("default")
     redis.set(
-        f"ai_draft_previous:{user_id}:{session_id}",
+        f"ai_draft_previous:{owner_key}:{session_id}",
         json.dumps(draft),
         ex=CHAT_HISTORY_TTL_SECONDS,
     )
 
 
-def clear_previous_draft(user_id, session_id):
+def clear_previous_draft(owner_key, session_id):
     redis = get_redis_connection("default")
-    redis.delete(f"ai_draft_previous:{user_id}:{session_id}")
+    redis.delete(f"ai_draft_previous:{owner_key}:{session_id}")
 
 
-def get_exercise_plan(user_id, session_id):
+def get_exercise_plan(owner_key, session_id):
     redis = get_redis_connection("default")
-    raw = redis.get(f"ai_exercise_plan:{user_id}:{session_id}")
+    raw = redis.get(f"ai_exercise_plan:{owner_key}:{session_id}")
     if not raw:
         return None
     return json.loads(raw.decode("utf-8"))
 
 
-def save_exercise_plan(user_id, session_id, plan):
+def save_exercise_plan(owner_key, session_id, plan):
     redis = get_redis_connection("default")
     redis.set(
-        f"ai_exercise_plan:{user_id}:{session_id}",
+        f"ai_exercise_plan:{owner_key}:{session_id}",
         json.dumps(plan),
         ex=CHAT_HISTORY_TTL_SECONDS,
     )
 
 
-def clear_exercise_plan(user_id, session_id):
+def clear_exercise_plan(owner_key, session_id):
     redis = get_redis_connection("default")
-    redis.delete(f"ai_exercise_plan:{user_id}:{session_id}")
+    redis.delete(f"ai_exercise_plan:{owner_key}:{session_id}")
 
 
-def get_enforce_plan(user_id, session_id):
+def get_enforce_plan(owner_key, session_id):
     redis = get_redis_connection("default")
-    raw = redis.get(f"ai_enforce_plan:{user_id}:{session_id}")
+    raw = redis.get(f"ai_enforce_plan:{owner_key}:{session_id}")
     if not raw:
         return False
     return raw.decode("utf-8") == "1"
 
 
-def set_enforce_plan(user_id, session_id, enforce):
+def set_enforce_plan(owner_key, session_id, enforce):
     redis = get_redis_connection("default")
     if enforce:
         redis.set(
-            f"ai_enforce_plan:{user_id}:{session_id}",
+            f"ai_enforce_plan:{owner_key}:{session_id}",
             "1",
             ex=CHAT_HISTORY_TTL_SECONDS,
         )
     else:
-        redis.delete(f"ai_enforce_plan:{user_id}:{session_id}")
+        redis.delete(f"ai_enforce_plan:{owner_key}:{session_id}")
 
 
-def snapshot_aichat(user_id, session_id, draft=None):
-    chat = AiChat.objects.filter(user_id=user_id, session_id=session_id).first()
+def snapshot_aichat(ctx, session_id, draft=None):
+    chat = find_aichat(ctx, session_id)
     if not chat:
         return
-    chat.intake = get_intake(user_id, session_id) or {}
-    chat.messages = get_history(user_id, session_id)
+    chat.intake = get_intake(ctx.owner_key, session_id) or {}
+    chat.messages = get_history(ctx.owner_key, session_id)
     update_fields = ["intake", "messages", "updated_at"]
     if draft is not None:
         drafts = list(chat.drafts or [])
@@ -210,11 +273,11 @@ def snapshot_aichat(user_id, session_id, draft=None):
     chat.save(update_fields=update_fields)
 
 
-def init_chat_session(user_id, session_id):
+def init_chat_session(owner_key, session_id):
     intake = new_intake()
-    save_intake(user_id, session_id, intake)
+    save_intake(owner_key, session_id, intake)
     history = [{"role": "assistant", "content": INTAKE_STEPS[0]["question"]}]
-    save_history(user_id, session_id, history)
+    save_history(owner_key, session_id, history)
     return intake, history
 
 
@@ -248,10 +311,10 @@ def draft_to_preview(draft):
     }
 
 
-def build_edit_draft_context(user_id, session_id, intake):
+def build_edit_draft_context(owner_key, session_id, intake):
     if not intake or intake.get("phase") != "chat":
         return None
-    draft = get_draft(user_id, session_id)
+    draft = get_draft(owner_key, session_id)
     if not draft:
         return None
     lines = [
@@ -260,7 +323,7 @@ def build_edit_draft_context(user_id, session_id, intake):
         "Current program draft (JSON):",
         json.dumps(draft, separators=(",", ":")),
     ]
-    previous = get_previous_draft(user_id, session_id)
+    previous = get_previous_draft(owner_key, session_id)
     if previous:
         lines.extend([
             "",
@@ -272,7 +335,7 @@ def build_edit_draft_context(user_id, session_id, intake):
 
 def build_exercise_name_lookup(user):
     exercises = list_exercises_for_user(
-        user,
+        user if user.is_authenticated else None,
         search_query="",
         exercise_type="",
         primary_bodypart="",
@@ -288,7 +351,7 @@ def build_exercise_name_lookup(user):
 
 def build_filtered_exercise_lookup(user, intake):
     exercises = list_exercises_for_user(
-        user,
+        user if user.is_authenticated else None,
         search_query="",
         exercise_type="",
         primary_bodypart="",
@@ -309,8 +372,9 @@ def resolve_allowed_exercise(user, exercise_id):
     exercise = Exercise.objects.filter(pk=exercise_id).first()
     if not exercise:
         return None
-    if exercise.is_custom and exercise.user_id != user.id:
-        return None
+    if exercise.is_custom:
+        if not user.is_authenticated or exercise.user_id != user.id:
+            return None
     return exercise
 
 
@@ -509,19 +573,19 @@ def validate_program_draft(user, draft):
     return cleaned, None, []
 
 
-def save_interrupt_reply(user_id, session_id, intake, history, reply):
+def save_interrupt_reply(ctx, session_id, intake, history, reply):
     history.append({"role": "assistant", "content": reply})
-    save_history(user_id, session_id, history)
+    save_history(ctx.owner_key, session_id, history, ctx)
     intake["phase"] = "chat"
-    save_intake(user_id, session_id, intake)
+    save_intake(ctx.owner_key, session_id, intake, ctx)
     return history
 
 
-def submit_exercise_plan_tool(user, session_id, args, intake):
-    cleaned, errors = clean_exercise_plan(user, args, intake)
+def submit_exercise_plan_tool(ctx, session_id, args, intake):
+    cleaned, errors = clean_exercise_plan(ctx.user, args, intake)
     if errors:
         return {"ok": False, "error": "; ".join(errors), "errors": errors}
-    save_exercise_plan(user.id, session_id, cleaned)
+    save_exercise_plan(ctx.owner_key, session_id, cleaned)
     exercise_count = sum(
         len(routine["exercises"]) for routine in cleaned["routines"]
     )
@@ -534,11 +598,11 @@ def submit_exercise_plan_tool(user, session_id, args, intake):
     }
 
 
-def submit_program_draft_tool(user, session_id, args, intake, enforce_plan=False):
+def submit_program_draft_tool(ctx, session_id, args, intake, enforce_plan=False):
     if enforce_plan:
-        plan = get_exercise_plan(user.id, session_id)
+        plan = get_exercise_plan(ctx.owner_key, session_id)
         if plan:
-            cleaned_preview, error, unknown_names = validate_program_draft(user, args)
+            cleaned_preview, error, unknown_names = validate_program_draft(ctx.user, args)
             if error:
                 return {"ok": False, "error": error, "unknown_names": unknown_names or []}
             if not draft_matches_exercise_plan(cleaned_preview, plan):
@@ -550,16 +614,19 @@ def submit_program_draft_tool(user, session_id, args, intake, enforce_plan=False
                     ),
                 }
 
-    cleaned, error, unknown_names = validate_program_draft(user, args)
+    cleaned, error, unknown_names = validate_program_draft(ctx.user, args)
     if error:
         result = {"ok": False, "error": error}
         if unknown_names:
             result["unknown_names"] = unknown_names
         return result
-    current = get_draft(user.id, session_id)
+    current = get_draft(ctx.owner_key, session_id)
     if current:
-        save_previous_draft(user.id, session_id, current)
-    save_draft(user.id, session_id, cleaned)
+        save_previous_draft(ctx.owner_key, session_id, current)
+    save_draft(ctx.owner_key, session_id, cleaned, ctx)
+    if intake and intake.get("phase") == "chat":
+        intake["phase"] = "review"
+        save_intake(ctx.owner_key, session_id, intake, ctx)
     exercise_count = sum(
         len(routine["exercises"]) for routine in cleaned["routines"]
     )
@@ -572,24 +639,24 @@ def submit_program_draft_tool(user, session_id, args, intake, enforce_plan=False
     }
 
 
-def execute_tool(name, args, user, session_id):
-    intake = get_intake(user.id, session_id)
+def execute_tool(name, args, ctx, session_id):
+    intake = get_intake(ctx.owner_key, session_id)
     if name == "get_exercise_catalog":
-        return run_get_exercise_catalog(user, args, intake)
+        return run_get_exercise_catalog(ctx.user, args, intake)
     if name == "get_lift_history":
-        return run_get_lift_history(user, args)
+        return run_get_lift_history(ctx.user, args)
     if name == "submit_exercise_plan":
-        return submit_exercise_plan_tool(user, session_id, args, intake)
+        return submit_exercise_plan_tool(ctx, session_id, args, intake)
     if name == "submit_program_draft":
-        enforce_plan = get_enforce_plan(user.id, session_id)
+        enforce_plan = get_enforce_plan(ctx.owner_key, session_id)
         return submit_program_draft_tool(
-            user, session_id, args, intake, enforce_plan=enforce_plan
+            ctx, session_id, args, intake, enforce_plan=enforce_plan
         )
     return {"ok": False, "error": f"Unknown tool: {name}"}
 
 
-def build_gemini_messages(user, session_id, history):
-    intake = get_intake(user.id, session_id)
+def build_gemini_messages(ctx, session_id, history):
+    intake = get_intake(ctx.owner_key, session_id)
     messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
 
     include_profile = False
@@ -606,12 +673,14 @@ def build_gemini_messages(user, session_id, history):
             include_profile = True
 
     if include_profile:
-        lifts = run_get_lift_history(user, {})["lifts"]
+        lifts = []
+        if ctx.user.is_authenticated:
+            lifts = run_get_lift_history(ctx.user, {})["lifts"]
         history_summary = format_history_summary(lifts) if lifts else ""
         profile = build_profile_context(intake, history_summary)
         messages.append({"role": "system", "content": profile})
 
-    edit_context = build_edit_draft_context(user.id, session_id, intake)
+    edit_context = build_edit_draft_context(ctx.owner_key, session_id, intake)
     if edit_context:
         messages.append({"role": "system", "content": edit_context})
 
@@ -619,25 +688,25 @@ def build_gemini_messages(user, session_id, history):
     return messages
 
 
-def run_stage_with_repair(user, session_id, base_history, system_prompt, tools):
+def run_stage_with_repair(ctx, session_id, base_history, system_prompt, tools):
     messages = [{"role": "system", "content": system_prompt}] + base_history
     return gemini_generate_with_tools(
         messages,
         tools,
-        user,
+        ctx,
         session_id,
         model=settings.AI_MODEL_GENERATE,
     )
 
 
-def run_generation_stages(user, session_id, history):
-    intake = get_intake(user.id, session_id)
-    clear_draft(user.id, session_id)
-    clear_previous_draft(user.id, session_id)
-    clear_exercise_plan(user.id, session_id)
-    set_enforce_plan(user.id, session_id, False)
+def run_generation_stages(ctx, session_id, history):
+    intake = get_intake(ctx.owner_key, session_id)
+    clear_draft(ctx.owner_key, session_id)
+    clear_previous_draft(ctx.owner_key, session_id)
+    clear_exercise_plan(ctx.owner_key, session_id)
+    set_enforce_plan(ctx.owner_key, session_id, False)
 
-    path, lifts = resolve_weight_path(user, intake)
+    path, lifts = resolve_weight_path(ctx.user, intake)
     history_summary = format_history_summary(lifts) if path == "use_history" else ""
     profile = build_profile_context(intake, history_summary)
     goal = intake.get("answers", {}).get("goal")
@@ -654,52 +723,52 @@ def run_generation_stages(user, session_id, history):
         + "\n\n"
         + profile
         + "\n\nExercise catalog (JSON):\n"
-        + format_catalog_for_prompt(user, intake)
+        + format_catalog_for_prompt(ctx.user, intake)
     )
     stage1_prompt = stage1_prompt + "\n\n" + build_coverage_prompt_section(intake)
     reply = run_stage_with_repair(
-        user, session_id, base_history, stage1_prompt, STAGE1_TOOL_DECLARATIONS
+        ctx, session_id, base_history, stage1_prompt, STAGE1_TOOL_DECLARATIONS
     )
     if reply in INTERRUPT_REPLIES:
-        return save_interrupt_reply(user.id, session_id, intake, history, reply)
-    plan = get_exercise_plan(user.id, session_id)
+        return save_interrupt_reply(ctx, session_id, intake, history, reply)
+    plan = get_exercise_plan(ctx.owner_key, session_id)
     if not plan:
         errors = ["Submit an exercise plan with submit_exercise_plan."]
     else:
-        lookup = build_filtered_exercise_lookup(user, intake)
+        lookup = build_filtered_exercise_lookup(ctx.user, intake)
         errors = validate_exercise_plan_structure(plan, lookup, intake)
     if errors:
         repair_text = REPAIR_PROMPT + "\n" + "\n".join(f"- {item}" for item in errors)
         repair_history = base_history + [{"role": "user", "content": repair_text}]
         reply = run_stage_with_repair(
-            user,
+            ctx,
             session_id,
             repair_history,
             stage1_prompt,
             STAGE1_TOOL_DECLARATIONS,
         )
         if reply in INTERRUPT_REPLIES:
-            return save_interrupt_reply(user.id, session_id, intake, history, reply)
-        plan = get_exercise_plan(user.id, session_id)
+            return save_interrupt_reply(ctx, session_id, intake, history, reply)
+        plan = get_exercise_plan(ctx.owner_key, session_id)
         if not plan:
             errors = ["Submit an exercise plan with submit_exercise_plan."]
         else:
-            lookup = build_filtered_exercise_lookup(user, intake)
+            lookup = build_filtered_exercise_lookup(ctx.user, intake)
             errors = validate_exercise_plan_structure(plan, lookup, intake)
 
-    plan = get_exercise_plan(user.id, session_id)
+    plan = get_exercise_plan(ctx.owner_key, session_id)
     if not plan or errors:
         reply = (
             "I couldn't put together a program just now. "
             "Try again or tell me what you want changed."
         )
         history.append({"role": "assistant", "content": reply})
-        save_history(user.id, session_id, history)
+        save_history(ctx.owner_key, session_id, history, ctx)
         intake["phase"] = "chat"
-        save_intake(user.id, session_id, intake)
+        save_intake(ctx.owner_key, session_id, intake, ctx)
         return history
 
-    set_enforce_plan(user.id, session_id, True)
+    set_enforce_plan(ctx.owner_key, session_id, True)
     locked_plan = json.dumps(plan, indent=2)
     stage2_prompt = (
         STAGE2_SYSTEM_PROMPT
@@ -709,12 +778,12 @@ def run_generation_stages(user, session_id, history):
         + locked_plan
     )
     reply = run_stage_with_repair(
-        user, session_id, base_history, stage2_prompt, STAGE2_TOOL_DECLARATIONS
+        ctx, session_id, base_history, stage2_prompt, STAGE2_TOOL_DECLARATIONS
     )
     if reply in INTERRUPT_REPLIES:
-        set_enforce_plan(user.id, session_id, False)
-        return save_interrupt_reply(user.id, session_id, intake, history, reply)
-    draft = get_draft(user.id, session_id)
+        set_enforce_plan(ctx.owner_key, session_id, False)
+        return save_interrupt_reply(ctx, session_id, intake, history, reply)
+    draft = get_draft(ctx.owner_key, session_id)
     if not draft:
         errors = ["Submit the full program with submit_program_draft."]
     else:
@@ -723,52 +792,234 @@ def run_generation_stages(user, session_id, history):
         repair_text = REPAIR_PROMPT + "\n" + "\n".join(f"- {item}" for item in errors)
         repair_history = base_history + [{"role": "user", "content": repair_text}]
         reply = run_stage_with_repair(
-            user,
+            ctx,
             session_id,
             repair_history,
             stage2_prompt,
             STAGE2_TOOL_DECLARATIONS,
         )
         if reply in INTERRUPT_REPLIES:
-            set_enforce_plan(user.id, session_id, False)
-            return save_interrupt_reply(user.id, session_id, intake, history, reply)
+            set_enforce_plan(ctx.owner_key, session_id, False)
+            return save_interrupt_reply(ctx, session_id, intake, history, reply)
 
-    set_enforce_plan(user.id, session_id, False)
+    set_enforce_plan(ctx.owner_key, session_id, False)
 
-    draft = get_draft(user.id, session_id)
+    draft = get_draft(ctx.owner_key, session_id)
     if draft:
-        reply = (
-            "I've put together a program preview for you. "
-            "Review it above and accept when ready, or tell me what to change."
-        )
+        reply = PROGRAM_READY_MESSAGE
+        intake["phase"] = "review"
     else:
         reply = (
             "I couldn't finish the program details just now. "
             "Tell me what to adjust and we can try again."
         )
-    history.append({"role": "assistant", "content": reply})
-    save_history(user.id, session_id, history)
-    intake["phase"] = "chat"
-    save_intake(user.id, session_id, intake)
+        intake["phase"] = "chat"
+    set_last_assistant_message(history, reply, replace_if=GENERATING_PROGRAM_MESSAGE)
+    save_history(ctx.owner_key, session_id, history, ctx)
+    save_intake(ctx.owner_key, session_id, intake, ctx)
     return history
 
 
-def begin_constraints(user, session_id, intake, history):
+def begin_constraints(ctx, session_id, intake, history):
     intake["phase"] = "awaiting_constraints"
     history.append({"role": "assistant", "content": CONSTRAINTS_PROMPT})
-    save_intake(user.id, session_id, intake)
-    save_history(user.id, session_id, history)
+    save_intake(ctx.owner_key, session_id, intake, ctx)
+    save_history(ctx.owner_key, session_id, history, ctx)
     return history, intake
 
 
-def apply_intake_choice(user, session_id, choice_id):
-    intake = get_intake(user.id, session_id)
+def restart_chat_session(ctx, session_id):
+    clear_draft(ctx.owner_key, session_id)
+    clear_previous_draft(ctx.owner_key, session_id)
+    clear_exercise_plan(ctx.owner_key, session_id)
+    clear_history(ctx.owner_key, session_id)
+    clear_intake(ctx.owner_key, session_id)
+    set_enforce_plan(ctx.owner_key, session_id, False)
+    intake, history = init_chat_session(ctx.owner_key, session_id)
+    snapshot_aichat(ctx, session_id)
+    return {"expired": False, "history": history, "intake": intake}
+
+
+def finish_feedback_flow(ctx, session_id, history, intake):
+    after_feedback = intake.get("after_feedback")
+    if after_feedback == "start_over_ask":
+        intake["phase"] = "start_over_ask"
+        history.append({"role": "assistant", "content": START_OVER_ASK_PROMPT})
+    else:
+        intake["phase"] = "done"
+        history.append({"role": "assistant", "content": THANK_YOU_MESSAGE})
+    save_intake(ctx.owner_key, session_id, intake, ctx)
+    save_history(ctx.owner_key, session_id, history, ctx)
+    program_id = None
+    if after_feedback == "done":
+        program_id = intake.get("accepted_program_id")
+    return {
+        "expired": False,
+        "history": history,
+        "intake": intake,
+        "program_id": program_id,
+    }
+
+
+def enter_feedback_comment(ctx, session_id, history, after_feedback, accepted_program_id=None):
+    draft = get_draft(ctx.owner_key, session_id)
+    if not draft:
+        return {"error": "no_draft", "history": history}
+
+    intake = get_intake(ctx.owner_key, session_id)
+    intake["after_feedback"] = after_feedback
+    intake["phase"] = "feedback_comment"
+    intake["feedback"] = {}
+    if accepted_program_id:
+        intake["accepted_program_id"] = accepted_program_id
+    history.append({"role": "assistant", "content": FEEDBACK_COMMENT_PROMPT})
+    save_intake(ctx.owner_key, session_id, intake, ctx)
+    save_history(ctx.owner_key, session_id, history, ctx)
+    return {"expired": False, "history": history, "intake": intake}
+
+
+def enter_accept_and_feedback(ctx, session_id, history):
+    accepted_program_id = None
+    if ctx.user.is_authenticated:
+        program = accept_draft(ctx, session_id)
+        if not program:
+            return {"error": "accept_failed", "history": history}
+        accepted_program_id = program.pk
+    return enter_feedback_comment(ctx, session_id, history, "done", accepted_program_id)
+
+
+def go_to_feedback_rating(ctx, session_id, history, intake, comment):
+    feedback = intake.setdefault("feedback", {})
+    feedback["comment"] = comment.strip()
+    intake["phase"] = "feedback_rating"
+    history.append({"role": "assistant", "content": FEEDBACK_RATING_PROMPT})
+    save_intake(ctx.owner_key, session_id, intake, ctx)
+    save_history(ctx.owner_key, session_id, history, ctx)
+    return {"expired": False, "history": history, "intake": intake}
+
+
+def complete_feedback_with_score(ctx, session_id, history, intake, score, skipped=False):
+    feedback = intake.setdefault("feedback", {})
+    feedback["score"] = score
+    feedback["skipped"] = skipped
+    return finish_feedback_flow(ctx, session_id, history, intake)
+
+
+def skip_feedback_from_comment(ctx, session_id, history, intake, comment):
+    feedback = intake.setdefault("feedback", {})
+    feedback["comment"] = (comment or "").strip()
+    feedback["score"] = None
+    feedback["skipped"] = True
+    return finish_feedback_flow(ctx, session_id, history, intake)
+
+
+def apply_review_choice(ctx, session_id, choice_id, choice_label):
+    intake = get_intake(ctx.owner_key, session_id)
+    history = get_history(ctx.owner_key, session_id)
+    history.append({"role": "user", "content": choice_label})
+
+    if choice_id == "edit":
+        intake["phase"] = "chat"
+        history.append({"role": "assistant", "content": EDIT_PROMPT})
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        save_history(ctx.owner_key, session_id, history, ctx)
+        return {"expired": False, "history": history, "intake": intake}
+
+    if choice_id == "discard":
+        save_history(ctx.owner_key, session_id, history, ctx)
+        result = enter_feedback_comment(ctx, session_id, history, "start_over_ask")
+        if result.get("error") == "no_draft":
+            return {
+                "expired": False,
+                "error": "no_draft",
+                "history": history,
+                "intake": intake,
+            }
+        return result
+
+    if choice_id == "accept":
+        save_history(ctx.owner_key, session_id, history, ctx)
+        result = enter_accept_and_feedback(ctx, session_id, history)
+        if result.get("error") == "no_draft":
+            return {
+                "expired": False,
+                "error": "no_draft",
+                "history": history,
+                "intake": intake,
+            }
+        if result.get("error") == "accept_failed":
+            return {
+                "expired": False,
+                "error": "accept_failed",
+                "history": history,
+                "intake": intake,
+            }
+        return result
+
+    save_history(ctx.owner_key, session_id, history, ctx)
+    return {"expired": False, "history": history, "intake": intake}
+
+
+def apply_intake_choice(ctx, session_id, choice_id, attributes=None):
+    attributes = attributes or {}
+    intake = get_intake(ctx.owner_key, session_id)
     if not intake:
         return {"expired": True}
+
+    phase = intake.get("phase")
+    history = get_history(ctx.owner_key, session_id)
+
+    if phase == "feedback_comment" and choice_id == "skip":
+        comment = attributes.get("message") or attributes.get("data-message") or ""
+        history.append({"role": "user", "content": "Skip"})
+        return skip_feedback_from_comment(ctx, session_id, history, intake, comment)
+
+    if phase == "feedback_rating":
+        history.append({"role": "user", "content": choice_id if choice_id != "skip" else "Skip"})
+        if choice_id == "skip":
+            return complete_feedback_with_score(ctx, session_id, history, intake, None, skipped=True)
+        if choice_id in ("1", "2", "3", "4", "5"):
+            return complete_feedback_with_score(
+                ctx, session_id, history, intake, int(choice_id), skipped=False
+            )
+        save_history(ctx.owner_key, session_id, history, ctx)
+        return {"expired": False, "history": history, "intake": intake}
+
+    if phase == "start_over_ask":
+        choice_label = choice_id
+        if choice_id == "yes":
+            choice_label = "Yes"
+        if choice_id == "no":
+            choice_label = "No"
+        history.append({"role": "user", "content": choice_label})
+        if choice_id == "yes":
+            save_history(ctx.owner_key, session_id, history, ctx)
+            return restart_chat_session(ctx, session_id)
+        if choice_id == "no":
+            intake["phase"] = "done"
+            history.append({"role": "assistant", "content": THANK_YOU_MESSAGE})
+            save_intake(ctx.owner_key, session_id, intake, ctx)
+            save_history(ctx.owner_key, session_id, history, ctx)
+            return {"expired": False, "history": history, "intake": intake}
+        save_history(ctx.owner_key, session_id, history, ctx)
+        return {"expired": False, "history": history, "intake": intake}
+
+    if phase == "review":
+        choice_label = choice_id
+        for item in [
+            {"id": "accept", "label": "Accept"},
+            {"id": "edit", "label": "Edit"},
+            {"id": "discard", "label": "Discard"},
+        ]:
+            if item["id"] == choice_id:
+                choice_label = item["label"]
+                break
+        return apply_review_choice(ctx, session_id, choice_id, choice_label)
+
     if intake.get("phase") != "intake":
         return {
             "expired": False,
-            "history": get_history(user.id, session_id),
+            "history": get_history(ctx.owner_key, session_id),
             "intake": intake,
         }
 
@@ -777,7 +1028,7 @@ def apply_intake_choice(user, session_id, choice_id):
     if not step:
         return {
             "expired": False,
-            "history": get_history(user.id, session_id),
+            "history": get_history(ctx.owner_key, session_id),
             "intake": intake,
         }
 
@@ -789,44 +1040,44 @@ def apply_intake_choice(user, session_id, choice_id):
     if not choice:
         return {
             "expired": False,
-            "history": get_history(user.id, session_id),
+            "history": get_history(ctx.owner_key, session_id),
             "intake": intake,
         }
 
-    AiChat.objects.get_or_create(
-        user=user,
-        session_id=session_id,
-        defaults={
-            "intake": get_intake(user.id, session_id) or {},
-            "messages": get_history(user.id, session_id),
+    ensure_aichat(
+        ctx,
+        session_id,
+        {
+            "intake": get_intake(ctx.owner_key, session_id) or {},
+            "messages": get_history(ctx.owner_key, session_id),
             "drafts": [],
         },
     )
-    history = get_history(user.id, session_id)
+    history = get_history(ctx.owner_key, session_id)
     history.append({"role": "user", "content": choice["label"]})
 
     if choice["id"] == "other":
         intake["awaiting_free_text_for"] = step["key"]
         history.append({"role": "assistant", "content": OTHER_TYPE_PROMPT})
-        save_intake(user.id, session_id, intake)
-        save_history(user.id, session_id, history)
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        save_history(ctx.owner_key, session_id, history, ctx)
         return {"expired": False, "history": history, "intake": intake}
 
     intake["answers"][step["key"]] = choice["id"]
     intake["step"] = step_index + 1
     if intake["step"] >= len(INTAKE_STEPS):
-        save_intake(user.id, session_id, intake)
-        history, intake = begin_constraints(user, session_id, intake, history)
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        history, intake = begin_constraints(ctx, session_id, intake, history)
         return {"expired": False, "history": history, "intake": intake}
 
     next_step = INTAKE_STEPS[intake["step"]]
     history.append({"role": "assistant", "content": next_step["question"]})
-    save_intake(user.id, session_id, intake)
-    save_history(user.id, session_id, history)
+    save_intake(ctx.owner_key, session_id, intake, ctx)
+    save_history(ctx.owner_key, session_id, history, ctx)
     return {"expired": False, "history": history, "intake": intake}
 
 
-def handle_intake_typed_message(user, session_id, intake, history, message):
+def handle_intake_typed_message(ctx, session_id, intake, history, message):
     awaiting = (intake.get("awaiting_free_text_for") or "").strip()
     if awaiting:
         current_key = awaiting
@@ -841,129 +1092,160 @@ def handle_intake_typed_message(user, session_id, intake, history, message):
 
     if (intake.get("awaiting_free_text_for") or "").strip():
         history.append({"role": "assistant", "content": OTHER_TYPE_PROMPT})
-        save_intake(user.id, session_id, intake)
-        save_history(user.id, session_id, history)
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        save_history(ctx.owner_key, session_id, history, ctx)
         return history
 
     if parsed["off_script"]:
         intake["off_script"] = True
         intake["phase"] = "chat"
-        save_intake(user.id, session_id, intake)
+        save_intake(ctx.owner_key, session_id, intake, ctx)
         reply = gemini_generate_with_tools(
-            build_gemini_messages(user, session_id, history),
+            build_gemini_messages(ctx, session_id, history),
             CHAT_TOOL_DECLARATIONS,
-            user,
+            ctx,
             session_id,
         )
         history.append({"role": "assistant", "content": reply})
-        save_history(user.id, session_id, history)
+        save_history(ctx.owner_key, session_id, history, ctx)
         return history
 
     intake["step"] = first_missing_step_index(intake)
     if intake["step"] >= len(INTAKE_STEPS):
-        save_intake(user.id, session_id, intake)
-        return begin_constraints(user, session_id, intake, history)[0]
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        return begin_constraints(ctx, session_id, intake, history)[0]
 
     next_step = INTAKE_STEPS[intake["step"]]
     history.append({"role": "assistant", "content": next_step["question"]})
-    save_intake(user.id, session_id, intake)
-    save_history(user.id, session_id, history)
+    save_intake(ctx.owner_key, session_id, intake, ctx)
+    save_history(ctx.owner_key, session_id, history, ctx)
     return history
 
 
-def prepare_chat_send(user, session_id, message):
+def prepare_chat_send(ctx, session_id, message):
     message = (message or "").strip()
     if not message:
-        return {"phase": "complete", "history": get_history(user.id, session_id)}
+        return {"phase": "complete", "history": get_history(ctx.owner_key, session_id)}
 
-    intake = get_intake(user.id, session_id)
+    intake = get_intake(ctx.owner_key, session_id)
     if not intake:
         return {"phase": "expired"}
 
-    AiChat.objects.get_or_create(
-        user=user,
-        session_id=session_id,
-        defaults={
-            "intake": get_intake(user.id, session_id) or {},
-            "messages": get_history(user.id, session_id),
+    ensure_aichat(
+        ctx,
+        session_id,
+        {
+            "intake": get_intake(ctx.owner_key, session_id) or {},
+            "messages": get_history(ctx.owner_key, session_id),
             "drafts": [],
         },
     )
-    history = get_history(user.id, session_id)
+    history = get_history(ctx.owner_key, session_id)
     history.append({"role": "user", "content": message})
 
-    if intake and intake.get("phase") == "intake":
-        history = handle_intake_typed_message(user, session_id, intake, history, message)
+    if intake and intake.get("phase") in ("quota_blocked", "done", "start_over_ask"):
+        history.pop()
         return {"phase": "complete", "history": history}
+
+    if intake and intake.get("phase") == "feedback_comment":
+        result = go_to_feedback_rating(ctx, session_id, history, intake, message)
+        return {"phase": "complete", "history": result["history"]}
+
+    if intake and intake.get("phase") == "feedback_rating":
+        score_text = message.strip()
+        if score_text not in ("1", "2", "3", "4", "5"):
+            history.pop()
+            history.append({"role": "assistant", "content": FEEDBACK_RATING_RETRY_PROMPT})
+            save_history(ctx.owner_key, session_id, history, ctx)
+            return {"phase": "complete", "history": history}
+        result = complete_feedback_with_score(
+            ctx, session_id, history, intake, int(score_text), skipped=False
+        )
+        return {
+            "phase": "complete",
+            "history": result["history"],
+            "program_id": result.get("program_id"),
+        }
+
+    if intake and intake.get("phase") == "intake":
+        history = handle_intake_typed_message(ctx, session_id, intake, history, message)
+        return {"phase": "complete", "history": history}
+
+    if intake and intake.get("phase") == "review":
+        intake["phase"] = "chat"
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        intake = get_intake(ctx.owner_key, session_id)
 
     if intake and intake.get("phase") == "awaiting_constraints":
         intake["constraints"] = message
-        save_intake(user.id, session_id, intake)
-        path, lifts = resolve_weight_path(user, intake)
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        path, lifts = resolve_weight_path(ctx.user, intake)
         if path == "use_history":
-            history = begin_program_generation(user.id, session_id, history)
+            history = begin_program_generation(ctx, session_id, history)
+            if history[-1]["content"] == GENERATING_PROGRAM_MESSAGE:
+                return {
+                    "phase": "generating",
+                    "session_id": session_id,
+                    "history": history,
+                }
+            return {"phase": "complete", "history": history}
+        if path == "ask_weights":
+            intake["phase"] = "awaiting_weights"
+            history.append({"role": "assistant", "content": WEIGHTS_PROMPT})
+            save_intake(ctx.owner_key, session_id, intake, ctx)
+            save_history(ctx.owner_key, session_id, history, ctx)
+            return {"phase": "complete", "history": history}
+        intake["phase"] = "awaiting_demographics"
+        history.append({"role": "assistant", "content": DEMOGRAPHICS_PROMPT})
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        save_history(ctx.owner_key, session_id, history, ctx)
+        return {"phase": "complete", "history": history}
+
+    if intake and intake.get("phase") == "awaiting_weights":
+        intake["weight_notes"] = message
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        history = begin_program_generation(ctx, session_id, history)
+        if history[-1]["content"] == GENERATING_PROGRAM_MESSAGE:
             return {
                 "phase": "generating",
                 "session_id": session_id,
                 "history": history,
             }
-        if path == "ask_weights":
-            intake["phase"] = "awaiting_weights"
-            history.append({"role": "assistant", "content": WEIGHTS_PROMPT})
-            save_intake(user.id, session_id, intake)
-            save_history(user.id, session_id, history)
-            return {"phase": "complete", "history": history}
-        intake["phase"] = "awaiting_demographics"
-        history.append({"role": "assistant", "content": DEMOGRAPHICS_PROMPT})
-        save_intake(user.id, session_id, intake)
-        save_history(user.id, session_id, history)
         return {"phase": "complete", "history": history}
-
-    if intake and intake.get("phase") == "awaiting_weights":
-        intake["weight_notes"] = message
-        save_intake(user.id, session_id, intake)
-        history = begin_program_generation(user.id, session_id, history)
-        return {
-            "phase": "generating",
-            "session_id": session_id,
-            "history": history,
-        }
 
     if intake and intake.get("phase") == "awaiting_demographics":
         intake["demographics_notes"] = message
-        save_intake(user.id, session_id, intake)
-        history = begin_program_generation(user.id, session_id, history)
-        return {
-            "phase": "generating",
-            "session_id": session_id,
-            "history": history,
-        }
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        history = begin_program_generation(ctx, session_id, history)
+        if history[-1]["content"] == GENERATING_PROGRAM_MESSAGE:
+            return {
+                "phase": "generating",
+                "session_id": session_id,
+                "history": history,
+            }
+        return {"phase": "complete", "history": history}
 
     reply = gemini_generate_with_tools(
-        build_gemini_messages(user, session_id, history),
+        build_gemini_messages(ctx, session_id, history),
         CHAT_TOOL_DECLARATIONS,
-        user,
+        ctx,
         session_id,
     )
     history.append({"role": "assistant", "content": reply})
-    save_history(user.id, session_id, history)
+    save_history(ctx.owner_key, session_id, history, ctx)
     return {"phase": "complete", "history": history}
 
 
-def accept_draft(user, session_id):
+def accept_draft(ctx, session_id):
+    if not ctx.user.is_authenticated:
+        return None
     from programs.services import create_program_from_ai_draft
 
-    draft = get_draft(user.id, session_id)
+    draft = get_draft(ctx.owner_key, session_id)
     if not draft:
         return None
-    cleaned, error, unknown_names = validate_program_draft(user, draft)
+    cleaned, error, unknown_names = validate_program_draft(ctx.user, draft)
     if error:
         return None
-    program = create_program_from_ai_draft(user, cleaned)
-    clear_draft(user.id, session_id)
-    clear_previous_draft(user.id, session_id)
-    clear_exercise_plan(user.id, session_id)
-    set_enforce_plan(user.id, session_id, False)
-    clear_history(user.id, session_id)
-    clear_intake(user.id, session_id)
+    program = create_program_from_ai_draft(ctx.user, cleaned)
     return program

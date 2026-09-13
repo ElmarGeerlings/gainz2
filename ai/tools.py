@@ -168,7 +168,7 @@ TOOL_DECLARATIONS = CHAT_TOOL_DECLARATIONS
 
 def build_filtered_catalog(user, intake):
     exercises = list_exercises_for_user(
-        user,
+        user if user.is_authenticated else None,
         search_query="",
         exercise_type="",
         primary_bodypart="",
@@ -199,4 +199,6 @@ def run_get_exercise_catalog(user, args, intake=None):
 
 
 def run_get_lift_history(user, args):
+    if not user.is_authenticated:
+        return {"lifts": []}
     return {"lifts": get_user_lift_history(user)}

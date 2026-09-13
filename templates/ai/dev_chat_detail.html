@@ -20,8 +20,8 @@
         <h1 class="title-lg m-0">AI Chat #{{ chat.pk }}</h1>
         <div class="grid-3">
             <div>
-                <p class="text-sm text-muted m-0">User</p>
-                <p class="title-sm m-0">{{ chat.user.username }}</p>
+                <p class="text-sm text-muted m-0">Owner</p>
+                <p class="title-sm m-0">{% if chat.user %}{{ chat.user.username }}{% else %}<code class="text-sm">{{ chat.guest_id }}</code>{% endif %}</p>
             </div>
             <div>
                 <p class="text-sm text-muted m-0">Session ID</p>
@@ -30,6 +30,10 @@
             <div>
                 <p class="text-sm text-muted m-0">Phase</p>
                 <p class="title-sm m-0">{{ chat.intake.phase|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted m-0">Review outcome</p>
+                <p class="title-sm m-0">{{ review_outcome_label }}</p>
             </div>
             <div>
                 <p class="text-sm text-muted m-0">Goal</p>
@@ -57,6 +61,22 @@
             </div>
         </div>
     </section>
+
+    {% if chat.intake.after_feedback %}
+    <section class="panel stack-sm mb-4">
+        <h2 class="title-md m-0">Feedback</h2>
+        <div class="grid-3">
+            <div>
+                <p class="text-sm text-muted m-0">Score</p>
+                <p class="title-sm m-0">{{ chat.intake.feedback.score|default:"—" }}</p>
+            </div>
+        </div>
+        {% if chat.intake.feedback.comment %}
+        <p class="text-sm text-muted m-0">Comment</p>
+        <p class="m-0">{{ chat.intake.feedback.comment }}</p>
+        {% endif %}
+    </section>
+    {% endif %}
 
     <section class="stack-sm mb-4">
         <h2 class="title-md m-0">Drafts</h2>

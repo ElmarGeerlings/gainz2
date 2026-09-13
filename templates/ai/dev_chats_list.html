@@ -16,7 +16,7 @@
         <table class="table table-compact">
             <thead>
                 <tr>
-                    <th>User</th>
+                    <th>Owner</th>
                     <th>Session ID</th>
                     <th>Phase</th>
                     <th>Goal</th>
@@ -31,7 +31,7 @@
             <tbody>
                 {% for chat in page_obj %}
                 <tr>
-                    <td>{{ chat.user.username }}</td>
+                    <td>{% if chat.user %}{{ chat.user.username }}{% else %}<code class="text-sm">{{ chat.guest_id }}</code>{% endif %}</td>
                     <td><code class="text-sm">{{ chat.session_id }}</code></td>
                     <td>{{ chat.intake.phase|default:"—" }}</td>
                     <td>{% if chat.intake.answers.goal %}{{ chat.intake.answers.goal }}{% else %}—{% endif %}</td>

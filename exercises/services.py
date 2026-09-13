@@ -18,6 +18,8 @@ def list_exercises_for_user(
         exercises = exercises.filter(is_custom=True, user=user)
     elif custom_filter == "non_custom":
         exercises = exercises.filter(is_custom=False)
+    elif user is None:
+        exercises = exercises.filter(is_custom=False)
     else:
         exercises = exercises.filter(
             Q(is_custom=False) | Q(is_custom=True, user=user)

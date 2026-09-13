@@ -2,8 +2,6 @@ import re
 
 from django.conf import settings
 
-from ai.models import AiChat
-
 MAX_TOOL_ROUNDS = 8
 RATE_LIMIT_REPLY = "I've hit the API rate limit. Wait a minute and try again."
 API_ERROR_REPLY = "Sorry, something went wrong. Please try again later."
@@ -109,7 +107,7 @@ def function_calls_from_parts(parts):
     return calls
 
 
-def generate_reply(messages, model=None):
+def generate_reply(messages, model=settings.AI_MODEL):
     system_instruction, contents = messages_to_gemini_contents(messages)
     payload = {"contents": contents}
     if system_instruction:
@@ -139,10 +137,11 @@ def generate_reply(messages, model=None):
     return strip_markdown(text)
 
 
-def generate_with_tools(messages, tools, user, session_id, model=None):
+def generate_with_tools(messages, tools, ctx, session_id, model=settings.AI_MODEL):
     from ai.services import execute_tool
+    from ai.session import find_aichat
 
-    chat = AiChat.objects.filter(user_id=user.id, session_id=session_id).first()
+    chat = find_aichat(ctx, session_id)
     system_instruction, contents = messages_to_gemini_contents(messages)
     tools_payload = [{"functionDeclarations": tools}]
     use_generate_fallback = model == settings.AI_MODEL_GENERATE
@@ -193,7 +192,7 @@ def generate_with_tools(messages, tools, user, session_id, model=None):
         for call in calls:
             name = call["name"]
             args = call.get("args") or {}
-            result = execute_tool(name, args, user, session_id)
+            result = execute_tool(name, args, ctx, session_id)
             function_response = {
                 "name": name,
                 "response": result,

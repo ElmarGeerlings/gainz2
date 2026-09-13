@@ -7,6 +7,13 @@ function scrollAiChatToBottom() {
   }
 }
 
+function scrollAiChatToDraft() {
+  const draft = document.querySelector("#ai-program-draft");
+  if (draft) {
+    draft.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 function resizeAiChatInput(event) {
   const input = event && event.currentTarget
     ? event.currentTarget
@@ -70,6 +77,7 @@ function setAiChatSending(isSending) {
   }
   if (input) {
     input.readOnly = isSending;
+    input.disabled = isSending;
   }
   for (const button of choiceButtons) {
     button.disabled = isSending;
@@ -99,8 +107,14 @@ function applyAiChatResponse(response) {
   }
   if (response.json_content?.composer_disabled) {
     setAiChatSending(true);
+  } else if (!aiChatSending) {
+    setAiChatSending(false);
   }
-  scrollAiChatToBottom();
+  if (response.json_content?.scroll_to_draft) {
+    scrollAiChatToDraft();
+  } else {
+    scrollAiChatToBottom();
+  }
 }
 
 function handleWsInterimResponse(response) {
@@ -110,6 +124,13 @@ function handleWsInterimResponse(response) {
 
 function finishAiChatRequest(response) {
   removeAiChatLoading();
+  if (response.status === 302 && response.headers && response.headers.length) {
+    window.location.href = response.headers[0][1];
+    return;
+  }
+  if (response.json_content?.toast_html) {
+    appendToast(response.json_content.toast_html, response.json_content.toast_delay_ms);
+  }
   applyAiChatResponse(response);
   if (!response.json_content?.composer_disabled) {
     setAiChatSending(false);
@@ -123,6 +144,13 @@ function sendAiIntakeChoice(event) {
 
   const trigger = event.currentTarget;
   const label = trigger.textContent.trim();
+  const choiceId = trigger.getAttribute("data-choice");
+  if (choiceId === "skip") {
+    const input = document.querySelector("#ai-chat-input");
+    if (input && input.value.trim()) {
+      trigger.setAttribute("data-message", input.value.trim());
+    }
+  }
   appendOptimisticUserMessage(label);
   appendAiChatLoading();
   scrollAiChatToBottom();
@@ -133,7 +161,9 @@ function sendAiIntakeChoice(event) {
   pending.then((response) => {
     finishAiChatRequest(response);
     const input = document.querySelector("#ai-chat-input");
-    if (input) {
+    if (input && !response.json_content?.composer_disabled) {
+      input.value = "";
+      resizeAiChatInput({ currentTarget: input });
       input.focus();
     }
   });
@@ -163,7 +193,9 @@ function sendAiChatMessage(event) {
 
   pending.then((response) => {
     finishAiChatRequest(response);
-    input.focus();
+    if (!response.json_content?.composer_disabled) {
+      input.focus();
+    }
   });
 }
 
