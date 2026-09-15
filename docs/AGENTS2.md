@@ -1,5 +1,7 @@
 # Gainz2 — agent implementation guide
 
+Agent instructions live in `.cursor/rules/` (`gainz2.mdc` always-on, `frontend-css.mdc` for HTML/CSS). This file is the longer human reference.
+
 Authoritative guide for agents working in this repo. Supersedes older draft text that referenced `gainz/` or `stolen_js.js` line-by-line without the implemented gainz2 contract.
 
 ## 1. Product scope (phase 1)

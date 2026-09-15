@@ -1,5 +1,7 @@
 # New project — agent implementation guide
 
+Superseded draft (old `gainz/` / `stolen_js.js` layout). Do not follow this file. Agent instructions: `.cursor/rules/gainz2.mdc` and `.cursor/rules/frontend-css.mdc`. Longer human reference: `docs/AGENTS2.md`.
+
 ## 1. Product scope (phase 1)
 
 **In scope**

@@ -1,5 +1,7 @@
 # Frontend CSS — conventions
 
+Agent instructions live in `.cursor/rules/frontend-css.mdc` (HTML/CSS) and the CSS policy section of `.cursor/rules/gainz2.mdc`. This file is the longer human reference.
+
 This doc is the detailed styling policy for gainz2. **`AGENTS.md` §6 stays short**; agents and humans should follow this file when adding or moving CSS.
 
 ## File layout
