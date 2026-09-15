@@ -3,7 +3,7 @@
     {% for choice in choices.choices %}
     <button
         type="button"
-        class="btn btn-outline ai-chat-choice-btn"
+        class="btn btn-outline w-100 ai-chat-choice-btn"
         data-session-id="{{ session_id }}"
         data-choice="{{ choice.id }}"
         data-function="click->sendAiIntakeChoice"

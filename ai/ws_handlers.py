@@ -63,7 +63,7 @@ def build_ai_chat_response(ctx, session_id, history):
     if intake and (intake.get("awaiting_free_text_for") or "").strip():
         composer_placeholder = "Type your answer..."
 
-    composer_disabled = phase in ("quota_blocked", "done")
+    composer_disabled = phase in ("quota_blocked", "done", "signup")
 
     json_content = {
         "target": "#ai-chat-messages",
@@ -89,7 +89,7 @@ def build_ai_chat_response(ctx, session_id, history):
 def apply_program_redirect(response, program_id):
     if program_id:
         response["status"] = 302
-        response["headers"] = [["Location", f"/programs/{program_id}/"]]
+        response["headers"] = [["Location", f"/programs/{program_id}/?from_ai=1"]]
     return response
 
 

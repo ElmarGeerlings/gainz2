@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from accounts.views import demo_page, design_page, home_page, login_page, logout_page, register_page, settings_page
-from ai.views import chat_page, dev_chat_detail_page, dev_chats_list_page
+from ai.views import chat_page, claim_ai_program_page, dev_chat_detail_page, dev_chats_list_page
 from routines.views import (
     import_routine_page,
     new_routine_page,
@@ -64,6 +64,7 @@ urlpatterns = [
     path("workouts/new/", new_workout_page, name="new-workout"),
     path("workouts/<int:workout_id>/", workout_detail_page, name="workout-detail"),
     path("ai/chat/", chat_page, name="ai-chat"),
+    path("ai/claim/", claim_ai_program_page, name="ai-claim"),
     path("programs/", programs_list_page, name="programs-list"),
     path("programs/import/", import_program_page, name="program-import"),
     path("programs/new/", new_program_page, name="new-program"),

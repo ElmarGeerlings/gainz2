@@ -2,7 +2,7 @@ import json
 import uuid
 
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from ai.intake import get_choices_context
 from ai.models import AiChat
@@ -36,6 +36,16 @@ def dev_chat_outcome_display(outcome, program_name=None):
     return "—"
 from ai.session import GUEST_COOKIE_MAX_AGE, GUEST_COOKIE_NAME, guest_id_from_cookies, resolve_chat_context
 from utils.pagination import paginate
+
+
+def claim_ai_program_page(req_event):
+    from ai.services import claim_guest_ai_program
+
+    guest_id = guest_id_from_cookies(req_event.COOKIES)
+    program = claim_guest_ai_program(req_event.user, guest_id)
+    if not program:
+        return redirect("home")
+    return redirect(f"/programs/{program.pk}/?from_ai=1")
 
 
 def chat_page(req_event):

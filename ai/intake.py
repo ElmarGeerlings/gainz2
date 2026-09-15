@@ -91,6 +91,12 @@ START_OVER_ASK_PROMPT = "Would you like to start over?"
 
 THANK_YOU_MESSAGE = "Thanks for your feedback!"
 
+SIGNUP_PROMPT = (
+    "Your program is ready. Sign up to save it to your account and start training."
+)
+
+SIGNUP_MESSAGE_KIND = "signup"
+
 FEEDBACK_SKIP_CHOICE = {"id": "skip", "label": "Skip"}
 
 FEEDBACK_RATING_CHOICES = [

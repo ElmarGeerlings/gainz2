@@ -136,9 +136,11 @@ def import_program_page(req_event):
 
 def program_detail_page(req_event, program_id):
     program = get_program(req_event.user, program_id)
+    from_ai = req_event.GET.get("from_ai") == "1"
     response = {
         "title": program.name,
         "program": program,
+        "from_ai": from_ai,
         "available_routines": list_addable_routines_for_program(req_event.user, program),
         "routines_catalog": routines_catalog(req_event.user),
         "progression_templates": list_progression_templates(req_event.user),

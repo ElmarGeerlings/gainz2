@@ -13,6 +13,8 @@ from ai.intake import (
     INTAKE_STEPS,
     OTHER_TYPE_PROMPT,
     PROGRAM_READY_MESSAGE,
+    SIGNUP_MESSAGE_KIND,
+    SIGNUP_PROMPT,
     START_OVER_ASK_PROMPT,
     THANK_YOU_MESSAGE,
     WEIGHTS_PROMPT,
@@ -36,6 +38,7 @@ from ai.prompts import (
 from ai.providers.gemini import API_ERROR_REPLY, RATE_LIMIT_REPLY
 from ai.providers.gemini import generate_with_tools as gemini_generate_with_tools
 from ai.rubrics import validate_exercise_plan_structure, validate_program_loads
+from ai.models import AiChat
 from ai.session import ensure_aichat, find_aichat
 from ai.tools import (
     CHAT_TOOL_DECLARATIONS,
@@ -535,7 +538,10 @@ def validate_program_draft(user, draft):
             for set_index, set_data in enumerate(sets, start=1):
                 if not isinstance(set_data, dict):
                     return None, f"{exercise.name}: set {set_index} is invalid.", []
-                reps = int(set_data["reps"])
+                reps_raw = set_data.get("reps")
+                if reps_raw is None:
+                    return None, f"{exercise.name}: set {set_index} needs reps.", []
+                reps = int(reps_raw)
                 if reps < 0:
                     return None, f"{exercise.name}: reps must be >= 0.", []
                 weight = set_data.get("weight", 0)
@@ -845,13 +851,20 @@ def finish_feedback_flow(ctx, session_id, history, intake):
     if after_feedback == "start_over_ask":
         intake["phase"] = "start_over_ask"
         history.append({"role": "assistant", "content": START_OVER_ASK_PROMPT})
+    elif after_feedback == "done" and ctx.is_guest:
+        intake["phase"] = "signup"
+        history.append({
+            "role": "assistant",
+            "content": SIGNUP_PROMPT,
+            "kind": SIGNUP_MESSAGE_KIND,
+        })
     else:
         intake["phase"] = "done"
         history.append({"role": "assistant", "content": THANK_YOU_MESSAGE})
     save_intake(ctx.owner_key, session_id, intake, ctx)
     save_history(ctx.owner_key, session_id, history, ctx)
     program_id = None
-    if after_feedback == "done":
+    if after_feedback == "done" and not ctx.is_guest:
         program_id = intake.get("accepted_program_id")
     return {
         "expired": False,
@@ -885,7 +898,13 @@ def enter_accept_and_feedback(ctx, session_id, history):
         if not program:
             return {"error": "accept_failed", "history": history}
         accepted_program_id = program.pk
-    return enter_feedback_comment(ctx, session_id, history, "done", accepted_program_id)
+    result = enter_feedback_comment(ctx, session_id, history, "done", accepted_program_id)
+    if ctx.is_guest:
+        intake = get_intake(ctx.owner_key, session_id)
+        intake["draft_accepted"] = True
+        save_intake(ctx.owner_key, session_id, intake, ctx)
+        result["intake"] = intake
+    return result
 
 
 def go_to_feedback_rating(ctx, session_id, history, intake, comment):
@@ -1143,7 +1162,7 @@ def prepare_chat_send(ctx, session_id, message):
     history = get_history(ctx.owner_key, session_id)
     history.append({"role": "user", "content": message})
 
-    if intake and intake.get("phase") in ("quota_blocked", "done", "start_over_ask"):
+    if intake and intake.get("phase") in ("quota_blocked", "done", "signup", "start_over_ask"):
         history.pop()
         return {"phase": "complete", "history": history}
 
@@ -1248,4 +1267,39 @@ def accept_draft(ctx, session_id):
     if error:
         return None
     program = create_program_from_ai_draft(ctx.user, cleaned)
+    return program
+
+
+def claim_guest_ai_program(user, guest_id):
+    from programs.services import create_program_from_ai_draft
+
+    if not guest_id:
+        return None
+    owner_key = str(guest_id)
+    chat = None
+    for candidate in AiChat.objects.filter(guest_id=guest_id).order_by("-updated_at"):
+        intake = candidate.intake or {}
+        if intake.get("draft_accepted"):
+            chat = candidate
+            break
+    if not chat:
+        return None
+    session_id = str(chat.session_id)
+    draft = get_draft(owner_key, session_id)
+    if not draft:
+        drafts = chat.drafts or []
+        if drafts:
+            draft = drafts[-1]
+    if not draft:
+        return None
+    cleaned, error, unknown_names = validate_program_draft(user, draft)
+    if error:
+        return None
+    program = create_program_from_ai_draft(user, cleaned)
+    intake = chat.intake or {}
+    intake["accepted_program_id"] = program.pk
+    chat.user = user
+    chat.guest_id = None
+    chat.intake = intake
+    chat.save(update_fields=["user", "guest_id", "intake", "updated_at"])
     return program

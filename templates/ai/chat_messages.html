@@ -1,7 +1,7 @@
 {% for message in chat_messages %}
 {% if message.role == "user" or message.role == "assistant" %}
 <div class="ai-chat-bubble ai-chat-bubble-{{ message.role }}">
-    <div class="ai-chat-bubble-body">{{ message.content }}</div>
+    <div class="ai-chat-bubble-body">{% if message.kind == "signup" %}Your program is ready. <a class="fw-700" href="{% url 'register' %}?next={% url 'ai-claim' %}">Sign up</a> to save it to your account and start training.{% else %}{{ message.content }}{% endif %}</div>
 </div>
 {% endif %}
 {% empty %}
