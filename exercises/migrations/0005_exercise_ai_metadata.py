@@ -3,12 +3,6 @@
 from django.db import migrations, models
 
 
-def seed_exercise_metadata(apps, schema_editor):
-    from seeding.exercise_metadata import seed_builtin_exercise_metadata
-
-    seed_builtin_exercise_metadata()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -26,5 +20,4 @@ class Migration(migrations.Migration):
             name='movement_kind',
             field=models.CharField(choices=[('compound', 'Compound'), ('isolation', 'Isolation')], default='compound', max_length=20),
         ),
-        migrations.RunPython(seed_exercise_metadata, migrations.RunPython.noop),
     ]

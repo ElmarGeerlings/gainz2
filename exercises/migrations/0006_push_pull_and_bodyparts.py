@@ -3,6 +3,23 @@
 from django.db import migrations, models
 
 
+def seed_exercise_metadata(apps, schema_editor):
+    from seeding.exercise_metadata import EXPLICIT_PRIMARY_BODYPART, infer_exercise_metadata
+
+    Exercise = apps.get_model("exercises", "Exercise")
+    for exercise in Exercise.objects.filter(is_custom=False):
+        metadata = infer_exercise_metadata(exercise.name)
+        exercise.equipment_tags = metadata["equipment_tags"]
+        exercise.movement_kind = metadata["movement_kind"]
+        exercise.push_pull = metadata["push_pull"]
+        key = exercise.name.strip().lower()
+        update_fields = ["equipment_tags", "movement_kind", "push_pull"]
+        if key in EXPLICIT_PRIMARY_BODYPART:
+            exercise.primary_bodypart = EXPLICIT_PRIMARY_BODYPART[key]
+            update_fields.append("primary_bodypart")
+        exercise.save(update_fields=update_fields)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -25,4 +42,5 @@ class Migration(migrations.Migration):
             name='secondary_bodypart',
             field=models.CharField(blank=True, choices=[('chest', 'Chest'), ('upper_chest', 'Upper chest'), ('lower_chest', 'Lower chest'), ('back', 'Back'), ('lats', 'Lats'), ('traps', 'Traps'), ('lower_back', 'Lower back'), ('shoulders', 'Shoulders'), ('front_delts', 'Front delts'), ('lateral_delts', 'Lateral delts'), ('rear_delts', 'Rear delts'), ('arms', 'Arms'), ('biceps', 'Biceps'), ('triceps', 'Triceps'), ('forearms', 'Forearms'), ('legs', 'Legs'), ('quads', 'Quads'), ('glutes', 'Glutes'), ('hamstrings', 'Hamstrings'), ('calves', 'Calves'), ('core', 'Core'), ('abs', 'Abs'), ('obliques', 'Obliques'), ('cardio', 'Cardio'), ('other', 'Other')], help_text='Secondary muscle group targeted by this exercise', max_length=20, null=True),
         ),
+        migrations.RunPython(seed_exercise_metadata, migrations.RunPython.noop),
     ]

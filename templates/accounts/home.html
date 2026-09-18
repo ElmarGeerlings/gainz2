@@ -18,6 +18,9 @@
             <a href="{% url 'workouts-list' %}" class="btn btn-primary">
                 <i class="fas fa-dumbbell" aria-hidden="true"></i> View My Workouts
             </a>
+            <a href="{% url 'ai-chat' %}" class="btn btn-outline">
+                <i class="fas fa-robot" aria-hidden="true"></i> Build a program
+            </a>
         </div>
         {% else %}
         <h1 class="title-lg m-0">Welcome to Gainz</h1>
@@ -64,6 +67,20 @@
             </article>
             <article class="home-feature-card panel stack-sm">
                 <div class="home-feature-icon">
+                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                </div>
+                <h3 class="title-md m-0">Smarter workouts</h3>
+                <p class="text-sm text-muted m-0">Smart set updates based on surrounding sets and last workouts.</p>
+            </article>
+            <article class="home-feature-card panel stack-sm">
+                <div class="home-feature-icon">
+                    <i class="fas fa-stopwatch" aria-hidden="true"></i>
+                </div>
+                <h3 class="title-md m-0">Rest timer</h3>
+                <p class="text-sm text-muted m-0">Rest timer with notification per exercise type.</p>
+            </article>
+            <article class="home-feature-card panel stack-sm">
+                <div class="home-feature-icon">
                     <i class="fas fa-bullseye" aria-hidden="true"></i>
                 </div>
                 <h3 class="title-md m-0">Progress & PRs</h3>
@@ -71,10 +88,10 @@
             </article>
             <article class="home-feature-card panel stack-sm">
                 <div class="home-feature-icon">
-                    <i class="fas fa-stopwatch" aria-hidden="true"></i>
+                    <i class="fas fa-robot" aria-hidden="true"></i>
                 </div>
-                <h3 class="title-md m-0">Rest timer</h3>
-                <p class="text-sm text-muted m-0">Rest periods tied to your profile. Including a notification for when the timer ends.</p>
+                <h3 class="title-md m-0">AI program builder</h3>
+                <p class="text-sm text-muted m-0">Chat with an assistant to make a personal program.</p>
             </article>
         </div>
     </section>
@@ -83,17 +100,17 @@
         <div class="home-card-grid">
             <article class="home-feature-card panel stack-sm">
                 <div class="home-feature-icon">
-                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    <i class="fas fa-sliders" aria-hidden="true"></i>
                 </div>
-                <h3 class="title-md m-0">Smarter workouts</h3>
-                <p class="text-sm text-muted m-0">Suggested loads across sessions and richer sets like tempo and bands.</p>
+                <h3 class="title-md m-0">Richer sets</h3>
+                <p class="text-sm text-muted m-0">Tempo, bands, and other set types beyond weight and reps.</p>
             </article>
             <article class="home-feature-card panel stack-sm">
                 <div class="home-feature-icon">
                     <i class="fas fa-user-gear" aria-hidden="true"></i>
                 </div>
-                <h3 class="title-md m-0">Profile & settings</h3>
-                <p class="text-sm text-muted m-0">Personal info, units, preferences, and social privacy.</p>
+                <h3 class="title-md m-0">Profile</h3>
+                <p class="text-sm text-muted m-0">Personal info, units, and social privacy.</p>
             </article>
             <article class="home-feature-card panel stack-sm">
                 <div class="home-feature-icon">
@@ -120,8 +137,8 @@
                 <div class="home-feature-icon">
                     <i class="fas fa-robot" aria-hidden="true"></i>
                 </div>
-                <h3 class="title-md m-0">AI agents</h3>
-                <p class="text-sm text-muted m-0">Build and refine routines and programs; later form feedback and training advice.</p>
+                <h3 class="title-md m-0">More AI</h3>
+                <p class="text-sm text-muted m-0">Build routines and workouts the same way, then later form feedback and training advice.</p>
             </article>
             <article class="home-feature-card panel stack-sm">
                 <div class="home-feature-icon">
