@@ -1,0 +1,67 @@
+---
+description: Gainz2 architecture, WS/JS contract, and agent workflow
+alwaysApply: true
+---
+
+# Gainz2
+
+Phase 1: workout logging, programs, routines. Scope grows only when asked.
+
+Mobile-first, one template set per screen. Phone in the gym is the reference device. Do not ship a second desktop HTML tree.
+
+## Architecture
+
+- Business logic lives in app `services.py`. HTTP views and WS handlers parse input, call services, build the response.
+- HTTP: first paint, auth, health, normal GET. WebSocket: mutations and HTML swaps.
+- Sync Django and sync ORM. Channels uses `database_sync_to_async` around dispatch in `MainConsumer`.
+- Python 3.10. PostgreSQL. Redis + django-rq for work that should not sit inside the request.
+- Change `models.py` only. Do not commit `migrations/*.py`. User runs `makemigrations` / `migrate`.
+- Resolve `user` before operations. Services enforce ownership on every read/write.
+
+**Wiring:** `DJANGO_SETTINGS_MODULE` is `settings`. `gainz2/urls.py` = HTTP. `gainz2/routing.py` = socket URL. `gainz2/ws_dispatch.py` = `WS_ENDPOINT_REGISTRY`. `gainz2/consumers.py` stays thin. App handlers (e.g. `workouts/ws_handlers.py`) are imported into the registry. Shared JS is `static/js/app.js`; page JS via `extra_js`.
+
+## Agent workflow
+
+1. Classify: model, service, HTTP view, WS handler, template, CSS, JS.
+2. Implement in services (enqueue if it belongs on a worker).
+3. Wire the view or WS handler; reuse the same service from HTTP and WS.
+4. Update templates and `data-*`. Extend `app.js` only when `ws_request` is not enough.
+5. Area CSS for page glue; `base.css` for shared tokens/components.
+
+Reuse existing templates, partials, handlers, and `data-endpoint` / `data-routing` before adding parallel HTML or JS. Do not extract a function used once or that is a single trivial line — inline it. Imports at module top unless there is a real circular import or a rare/heavy dependency.
+
+## JavaScript
+
+| Attribute | Use |
+|-----------|-----|
+| `data-endpoint="click->workouts/update_set"` | Generic `ws_request` (one round-trip, standard morph/reload/toast). |
+| `data-function="click->openSetModal"` | `window[funcName](event)` in `app.js` or page JS. |
+| `data-routing` | WS route for a reusable `data-function` (often `{{ endpoint_ns }}/...`). |
+| `data-close-modal` | Hide that modal on 200. |
+| `data-refresh` | Full reload on response. |
+| `data-target` | Fallback morph selector if the server omits `json_content.target`. |
+| `data-endpoint-ns` | Shared handler builds the route (add/remove exercise, etc.). |
+
+Prefer `data-endpoint`. Use `data-function` + `data-routing` when the client needs custom DOM work. Hardcode an endpoint in JS only when the handler is tied to one route.
+
+`ws_request` on response: 302 → redirect; `data-refresh` → reload; morph `json_content.target` + `html`; 200 + `data-close-modal` → hide; 200 + `toast_html` → `appendToast`.
+
+## WebSocket
+
+Client: `{ request_id, endpoint, attributes }`. `sendWsRequest` merges `closest('form')` FormData into `attributes`.
+
+Server: echo `request_id`, set `status` (app-level). Payload in `json_content`:
+
+- `target` + `html` — morph via `innerHTML`
+- `toast_html` + `toast_delay_ms` — success toast on 200 only (`render_toast` + `templates/components/toast.html`)
+- `error` — configured non-200 (unknown endpoint → `status: 404`)
+
+Handlers are `(user, attributes) -> dict`. Unhandled exceptions show in the Daphne terminal; do not add a catch-all 500 wrapper.
+
+## CSS policy
+
+- `base.css`: tokens (`:root`), resets, reusable components, utilities used on multiple screens.
+- Area CSS (`workouts.css`, …) via `extra_css`: scoped page glue. Prefix with a feature class. Do not restyle bare `.btn` / `.table` for one page.
+- First use stays in area CSS. Second use: promote to `base.css` and `/design/`. Never copy the same block into two area files.
+- Compose from `/design/`. No inline layout/theme. Mobile-first: default narrow; `min-width` for larger screens.
+- HTML: no blank lines between siblings (use utilities for spacing). Blank line only before `{% block %}`.

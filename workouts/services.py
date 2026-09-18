@@ -540,11 +540,17 @@ def update_workout_exercise_notes(user, workout_exercise_id, notes):
 
 
 def list_add_exercise_options(user, primary_bodypart=None):
+    from exercises.bodypart_metadata import BODYPART_DISPLAY_GROUPS
+
     exercises = Exercise.objects.filter(
         Q(is_custom=False) | Q(is_custom=True, user=user)
     )
     if primary_bodypart:
-        exercises = exercises.filter(primary_bodypart=primary_bodypart)
+        tags = BODYPART_DISPLAY_GROUPS.get(primary_bodypart)
+        if tags:
+            exercises = exercises.filter(primary_bodypart__in=tags)
+        else:
+            exercises = exercises.filter(primary_bodypart=primary_bodypart)
     return exercises.order_by("name")
 
 

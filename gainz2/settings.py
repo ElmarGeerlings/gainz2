@@ -44,7 +44,18 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 # Application definition
 
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+AI_PROVIDER = 'gemini'
+AI_MODEL = 'gemini-3.5-flash-lite'
+AI_MODEL_EDIT = 'gemini-3.8-flash'
+AI_MODEL_GENERATE = 'gemini-3.1-pro-preview'
+# Used only when AI_MODEL_GENERATE returns HTTP 429.
+AI_MODEL_GENERATE_FALLBACK = 'gemini-3.8-flash'
+
 INSTALLED_APPS = [
+    'ai',
+    'apis',
+    'seeding',
     'accounts',
     'channels',
     'django.contrib.admin',
@@ -53,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_rq',
     'exercises',
     'workouts',
     'routines',
@@ -70,6 +82,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'gainz2.login_middleware.LoginRequiredUnlessExemptMiddleware',
+    'gainz2.middleware.DevAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -84,6 +97,7 @@ LOGIN_EXEMPT_URLS = [
     r'^/register/?$',
     r'^/demo/?$',
     r'^/admin/login/?$',
+    r'^/ai/chat/?$',
 ]
 
 ROOT_URLCONF = 'gainz2.urls'
@@ -126,24 +140,37 @@ DATABASES = {
     }
 }
 
+def default_redis_url():
+    from subprocess import check_output
+    ip = check_output(['wsl', '-d', 'Ubuntu', 'hostname', '-I'], text=True).strip().split()[0]
+    return f'redis://{ip}:6379/0'
+
+
+REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+    },
+}
+
+RQ_QUEUES = {
+    'default': {
+        'URL': REDIS_URL,
+        'DEFAULT_TIMEOUT': 500,
+        'DEFAULT_RESULT_TTL': 500,
+    },
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
+AUTH_PASSWORD_VALIDATORS = []
 
 
 # Internationalization

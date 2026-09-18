@@ -55,10 +55,10 @@ def register_user(username, password):
         errors.append("Username already taken.")
     if errors:
         return None, errors
-    try:
-        password_validation.validate_password(password)
-    except ValidationError as exc:
-        return None, list(exc.messages)
+    # try:
+    #     password_validation.validate_password(password)
+    # except ValidationError as exc:
+    #     return None, list(exc.messages)
     user = create_user_with_settings(username, password)
     return user, []
 

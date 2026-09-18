@@ -1,0 +1,87 @@
+---
+description: Gainz2 CSS class catalog and template composition
+globs: "**/*.css, **/*.html"
+alwaysApply: false
+---
+
+# Frontend CSS catalog
+
+Compose from `/design/` (core tokens and components in `base.css`). Page-specific UI stays in scoped area CSS. `styleguide.css` is layout-only for that page.
+
+Tokens live in `:root` in `base.css` only. Do not duplicate a utility or component in `base.css` and an area file. New CSS only when a class combo repeats or markup becomes unreadable. No inline layout/theme. Use `var(--...)`.
+
+## Core classes
+
+**Page:** `page` `page-narrow`
+
+```html
+<main class="page page-narrow">…</main>
+```
+
+**Panel:** `panel` plus optional `surface-soft` `stack-sm` `stack-md`
+
+```html
+<section class="panel stack-sm">…</section>
+```
+
+**Type:** `title-lg` `title-md` `title-sm` `text-sm` `text-muted` `fw-700`
+
+**Layout:** `stack-xs`…`stack-lg` `gap-sm` `gap-md` `row-between` `row-center` `grid-3` `mt-*` `mb-*` `p-*` `m-0` `text-center` `w-100`
+
+**Button:** `btn` plus `btn-primary` `btn-outline` `btn-success` `btn-warning` `btn-danger` `btn-danger-outline` `icon-btn` `link-btn`. Disabled via the `disabled` attribute.
+
+```html
+<button type="button" class="btn btn-primary w-100">Save</button>
+```
+
+**Form:** `form-stack` wrapping `label` + `form-control` (no Django Forms)
+
+```html
+<div class="form-stack">
+  <label for="field-id">Label</label>
+  <input id="field-id" type="text" class="form-control">
+</div>
+```
+
+**Table:** `table-shell` > `table`. Optional `table-compact` (smaller font only; no column widths in core).
+
+```html
+<div class="table-shell">
+  <table class="table">…</table>
+</div>
+```
+
+**Modal:** `gainz-modal` `gainz-modal-content` `gainz-modal-close`
+
+**Set modal / value picker:** `set-modal-fields-row` `set-modal-times` `set-modal-actions` `value-picker` `value-picker-window` `value-picker-list` `value-picker-item` `is-center` `is-near`
+
+```html
+<div class="set-modal-fields-row">
+  <div class="value-picker" data-picker="weight">…</div>
+  <span class="set-modal-times">X</span>
+  <div class="value-picker" data-picker="reps">…</div>
+</div>
+```
+
+**Exercise type:** `exercise-type-badge` `exercise-type-badge--primary` `--secondary` `--accessory`. Partial: `components/exercise_type_badge.html`.
+
+**Dropdown:** `gainz-dropdown` `gainz-dropdown-full` `gainz-dropdown-menu` `gainz-dropdown-item` `gainz-dropdown-divider` `gainz-dropdown-empty`. JS: `toggleGainzDropdown`.
+
+**Toggle:** `gainz-toggle-switch` `gainz-toggle-input` `gainz-toggle-slider`
+
+```html
+<label class="gainz-toggle-switch">
+  <input type="checkbox" class="gainz-toggle-input">
+  <span class="gainz-toggle-slider" aria-hidden="true"></span>
+</label>
+```
+
+**Toast:** `gainz-toast` `gainz-toast-success` `gainz-toast-warning` `gainz-toast-danger` `gainz-toast-message` `gainz-toast-close` optional `gainz-toast-actions`. Live toasts go in `.toast-container` in `base.html`.
+
+## Area CSS
+
+Scope with a feature class (`workout-sets-table`). Do not target bare `.table` / `.btn` / `.table-compact` for one-page layout.
+
+## Templates
+
+No blank lines between HTML siblings. One blank line before each `{% block %}`. Partials stay compact.

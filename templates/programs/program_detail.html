@@ -168,7 +168,9 @@
             >
             <i class="fas fa-floppy-disk" aria-hidden="true"></i>
         </button>
+        {% if not from_ai %}
         <a href="{% url 'programs-list' %}" class="btn btn-outline" aria-label="Cancel"><i class="fas fa-xmark" aria-hidden="true"></i></a>
+        {% endif %}
         </div>
     </form>
 </main>

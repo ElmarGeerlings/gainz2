@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
 
+from exercises.bodypart_metadata import BODYPART_DISPLAY_FILTER_CHOICES
 from exercises.models import Exercise
 from exercises.services import group_exercises_by_bodypart, list_exercises_for_user
 
@@ -9,7 +10,7 @@ from exercises.services import group_exercises_by_bodypart, list_exercises_for_u
 def exercise_list_page(req_event):
     choice_context = {
         "exercise_type_choices": Exercise.EXERCISE_TYPE_CHOICES,
-        "bodypart_choices": Exercise.BODYPART_CHOICES,
+        "bodypart_choices": BODYPART_DISPLAY_FILTER_CHOICES,
     }
 
     if req_event.headers.get("x-requested-with") == "XMLHttpRequest":

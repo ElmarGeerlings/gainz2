@@ -8,28 +8,37 @@
     padding: var(--space-6) var(--space-4);
 }
 
-.home-demo-card {
+.home-promo-card {
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-top: var(--space-4);
     padding: var(--space-5) var(--space-4);
-    background: #e7edfc;
-    border: 2px solid #a8b8f0;
     border-radius: var(--radius);
+    border: 2px solid var(--border);
+}
+
+.home-promo-card--demo {
+    background: #e7edfc;
+    border-color: #a8b8f0;
     box-shadow: 0 8px 24px rgba(59, 87, 232, 0.15);
 }
 
-.home-demo-form {
+.home-promo-card--ai {
+    background: #e6f7f4;
+    border-color: #9dd9cc;
+    box-shadow: 0 8px 24px rgba(45, 157, 137, 0.15);
+}
+
+.home-promo-action {
     width: 100%;
     max-width: 280px;
 }
 
-.home-demo-btn {
+.home-promo-btn {
     font-size: 1.05rem;
     min-height: 48px;
-    font-weight: 600;
 }
 
 .home-section {

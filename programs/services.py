@@ -1,10 +1,12 @@
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import Case, Count, IntegerField, Max, Prefetch, Q, When
 from django.utils import timezone
 
 from gainz2.utils import next_numbered_name, quantize_weight
 from programs.models import Program, ProgramExercise, ProgramRoutine, ProgressionStep, ProgressionTemplate
-from routines.models import Routine, RoutineExercise
+from routines.models import Routine, RoutineExercise, RoutineSet
 from routines.services import (
     import_routine_from_parsed,
     list_routines,
@@ -145,6 +147,58 @@ def import_program_from_parsed(user, program_name, routine_groups, name_to_exerc
                 parsed_lines,
                 name_to_exercise,
             )
+            ProgramRoutine.objects.create(
+                program=program,
+                routine=routine,
+                order=order,
+            )
+    return program
+
+
+def create_program_from_ai_draft(user, draft):
+    from ai.services import resolve_allowed_exercise
+
+    no_progression = ProgressionTemplate.objects.get(
+        is_system=True,
+        name="System: No progression",
+    )
+    with transaction.atomic():
+        program = Program.objects.create(
+            user=user,
+            name=draft["name"],
+            description=draft.get("description") or "",
+            weekly_scheduling=False,
+            primary_progression_template=no_progression,
+            secondary_progression_template=no_progression,
+            accessory_progression_template=no_progression,
+        )
+        for order, routine_data in enumerate(draft["routines"], start=1):
+            routine = Routine.objects.create(
+                user=user,
+                name=routine_data["name"],
+                notes="Created from AI program draft",
+            )
+            for exercise_order, item in enumerate(routine_data["exercises"]):
+                exercise = resolve_allowed_exercise(user, item["exercise_id"])
+                if not exercise:
+                    raise ValueError(f"Unknown or disallowed exercise_id: {item['exercise_id']}")
+                routine_exercise = RoutineExercise.objects.create(
+                    routine=routine,
+                    exercise=exercise,
+                    order=exercise_order,
+                    exercise_type=item.get("exercise_type") or "accessory",
+                )
+                for set_number, set_data in enumerate(item["sets"], start=1):
+                    RoutineSet.objects.create(
+                        routine_exercise=routine_exercise,
+                        set_number=set_number,
+                        weight=quantize_weight(
+                            Decimal(str(set_data.get("weight", 0))),
+                            exercise.weight_increment,
+                        ),
+                        reps=int(set_data["reps"]),
+                        is_warmup=bool(set_data.get("is_warmup", False)),
+                    )
             ProgramRoutine.objects.create(
                 program=program,
                 routine=routine,

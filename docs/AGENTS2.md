@@ -1,5 +1,7 @@
 # Gainz2 — agent implementation guide
 
+Agent instructions live in `.cursor/rules/` (`gainz2.mdc` always-on, `frontend-css.mdc` for HTML/CSS). This file is the longer human reference.
+
 Authoritative guide for agents working in this repo. Supersedes older draft text that referenced `gainz/` or `stolen_js.js` line-by-line without the implemented gainz2 contract.
 
 ## 1. Product scope (phase 1)
@@ -248,6 +250,10 @@ Every handled message should include **`request_id`** (echoed from client) and *
 
 - **Reuse** existing templates, partials, WS handlers, and `data-endpoint` / `data-routing` patterns before adding parallel HTML or JS.
 - **No trivial helpers** — do not extract a function used only once or that is a single trivial line in the same file; inline at the call site. Put genuinely shared logic in **services** or JS already loaded on multiple pages.
+- **Imports at top of file by default** — put `import` / `from … import` at module level. Import inside a function only when necessary:
+  - **Circular import** — e.g. `ai/services.py` imports `ai/providers/gemini.py` at load time, so `gemini.py` must not import from `services.py` at the top; import `execute_tool` inside the function that needs it.
+  - **Defer heavy or rare dependencies** — e.g. `accept_draft` importing `programs.services` only when accept runs, not on every `ai.services` load.
+  - Do **not** use function-level imports for models in the same app when there is no cycle (`from ai.models import AiChat` belongs at the top of `ai/services.py`).
 
 ---
 

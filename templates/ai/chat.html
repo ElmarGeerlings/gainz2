@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ai.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow ai-chat">
+    <header class="stack-sm mb-3">
+        <div class="row-between row-center gap-sm">
+            <h1 class="title-lg m-0">AI Chat</h1>
+            {% if is_guest %}
+            <a href="{% url 'home' %}" class="btn btn-outline">Back</a>
+            {% else %}
+            <a href="{% url 'programs-list' %}" class="btn btn-outline">Back</a>
+            {% endif %}
+        </div>
+        {% if is_guest %}
+        <p class="text-sm text-muted m-0">Chat to design a program preview. Sign in to save it to your account.</p>
+        {% else %}
+        <p class="text-sm text-muted m-0">Chat to design a program, then accept when ready or keep editing.</p>
+        {% endif %}
+    </header>
+    <div id="ai-program-draft" class="mb-3"></div>
+    <section class="panel ai-chat-panel stack-sm">
+        <div id="ai-chat-messages" class="ai-chat-messages">
+            {% include "ai/chat_messages.html" %}
+        </div>
+        <div id="ai-chat-choices" class="stack-sm pb-3">
+            {% include "ai/chat_choices.html" %}
+        </div>
+        <form id="ai-chat-form" class="ai-chat-composer row-center gap-sm">
+            <input type="hidden" name="session_id" value="{{ session_id }}">
+            <textarea
+                name="message"
+                id="ai-chat-input"
+                class="form-control ai-chat-input"
+                placeholder="Type a message..."
+                maxlength="2000"
+                rows="1"
+                autocomplete="off"
+                {% if composer_disabled %}disabled{% endif %}
+                data-function="keydown->aiChatInputKeydown input->resizeAiChatInput"
+            ></textarea>
+            <button
+                type="button"
+                id="ai-chat-send"
+                class="btn btn-primary"
+                {% if composer_disabled %}disabled{% endif %}
+                data-function="click->sendAiChatMessage"
+            >Send</button>
+        </form>
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'js/ai.js' %}"></script>
+{% endblock %}

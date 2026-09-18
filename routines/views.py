@@ -1,5 +1,8 @@
 from django.shortcuts import get_object_or_404, redirect, render
 
+from utils.pagination import paginate
+
+from exercises.bodypart_metadata import BODYPART_DISPLAY_FILTER_CHOICES
 from exercises.models import Exercise
 from programs.services import list_programs_for_filter, list_programs_for_routine
 from routines.models import Routine, RoutineExercise
@@ -33,12 +36,16 @@ def render_import_routine_page(req_event, context):
 
 
 def routines_list_page(req_event):
-    response = {
-        "title": "My Routines",
-        "programs": list_programs_for_filter(req_event.user),
-        "routines": list_routines(req_event.user),
-    }
-    return render(req_event, "routines/routines_list.html", response)
+    page_obj = paginate(req_event, list_routines(req_event.user))
+    return render(
+        req_event,
+        "routines/routines_list.html",
+        {
+            "title": "My Routines",
+            "programs": list_programs_for_filter(req_event.user),
+            "page_obj": page_obj,
+        },
+    )
 
 
 def new_routine_page(req_event):
@@ -56,7 +63,7 @@ def routine_detail_page(req_event, routine_id):
         "routine": routine,
         "programs_for_routine": programs_for_routine,
         "add_exercise_options": list_add_exercise_options(req_event.user),
-        "bodypart_choices": Exercise.BODYPART_CHOICES,
+        "bodypart_choices": BODYPART_DISPLAY_FILTER_CHOICES,
         "exercise_type_choices": [
             {"value": value, "label": label}
             for value, label in RoutineExercise.EXERCISE_TYPE_CHOICES

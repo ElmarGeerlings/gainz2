@@ -1,4 +1,5 @@
 from django.db.models import Q
+from exercises.bodypart_metadata import BODYPART_DISPLAY_GROUPS, TAG_TO_DISPLAY_GROUP
 from exercises.models import Exercise
 from gainz2.utils import DEFAULT_WEIGHT_INCREMENT, parse_weight_increment
 
@@ -17,6 +18,8 @@ def list_exercises_for_user(
         exercises = exercises.filter(is_custom=True, user=user)
     elif custom_filter == "non_custom":
         exercises = exercises.filter(is_custom=False)
+    elif user is None:
+        exercises = exercises.filter(is_custom=False)
     else:
         exercises = exercises.filter(
             Q(is_custom=False) | Q(is_custom=True, user=user)
@@ -31,7 +34,11 @@ def list_exercises_for_user(
         exercises = exercises.filter(exercise_type=exercise_type)
 
     if primary_bodypart:
-        exercises = exercises.filter(primary_bodypart=primary_bodypart)
+        tags = BODYPART_DISPLAY_GROUPS.get(primary_bodypart)
+        if tags:
+            exercises = exercises.filter(primary_bodypart__in=tags)
+        else:
+            exercises = exercises.filter(primary_bodypart=primary_bodypart)
 
     return exercises.select_related("user").order_by("name")
 
@@ -39,7 +46,8 @@ def list_exercises_for_user(
 def group_exercises_by_bodypart(exercises):
     grouped = {}
     for exercise in exercises:
-        label = exercise.get_primary_bodypart_display()
+        tag = exercise.primary_bodypart
+        label = TAG_TO_DISPLAY_GROUP.get(tag, "Other") if tag else "Other"
         if label not in grouped:
             grouped[label] = []
         grouped[label].append(exercise)

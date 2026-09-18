@@ -31,6 +31,12 @@ function connectWs() {
 
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
+    if (data.interim && data.request_id != null && requestMap.has(data.request_id)) {
+      if (typeof handleWsInterimResponse === "function") {
+        handleWsInterimResponse(data);
+      }
+      return;
+    }
     if (data.request_id != null && requestMap.has(data.request_id)) {
       const resolve = requestMap.get(data.request_id);
       resolve(data);

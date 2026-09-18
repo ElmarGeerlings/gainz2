@@ -1,5 +1,8 @@
 from django.shortcuts import redirect, render
 
+from utils.pagination import paginate
+
+from exercises.bodypart_metadata import BODYPART_DISPLAY_FILTER_CHOICES
 from exercises.models import Exercise
 from workouts.models import WorkoutExercise
 from workouts.services import (
@@ -15,13 +18,17 @@ from workouts.services import (
 
 def workouts_list_page(req_event):
     program_routines, other_routines = list_routines_for_choose(req_event.user)
-    response = {
-        "title": "My Workouts",
-        "workouts": list_workouts(req_event.user),
-        "program_routines": program_routines,
-        "other_routines": other_routines,
-    }
-    return render(req_event, "workouts/workouts_list.html", response)
+    page_obj = paginate(req_event, list_workouts(req_event.user))
+    return render(
+        req_event,
+        "workouts/workouts_list.html",
+        {
+            "title": "My Workouts",
+            "page_obj": page_obj,
+            "program_routines": program_routines,
+            "other_routines": other_routines,
+        },
+    )
 
 
 def new_workout_page(req_event):
@@ -37,7 +44,7 @@ def workout_detail_page(req_event, workout_id):
     response = {
         "workout": workout,
         "add_exercise_options": list_add_exercise_options(req_event.user),
-        "bodypart_choices": Exercise.BODYPART_CHOICES,
+        "bodypart_choices": BODYPART_DISPLAY_FILTER_CHOICES,
         "exercise_type_choices": [
             {"value": value, "label": label}
             for value, label in WorkoutExercise.EXERCISE_TYPE_CHOICES

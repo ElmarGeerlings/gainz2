@@ -4,6 +4,7 @@ from django.db import models
 
 class User(AbstractUser):
     is_demo = models.BooleanField(default=False)
+    is_dev = models.BooleanField(default=False)
 
 
 class UserSettings(models.Model):

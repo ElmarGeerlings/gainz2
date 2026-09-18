@@ -5,7 +5,8 @@ asgiref>=3.8
 daphne>=4.2,<5
 psycopg[binary]>=3.1
 python-dotenv>=1.0,<2.0
+requests>=2.31,<3.0
 
-# Optional later (AGENTS.md): PostgreSQL, Redis, workers — uncomment when wired in settings
-# redis>=5.0
-# django-rq>=2.10
+redis>=5.0
+django-redis>=5.4
+django-rq>=2.10

@@ -4,12 +4,15 @@ Endpoint strings are keys in WS_ENDPOINT_REGISTRY (like paths in urls.py); they 
 not resolved by Django HTTP urls.py. Channels routing.py maps the socket URL to
 MainConsumer; this module maps each message's endpoint string to a handler.
 
-Handlers are sync callables: (user, attributes) -> response dict matching app.js.
+Authenticated handlers: (user, attributes) -> response dict matching app.js.
+AI handlers: (ctx, attributes) -> response dict matching app.js.
 """
 
 from typing import Any, Callable
 
 from accounts.ws_handlers import handle_update_user_setting
+from ai.session import resolve_chat_context
+from ai.ws_handlers import handle_intake_choice
 from programs.ws_handlers import (
     handle_activate_program,
     handle_create_progression_step,
@@ -70,20 +73,28 @@ from workouts.ws_handlers import (
     handle_update_exercise_notes as handle_workout_update_exercise_notes,
 )
 
+PUBLIC_WS_ENDPOINTS = frozenset({
+    "ai/send_message",
+    "ai/intake_choice",
+})
+
+DEV_WS_ENDPOINTS = frozenset()
+
+WS_FORBIDDEN_RESPONSE = {
+    "status": 403,
+    "headers": [],
+    "html_content": None,
+    "json_content": {"error": "forbidden"},
+}
+
 Handler = Callable[[Any, dict], dict]
+AiHandler = Callable[[Any, dict], dict]
 
-
-def handle_ping(user, attributes):
-    return {
-        "status": 200,
-        "headers": [],
-        "html_content": None,
-        "json_content": {"message": "pong", "echo_attributes": attributes},
-    }
-
+AI_WS_ENDPOINT_REGISTRY: dict[str, AiHandler] = {
+    "ai/intake_choice": handle_intake_choice,
+}
 
 WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
-    "ping": handle_ping,
     "accounts/update_user_setting": handle_update_user_setting,
     "exercises/exercise_form": handle_exercise_form,
     "exercises/create_exercise": handle_create_exercise,
@@ -138,7 +149,34 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
 }
 
 
+def ws_endpoint_allowed(user, endpoint):
+    if not endpoint:
+        return False
+    if user.is_authenticated:
+        if endpoint in DEV_WS_ENDPOINTS and not user.is_dev:
+            return False
+        return True
+    return endpoint in PUBLIC_WS_ENDPOINTS
+
+
+def dispatch_ai_ws_endpoint(user, endpoint, attributes, guest_id):
+    if not endpoint or endpoint not in AI_WS_ENDPOINT_REGISTRY:
+        return {
+            "status": 404,
+            "headers": [],
+            "html_content": None,
+            "json_content": {"error": f"unknown endpoint: {endpoint}"},
+        }
+    if not user.is_authenticated and not guest_id:
+        return {**WS_FORBIDDEN_RESPONSE}
+    ctx = resolve_chat_context(user, guest_id)
+    handler = AI_WS_ENDPOINT_REGISTRY[endpoint]
+    return handler(ctx, attributes)
+
+
 def dispatch_ws_endpoint(user, endpoint, attributes):
+    if not ws_endpoint_allowed(user, endpoint):
+        return {**WS_FORBIDDEN_RESPONSE}
     if not endpoint or endpoint not in WS_ENDPOINT_REGISTRY:
         return {
             "status": 404,
