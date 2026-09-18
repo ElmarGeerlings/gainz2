@@ -59,10 +59,10 @@ from exercises.services import list_exercises_for_user
 CHAT_HISTORY_TTL_SECONDS = 3600
 VALID_EXERCISE_TYPES = {"primary", "secondary", "accessory"}
 MIN_EXERCISES_PER_ROUTINE = 4
-GUEST_GEN_QUOTA_MAX = 2
+GUEST_GEN_QUOTA_MAX = 3
 GUEST_GEN_QUOTA_TTL = 86400
 GUEST_GEN_QUOTA_MESSAGE = (
-    "You have reached the limit of 2 program generations per day. Try again tomorrow."
+    "You have reached the limit of 3 program generations per day. Try again tomorrow."
 )
 GENERATING_PROGRAM_MESSAGE = (
     "Generating your program. This can take up to a few minutes..."
@@ -72,7 +72,7 @@ INTERRUPT_REPLIES = frozenset({RATE_LIMIT_REPLY, API_ERROR_REPLY})
 
 
 def guest_generation_count(ctx):
-    if not ctx.is_guest:
+    if ctx.user.is_authenticated and ctx.user.is_dev:
         return 0
     redis = get_redis_connection("default")
     raw = redis.get(f"ai_gen_quota:{ctx.owner_key}")
@@ -86,7 +86,7 @@ def guest_at_generation_limit(ctx):
 
 
 def check_guest_generation_quota(ctx):
-    if not ctx.is_guest:
+    if ctx.user.is_authenticated and ctx.user.is_dev:
         return None
     redis = get_redis_connection("default")
     key = f"ai_gen_quota:{ctx.owner_key}"
@@ -1249,6 +1249,7 @@ def prepare_chat_send(ctx, session_id, message):
         CHAT_TOOL_DECLARATIONS,
         ctx,
         session_id,
+        model=settings.AI_MODEL_EDIT,
     )
     history.append({"role": "assistant", "content": reply})
     save_history(ctx.owner_key, session_id, history, ctx)

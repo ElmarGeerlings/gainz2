@@ -45,11 +45,12 @@ CSRF_COOKIE_SECURE = not DEBUG
 # Application definition
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini')
-AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.5-flash-lite')
-AI_MODEL_GENERATE = os.getenv('AI_MODEL_GENERATE', 'gemini-3.6-flash')
+AI_PROVIDER = 'gemini'
+AI_MODEL = 'gemini-3.5-flash-lite'
+AI_MODEL_EDIT = 'gemini-3.8-flash'
+AI_MODEL_GENERATE = 'gemini-3.1-pro-preview'
 # Used only when AI_MODEL_GENERATE returns HTTP 429.
-AI_MODEL_GENERATE_FALLBACK = os.getenv('AI_MODEL_GENERATE_FALLBACK', 'gemini-3.5-flash')
+AI_MODEL_GENERATE_FALLBACK = 'gemini-3.8-flash'
 
 INSTALLED_APPS = [
     'ai',
@@ -145,7 +146,7 @@ def default_redis_url():
     return f'redis://{ip}:6379/0'
 
 
-REDIS_URL = os.getenv('REDIS_URL') or default_redis_url()
+REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
 
 CACHES = {
     'default': {
