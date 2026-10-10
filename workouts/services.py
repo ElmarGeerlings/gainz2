@@ -164,7 +164,6 @@ def resolve_progression(
         prior_step = 0
 
     template = None
-    step_count = 0
     if program_includes_routine:
         template_pk = None
         if routine_exercise:
@@ -194,40 +193,73 @@ def resolve_progression(
                 )
                 .first()
             )
-            if template:
-                step_count = template.steps.count()
 
-    step_to_apply = None
-    reverse = False
-    if prior and template and step_count:
-        if prior_step >= step_count:
-            if feedback == "increase":
-                prior_step = 0
-            else:
-                prior_step = step_count - 1
-        if feedback == "stay":
-            new_step = prior_step
-        elif feedback == "increase":
-            if prior_step == step_count - 1:
-                step_to_apply = step_count
-                new_step = 0
-            else:
-                step_to_apply = prior_step + 1
-                new_step = prior_step + 1
+    return template, feedback, prior_step
+
+
+def work_reps_fit_range(result_set_values, step, template):
+    if step.reps_delta > 0:
+        for weight, reps, is_warmup in result_set_values:
+            if not is_warmup and reps > template.max_reps:
+                return False
+    elif step.reps_delta < 0:
+        for weight, reps, is_warmup in result_set_values:
+            if not is_warmup and reps < template.min_reps:
+                return False
+    return True
+
+
+def pick_progression_step(
+    set_values, template, feedback, prior_step, weight_increment, has_prior
+):
+    if not has_prior:
+        return set_values, 0
+    if template is None:
+        return set_values, prior_step
+    steps = list(template.steps.all())
+    step_count = len(steps)
+    if step_count == 0:
+        return set_values, prior_step
+    if prior_step >= step_count:
+        if feedback == "increase":
+            prior_step = 0
         else:
-            if prior_step == 0:
-                step_to_apply = step_count
-                new_step = step_count - 1
-            else:
-                step_to_apply = prior_step
-                new_step = prior_step - 1
-            reverse = True
-    elif prior:
-        new_step = prior_step
+            prior_step = step_count - 1
+    if feedback == "stay":
+        return set_values, prior_step
+    steps_by_order = {step.order: step for step in steps}
+    orders = list(range(1, step_count + 1))
+    if feedback == "increase":
+        if prior_step == step_count - 1:
+            start = step_count
+        else:
+            start = prior_step + 1
+        start_index = orders.index(start)
+        for order in orders[start_index:] + orders[:start_index]:
+            step = steps_by_order[order]
+            result = apply_progression_to_set_values(
+                set_values, order, False, template, weight_increment
+            )
+            if work_reps_fit_range(result, step, template):
+                if prior_step == step_count - 1 and order == step_count:
+                    new_step = 0
+                else:
+                    new_step = order
+                return result, new_step
+        return set_values, prior_step
+    if prior_step == 0:
+        start = step_count
     else:
-        new_step = 0
-
-    return template, step_to_apply, reverse, new_step, feedback
+        start = prior_step
+    start_index = orders.index(start)
+    for order in orders[start_index::-1] + orders[:start_index:-1]:
+        step = steps_by_order[order]
+        result = apply_progression_to_set_values(
+            set_values, order, True, template, weight_increment
+        )
+        if work_reps_fit_range(result, step, template):
+            return result, order - 1
+    return set_values, prior_step
 
 
 def apply_progression_to_set_values(
@@ -259,17 +291,23 @@ def apply_progression_to_set_values(
             weight_delta = steps * increment
         else:
             weight_delta = -steps * increment
-    return [
-        (
-            quantize_weight(
-                max(0, weight + sign * weight_delta),
-                weight_increment,
-            ),
-            max(0, reps + sign * step.reps_delta),
-            is_warmup,
+    progress_warmups = template.progress_warmups
+    result = []
+    for weight, reps, is_warmup in set_values:
+        if is_warmup and not progress_warmups:
+            result.append((weight, reps, is_warmup))
+            continue
+        result.append(
+            (
+                quantize_weight(
+                    max(0, weight + sign * weight_delta),
+                    weight_increment,
+                ),
+                max(0, reps + sign * step.reps_delta),
+                is_warmup,
+            )
         )
-        for weight, reps, is_warmup in set_values
-    ]
+    return result
 
 
 def create_workout_exercise_with_sets(
@@ -338,7 +376,7 @@ def new_workout_from_routine(user, routine):
                 before_workout=workout,
             )
             notes = routine_exercise.notes or (prior.notes if prior else "")
-            template, step_to_apply, reverse, new_step, feedback = resolve_progression(
+            template, feedback, prior_step = resolve_progression(
                 program,
                 program_includes_routine,
                 routine_exercise,
@@ -347,12 +385,13 @@ def new_workout_from_routine(user, routine):
             )
             routine_sets = list(routine_exercise.sets.order_by("set_number"))
             set_values = seed_set_values(routine_sets, prior)
-            set_values = apply_progression_to_set_values(
+            set_values, new_step = pick_progression_step(
                 set_values,
-                step_to_apply,
-                reverse,
                 template,
+                feedback,
+                prior_step,
                 routine_exercise.exercise.weight_increment,
+                prior is not None,
             )
             create_workout_exercise_with_sets(
                 workout,
@@ -393,7 +432,7 @@ def new_workout_from_routine(user, routine):
                 exclude_workout=workout,
                 before_workout=workout,
             )
-            template, step_to_apply, reverse, new_step, feedback = resolve_progression(
+            template, feedback, prior_step = resolve_progression(
                 program,
                 program_includes_routine,
                 routine_exercise,
@@ -402,12 +441,13 @@ def new_workout_from_routine(user, routine):
             )
             structure_sets = list(prior_we.sets.order_by("set_number"))
             set_values = seed_set_values(structure_sets, prior)
-            set_values = apply_progression_to_set_values(
+            set_values, new_step = pick_progression_step(
                 set_values,
-                step_to_apply,
-                reverse,
                 template,
+                feedback,
+                prior_step,
                 prior_we.exercise.weight_increment,
+                prior is not None,
             )
             create_workout_exercise_with_sets(
                 workout,

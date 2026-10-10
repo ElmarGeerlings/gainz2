@@ -355,6 +355,73 @@ def delete_progression_template(user, pk):
     template.delete()
 
 
+def progression_rep_bounds(template):
+    show_min = False
+    show_max = False
+    for step in template.steps.all():
+        if step.reps_delta < 0:
+            show_min = True
+        if step.reps_delta > 0:
+            show_max = True
+    return show_min, show_max
+
+
+def update_progression_settings(
+    user,
+    pk,
+    min_reps_raw,
+    max_reps_raw,
+    progress_warmups,
+    edited_field,
+    show_min,
+    show_max,
+):
+    template = get_progression_template(user, pk, mutable=True)
+    snapped = False
+    min_reps = template.min_reps
+    max_reps = template.max_reps
+    if show_min:
+        if min_reps_raw is None or min_reps_raw == "":
+            min_reps = 1
+            snapped = True
+        else:
+            parsed = int(min_reps_raw)
+            min_reps = parsed
+            if parsed < 1:
+                min_reps = 1
+                snapped = True
+            elif parsed > 99:
+                min_reps = 99
+                snapped = True
+    if show_max:
+        if max_reps_raw is None or max_reps_raw == "":
+            max_reps = 99
+            snapped = True
+        else:
+            parsed = int(max_reps_raw)
+            max_reps = parsed
+            if parsed < 1:
+                max_reps = 1
+                snapped = True
+            elif parsed > 99:
+                max_reps = 99
+                snapped = True
+    if show_min and show_max:
+        if edited_field == "min_reps" and min_reps > max_reps:
+            min_reps = max_reps
+            snapped = True
+        elif edited_field == "max_reps" and max_reps < min_reps:
+            max_reps = min_reps
+            snapped = True
+    template.min_reps = min_reps
+    template.max_reps = max_reps
+    template.progress_warmups = progress_warmups
+    template.save(
+        update_fields=["min_reps", "max_reps", "progress_warmups", "updated_at"]
+    )
+    return template, snapped
+
+
 def duplicate_progression_template(user, source_pk):
     source = get_progression_template(user, source_pk, mutable=False)
     copy = ProgressionTemplate.objects.create(
@@ -362,6 +429,9 @@ def duplicate_progression_template(user, source_pk):
         is_system=False,
         name=f"{source.name} (copy)",
         notes=source.notes,
+        min_reps=source.min_reps,
+        max_reps=source.max_reps,
+        progress_warmups=source.progress_warmups,
     )
     for step in source.steps.all():
         ProgressionStep.objects.create(

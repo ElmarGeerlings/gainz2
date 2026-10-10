@@ -24,6 +24,7 @@ from programs.ws_handlers import (
     handle_progression_step_modal_form,
     handle_set_program_exercise_progression,
     handle_update_program,
+    handle_update_progression_settings,
     handle_update_progression_step,
     handle_update_progression_template,
 )
@@ -142,6 +143,7 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "programs/create_progression_step": handle_create_progression_step,
     "programs/update_progression_step": handle_update_progression_step,
     "programs/delete_progression_step": handle_delete_progression_step,
+    "programs/update_progression_settings": handle_update_progression_settings,
     "progress/refresh_exercise_options": handle_refresh_progress_exercise_options,
     "progress/chart_data": handle_progress_chart_data,
     "progress/page_stats": handle_progress_page_stats,

@@ -1,4 +1,66 @@
 {% load formatting %}
+{% if not template.is_system %}
+<section class="panel stack-sm progression-settings mb-3">
+    <form id="progression-settings-form" class="stack-sm">
+        <input type="hidden" name="template_id" value="{{ template.pk }}">
+        {% if show_min or show_max %}
+        <div class="progression-settings-rep-range{% if show_min and show_max %} row-between gap-sm{% endif %}">
+            {% if show_min %}
+            <div class="row-center gap-sm progression-rep-bound">
+                <label for="progression-min-reps" class="text-sm">Min reps</label>
+                <input
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="2"
+                    pattern="[0-9]*"
+                    autocomplete="off"
+                    id="progression-min-reps"
+                    name="min_reps"
+                    class="form-control progression-rep-input"
+                    value="{{ template.min_reps }}"
+                    data-endpoint="change->programs/update_progression_settings"
+                    data-template-id="{{ template.pk }}"
+                >
+            </div>
+            {% endif %}
+            {% if show_max %}
+            <div class="row-center gap-sm progression-rep-bound">
+                <label for="progression-max-reps" class="text-sm">Max reps</label>
+                <input
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="2"
+                    pattern="[0-9]*"
+                    autocomplete="off"
+                    id="progression-max-reps"
+                    name="max_reps"
+                    class="form-control progression-rep-input"
+                    value="{{ template.max_reps }}"
+                    data-endpoint="change->programs/update_progression_settings"
+                    data-template-id="{{ template.pk }}"
+                >
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        <div class="row-between gap-sm progression-settings-warmups">
+            <span class="text-sm">Apply to warmups</span>
+            <label class="gainz-toggle-switch">
+                <input
+                    type="checkbox"
+                    class="gainz-toggle-input"
+                    name="progress_warmups"
+                    data-endpoint="change->programs/update_progression_settings"
+                    data-template-id="{{ template.pk }}"
+                    {% if template.progress_warmups %}checked{% endif %}
+                >
+                <span class="gainz-toggle-slider" aria-hidden="true"></span>
+            </label>
+        </div>
+        <button type="submit" disabled hidden></button>
+    </form>
+</section>
+{% endif %}
 <div class="panel progression-steps-panel">
 {% for step in template.steps.all %}
 <div

@@ -13,8 +13,10 @@ from programs.services import (
     duplicate_progression_template,
     get_progression_template,
     parse_progression_template_id,
+    progression_rep_bounds,
     set_program_exercise_progression,
     update_program,
+    update_progression_settings,
     update_progression_step,
     update_progression_template,
 )
@@ -167,10 +169,48 @@ def handle_progression_step_modal_form(user, attributes):
 
 
 def render_progression_steps(template):
+    show_min, show_max = progression_rep_bounds(template)
     return render_to_string(
         "programs/progression/progression_steps_inner.html",
-        {"template": template},
+        {
+            "template": template,
+            "show_min": show_min,
+            "show_max": show_max,
+        },
     )
+
+
+def handle_update_progression_settings(user, attributes):
+    template_id = int(attributes["data-template-id"])
+    edited_field = attributes.get("name", "")
+    if edited_field == "progress_warmups":
+        checked = attributes.get("checked")
+        progress_warmups = checked is True or checked == "true"
+    else:
+        progress_warmups = attributes.get("progress_warmups") == "on"
+    pre_template = get_progression_template(user, template_id, mutable=True)
+    show_min, show_max = progression_rep_bounds(pre_template)
+    template, snapped = update_progression_settings(
+        user,
+        template_id,
+        attributes.get("min_reps"),
+        attributes.get("max_reps"),
+        progress_warmups,
+        edited_field,
+        show_min,
+        show_max,
+    )
+    json_content = {}
+    if snapped:
+        json_content = {
+            "target": "#progression-steps-list",
+            "html": render_progression_steps(template),
+        }
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": json_content,
+    }
 
 
 def handle_create_progression_step(user, attributes):

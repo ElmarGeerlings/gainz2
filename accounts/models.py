@@ -5,6 +5,7 @@ from django.db import models
 class User(AbstractUser):
     is_demo = models.BooleanField(default=False)
     is_dev = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class UserSettings(models.Model):

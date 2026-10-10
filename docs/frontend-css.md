@@ -59,13 +59,13 @@ Markup below is the contract; see `/design/` for live examples.
 ### Layout utilities
 
 - **Use when:** Spacing and alignment without new CSS.
-- **Classes:** `stack-xs` … `stack-lg`, `gap-sm`, `gap-md`, `row-between`, `row-center`, `grid-3`, `mt-*`, `mb-*`, `p-*`, `m-0`, `text-center`, `w-100`.
+- **Classes:** `stack-xs` … `stack-lg`, `gap-sm`, `gap-md`, `row-between`, `row-center`, `flex-wrap`, `grid-2`, `grid-3`, `mt-*`, `mb-*`, `p-*`, `m-0`, `text-center`, `w-100`.
 
 ### Button
 
 - **Use when:** Actions, submits, icon dismiss.
 - **Base:** `btn`
-- **Variants:** `btn-primary`, `btn-outline`, `btn-success`, `btn-warning`, `btn-danger`, `btn-danger-outline`, `icon-btn`, `link-btn`
+- **Variants:** `btn-primary`, `btn-outline`, `btn-success`, `btn-warning`, `btn-danger`, `btn-danger-outline`, `btn-stacked` (icon above label; rows of these use `row-center flex-wrap gap-sm`), `icon-btn`, `link-btn`
 - **State:** `disabled` attribute on `<button>`
 
 ```html

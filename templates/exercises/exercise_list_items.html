@@ -2,7 +2,7 @@
     {% for section_name, exercises_in_section in grouped_exercises %}
     <section class="stack-sm mb-4">
         <h2 class="title-sm m-0">{{ section_name }}</h2>
-        <div class="exercise-library-grid">
+        <div class="grid-2 exercise-library-grid">
             {% for exercise in exercises_in_section %}
             <div
                 class="panel stack-xs p-3 clickable{% if exercise.is_custom %} surface-soft{% endif %}"

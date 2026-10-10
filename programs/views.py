@@ -15,6 +15,7 @@ from programs.services import (
     new_program,
     new_progression_template,
     prepare_program_import,
+    progression_rep_bounds,
     routines_catalog,
 )
 from routines.models import Routine
@@ -208,8 +209,11 @@ def new_progression_template_page(req_event):
 
 def progression_template_detail_page(req_event, template_id):
     template = get_progression_template(req_event.user, template_id, mutable=False)
+    show_min, show_max = progression_rep_bounds(template)
     response = {
         "title": template.name,
         "template": template,
+        "show_min": show_min,
+        "show_max": show_max,
     }
     return render(req_event, "programs/progression/progression_detail.html", response)

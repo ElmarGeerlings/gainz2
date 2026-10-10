@@ -78,6 +78,9 @@ class ProgressionTemplate(models.Model):
     is_system = models.BooleanField(default=False)
     name = models.CharField(max_length=200)
     notes = models.TextField(blank=True)
+    min_reps = models.PositiveIntegerField(default=1)
+    max_reps = models.PositiveIntegerField(default=99)
+    progress_warmups = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

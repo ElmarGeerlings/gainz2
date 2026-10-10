@@ -15,6 +15,24 @@
     cursor: grab;
 }
 
+.progression-rep-bound {
+    flex-shrink: 0;
+}
+
+.progression-rep-input {
+    width: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 0;
+    height: 2rem;
+    padding: 0 0.25rem;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.progression-settings-warmups .gainz-toggle-switch {
+    flex-shrink: 0;
+}
+
 .progression-steps-panel {
     padding: 0;
 }
