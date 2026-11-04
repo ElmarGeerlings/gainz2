@@ -1,0 +1,24 @@
+<h2 class="title-md m-0 mb-3">Discipline scores</h2>
+<div class="stack-sm">
+    {% for score in discipline_scores %}
+    <section class="panel stack-sm m-0">
+        <div class="row-between gap-sm">
+            <h3 class="title-sm m-0">{{ score.name }}</h3>
+            <span class="text-sm fw-700">{{ score.confirmed }}/{{ score.total }}</span>
+        </div>
+        <ul class="gym-checklist m-0 p-0">
+            {% for item in score.checklist %}
+            <li class="gym-checklist-item row-center gap-sm text-sm">
+                {% if item.checked %}
+                <i class="fas fa-check-circle gym-checklist-icon--yes" aria-hidden="true"></i>
+                <span>{{ item.label }}</span>
+                {% else %}
+                <i class="far fa-circle gym-checklist-icon--no" aria-hidden="true"></i>
+                <span class="text-muted">{{ item.label }}</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endfor %}
+</div>

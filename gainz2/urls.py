@@ -37,6 +37,7 @@ from programs.views import (
     programs_list_page,
 )
 from progress.views import progress_page, progress_records_page
+from gyms.views import gym_detail_page
 from workouts.views import (
     new_workout_page,
     workout_detail_page,
@@ -81,6 +82,7 @@ urlpatterns = [
     path("routines/import/", import_routine_page, name="routine-import"),
     path("routines/new/", new_routine_page, name="new-routine"),
     path("routines/<int:routine_id>/", routine_detail_page, name="routine-detail"),
+    path("gyms/demo/", gym_detail_page, name="gym-detail"),
 ]
 
 handler404 = "gainz2.views.page_not_found"

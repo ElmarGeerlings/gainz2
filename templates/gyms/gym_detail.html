@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/gyms.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="page page-narrow gym-page">
+    <header class="gym-hero" id="gym-hero">
+        {% if gym.has_photos %}
+        <div class="gym-hero-carousel" id="gym-photo-carousel">
+            <div class="gym-hero-track" id="gym-photo-track">
+                {% for photo in photos %}
+                <div class="gym-hero-slide" data-photo-index="{{ forloop.counter0 }}" data-function="click->openGymPhotoViewer">
+                    <img class="gym-hero-slide-img" src="{% static photo.src %}" alt="{{ photo.label }}">
+                </div>
+                {% endfor %}
+            </div>
+            <div class="gym-hero-dots" id="gym-photo-dots" aria-hidden="true">
+                {% for photo in photos %}
+                <span class="gym-hero-dot{% if forloop.first %} is-active{% endif %}"></span>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="gym-hero-empty panel stack-sm">
+            <p class="text-sm text-muted m-0 text-center">Be the first to add a picture</p>
+        </div>
+        {% endif %}
+        <div class="gym-hero-overlay stack-xs">
+            <div class="row-between gap-sm">
+                <div class="stack-xs gym-hero-titles">
+                    <h1 class="title-lg m-0">{{ gym.name }}</h1>
+                    <p class="text-sm m-0">{{ gym.city }}</p>
+                </div>
+                <button type="button" class="gym-save-btn icon-btn" aria-label="Save gym" aria-pressed="{% if gym.saved %}true{% else %}false{% endif %}">
+                    <i class="{% if gym.saved %}fas fa-heart{% else %}far fa-heart{% endif %}" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    <div class="gym-tabs-sticky">
+        <div class="gym-tabs" role="tablist" aria-label="Gym sections">
+            <button type="button" id="gym-tab-overview" class="gym-tab{% if tab == 'overview' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'overview' %}true{% else %}false{% endif %}" aria-controls="gym-panel-overview" data-function="click->switchGymTab" data-tab="overview">Overview</button>
+            <button type="button" id="gym-tab-info" class="gym-tab{% if tab == 'info' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'info' %}true{% else %}false{% endif %}" aria-controls="gym-panel-info" data-function="click->switchGymTab" data-tab="info">Info</button>
+            <button type="button" id="gym-tab-equipment" class="gym-tab{% if tab == 'equipment' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'equipment' %}true{% else %}false{% endif %}" aria-controls="gym-panel-equipment" data-function="click->switchGymTab" data-tab="equipment">Equipment</button>
+        </div>
+    </div>
+    <div class="gym-panels stack-md">
+        {% include "gyms/gym_tab_overview.html" %}
+        {% include "gyms/gym_tab_info.html" %}
+        {% include "gyms/gym_tab_equipment.html" %}
+    </div>
+    <footer class="gym-page-footer text-sm text-muted">
+        <span id="gym-footer-info"{% if tab == 'equipment' %} hidden{% endif %}>Last updated {{ gym.info_updated_at }}</span>
+        <span id="gym-footer-equipment"{% if tab != 'equipment' %} hidden{% endif %}>Last updated {{ gym.equipment_updated_at }}</span>
+    </footer>
+</main>
+<div id="gym-photo-viewer" class="gym-photo-viewer hidden" hidden data-function="click->closeGymPhotoViewer">
+    <button type="button" class="gym-photo-viewer-close icon-btn" data-function="click->closeGymPhotoViewer" aria-label="Close photo">
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+    </button>
+    <div class="gym-photo-viewer-body" id="gym-photo-viewer-body">
+        <img id="gym-photo-viewer-img" class="gym-photo-viewer-img" alt="">
+    </div>
+</div>
+<div id="gym-score-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content gym-modal-scroll">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_score_modal.html" %}
+    </div>
+</div>
+<div id="gym-prices-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_prices_modal.html" %}
+    </div>
+</div>
+<div id="gym-equipment-item-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-modal-persist>
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_equipment_item_modal.html" %}
+    </div>
+</div>
+<div id="gym-add-equipment-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-modal-persist>
+    <div class="gainz-modal-content gym-modal-scroll">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_add_equipment_modal.html" %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'js/gyms.js' %}"></script>
+{% endblock %}

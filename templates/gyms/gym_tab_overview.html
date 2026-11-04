@@ -1,0 +1,35 @@
+<section id="gym-panel-overview" class="gym-panel stack-md{% if tab != 'overview' %} hidden{% endif %}" role="tabpanel" aria-labelledby="gym-tab-overview"{% if tab != 'overview' %} hidden{% endif %}>
+    <section class="panel stack-sm">
+        <p class="text-sm m-0">{{ gym.description }}</p>
+    </section>
+    <button type="button" class="panel w-100 gym-tap-card" data-function="click->jumpToGymHours">
+        <div class="row-between gap-sm">
+            {% if gym.is_open_now %}
+            <span class="text-sm fw-700 gym-open-text">Open now</span>
+            {% else %}
+            <span class="text-sm fw-700 gym-closed-text">Closed</span>
+            {% endif %}
+            <span class="text-sm fw-700 m-0">{{ gym.today_hours }}</span>
+        </div>
+    </button>
+    <button type="button" class="panel stack-sm w-100 gym-tap-card" data-function="click->ShowModal" data-modal-name="gym-score-modal">
+        <h2 class="title-sm m-0">Discipline scores</h2>
+        {% for score in discipline_scores %}
+        <div class="row-between gap-sm text-sm">
+            <span>{{ score.name }}</span>
+            <span class="fw-700">{{ score.confirmed }}/{{ score.total }}</span>
+        </div>
+        {% endfor %}
+    </button>
+    <button type="button" class="panel stack-sm w-100 gym-tap-card" data-function="click->ShowModal" data-modal-name="gym-prices-modal">
+        <h2 class="title-sm m-0">Prices</h2>
+        <div class="row-between gap-sm text-sm">
+            <span>Day pass</span>
+            <span class="fw-700">{{ price_headline_day }}</span>
+        </div>
+        <div class="row-between gap-sm text-sm">
+            <span>Subscription</span>
+            <span class="fw-700">{{ price_headline_subscription }}</span>
+        </div>
+    </button>
+</section>

@@ -1,0 +1,38 @@
+<section id="gym-panel-equipment" class="gym-panel stack-md{% if tab != 'equipment' %} hidden{% endif %}" role="tabpanel" aria-labelledby="gym-tab-equipment"{% if tab != 'equipment' %} hidden{% endif %}>
+    <div class="gym-equip-toolbar stack-sm mb-3">
+        <div class="gym-equip-search-row">
+            <input type="search" id="gym-equipment-search" class="form-control gym-equip-search-input" placeholder="Search equipment…" autocomplete="off" aria-label="Search equipment">
+            <button type="button" class="btn btn-outline btn-sm gym-equip-add-btn" data-function="click->ShowModal" data-modal-name="gym-add-equipment-modal">Add equipment</button>
+        </div>
+        <div class="gym-equip-filter-row">
+            <select id="gym-equipment-bodypart-filter" class="form-control gym-equip-filter-control" aria-label="Bodypart">
+                <option value="">Bodyparts</option>
+                {% for group in equipment_filter_groups %}
+                <option value="{{ group.slug }}">{{ group.label }}</option>
+                {% endfor %}
+            </select>
+            <select id="gym-equipment-status-filter" class="form-control gym-equip-filter-control" aria-label="Status">
+                <option value="">Status</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="assumed">Assumed</option>
+                <option value="missing">Missing</option>
+            </select>
+        </div>
+    </div>
+    {% for group in equipment_groups %}
+    <div class="stack-sm" data-equipment-group="{{ group.filter_slug }}">
+        <h2 class="title-sm m-0">{{ group.title }}</h2>
+        <div class="stack-sm">
+            {% for item in group.items %}
+            <button type="button" class="panel row-between gap-sm w-100 gym-equip-row" data-equipment-row data-equipment-slug="{{ item.slug }}" data-equipment-name="{{ item.name }}" data-equipment-status="{{ item.status }}" data-equipment-quantity="{{ item.quantity }}" data-function="click->openGymEquipmentItemModal">
+                <span class="text-sm fw-700 gym-equip-name">{{ item.name }}</span>
+                <span class="gym-equip-status gym-equip-status--{{ item.status }}" data-equipment-status-label>
+                    <span class="gym-equip-status-word">{{ item.status_word }}</span>
+                    <span class="gym-equip-status-qty">{% if item.status_qty %}{{ item.status_qty }}{% endif %}</span>
+                </span>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</section>

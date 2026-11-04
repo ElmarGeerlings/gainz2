@@ -1,0 +1,22 @@
+<h2 class="title-md m-0 mb-3">Prices</h2>
+<div class="table-shell">
+    <table class="table table-compact gym-prices-modal-table">
+        <thead>
+            <tr>
+                <th>Plan</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for plan in price_plans %}
+            <tr>
+                <td>
+                    <span class="fw-700">{{ plan.name }}</span>
+                    <span class="text-sm text-muted gym-price-plan-meta">{{ plan.period }}{% if plan.note %} · {{ plan.note }}{% endif %}</span>
+                </td>
+                <td class="fw-700">{{ plan.price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

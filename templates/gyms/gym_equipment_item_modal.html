@@ -1,0 +1,12 @@
+<h2 class="title-md m-0 mb-3" id="gym-equipment-item-modal-title">Equipment</h2>
+<input type="hidden" id="gym-equipment-item-slug" value="">
+<div class="gym-status-btns mb-3">
+    <button type="button" class="gym-status-btn" data-function="click->pickGymEquipmentItemStatus" data-status="confirmed">Confirmed</button>
+    <button type="button" class="gym-status-btn" data-function="click->pickGymEquipmentItemStatus" data-status="assumed">Assumed</button>
+    <button type="button" class="gym-status-btn" data-function="click->pickGymEquipmentItemStatus" data-status="missing">Missing</button>
+</div>
+<div id="gym-equipment-quantity-wrap" class="form-stack hidden" hidden>
+    <label for="gym-equipment-quantity-input">Quantity</label>
+    <input type="text" id="gym-equipment-quantity-input" class="form-control" placeholder="Unknown" autocomplete="off">
+</div>
+<button type="button" class="btn btn-primary w-100 mt-4" data-function="click->applyGymEquipmentItemModal">Done</button>

@@ -1,0 +1,18 @@
+---
+description: Gym Pages feature context (equipment, policies, chains, discipline checklists, trust/attribution). Attach when working on gyms.
+globs: "gyms/**"
+alwaysApply: false
+---
+
+# Gym Pages
+
+Full overview and phasing: @docs/gym-pages.md. That file is the source of truth; read it before designing or building anything for gyms.
+
+Key points to keep in mind:
+
+- Build in phases. V1 is standalone public gym pages (info, equipment, policies, amenities, discipline checklists, attribution/freshness, chain templates, member editing). Logger/AI integration is V2, community/owners is V3. Do not build later phases early.
+- Equipment items have three states: unknown (default), present, absent.
+- Data is reports with attribution and last-confirmed date; wording must be honest ("lifters report...").
+- Public pages are server-rendered HTTP and indexable. Mutations go through WebSocket handlers.
+- Follow `gainz2.mdc` architecture: logic in `services.py`, models only (user runs migrations).
+- If the design changes, update `docs/gym-pages.md`.

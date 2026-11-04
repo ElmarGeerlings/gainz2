@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'utils',
     'programs',
     'progress',
+    'gyms',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -98,6 +99,7 @@ LOGIN_EXEMPT_URLS = [
     r'^/demo/?$',
     r'^/admin/login/?$',
     r'^/ai/chat/?$',
+    r'^/gyms/',
 ]
 
 ROOT_URLCONF = 'gainz2.urls'

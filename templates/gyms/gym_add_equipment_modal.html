@@ -1,0 +1,17 @@
+<h2 class="title-md m-0 mb-3">Add equipment</h2>
+<input type="search" id="gym-add-equipment-search" class="form-control mb-3" placeholder="Search equipment…" autocomplete="off" aria-label="Search catalog">
+<select id="gym-add-equipment-bodypart" class="form-control mb-3" aria-label="Bodypart">
+    <option value="">All bodyparts</option>
+    {% for group in equipment_filter_groups %}
+    <option value="{{ group.slug }}">{{ group.label }}</option>
+    {% endfor %}
+</select>
+<ul class="gym-catalog-list m-0 p-0">
+    {% for name in equipment_catalog_not_on_page %}
+    <li class="gym-catalog-item">
+        <button type="button" class="gym-catalog-btn text-sm">{{ name }}</button>
+    </li>
+    {% empty %}
+    <li class="text-sm text-muted">Everything in the catalog is already on this page.</li>
+    {% endfor %}
+</ul>
