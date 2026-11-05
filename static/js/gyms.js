@@ -362,7 +362,7 @@ function ruleBadgeHtml(state) {
 }
 
 function stripGymPriceNumber(raw) {
-    return raw.replace(/€/g, "").trim();
+    return raw.replace(/€/g, "").split("/")[0].trim();
 }
 
 function formatGymPriceDisplay(raw) {
@@ -373,6 +373,14 @@ function formatGymPriceDisplay(raw) {
     return "€" + stripped;
 }
 
+const GYM_PRICE_UNITS = [
+    ["day", "day(s)"],
+    ["week", "week(s)"],
+    ["month", "month(s)"],
+    ["year", "year(s)"],
+    ["session", "session(s)"],
+];
+
 function parseGymPricesFromTable() {
     const tbody = document.getElementById("gym-prices-table-body");
     if (!tbody) {
@@ -381,48 +389,61 @@ function parseGymPricesFromTable() {
     const plans = [];
     tbody.querySelectorAll("tr").forEach((row) => {
         const nameEl = row.querySelector(".fw-700");
-        const metaEl = row.querySelector(".gym-price-plan-meta");
-        const priceEl = row.querySelector("td:last-child");
+        const priceEl = row.querySelector(".gym-price-amount");
         if (!nameEl || !priceEl) {
             return;
         }
-        let period = "";
-        let note = "";
-        if (metaEl) {
-            const metaText = metaEl.textContent.trim();
-            const parts = metaText.split(" · ");
-            period = parts[0] || "";
-            note = parts.slice(1).join(" · ");
-        }
         plans.push({
             name: nameEl.textContent.trim(),
-            period: period,
-            note: note,
+            note: row.getAttribute("data-note") || "",
             price: stripGymPriceNumber(priceEl.textContent.trim()),
+            billingCount: row.getAttribute("data-billing-count") || "1",
+            billingUnit: row.getAttribute("data-billing-unit") || "month",
         });
     });
     return plans;
 }
 
-function gymPriceSubtitle(plan) {
-    if (!plan.period && !plan.note) {
-        return "";
+function gymPriceReadPeriod(plan) {
+    const count = Number(plan.billingCount) || 1;
+    const singular = { day: "day", week: "week", month: "month", year: "year", session: "session" };
+    const plural = { day: "days", week: "weeks", month: "months", year: "years", session: "sessions" };
+    if (count === 1) {
+        return singular[plan.billingUnit];
     }
-    if (plan.period && plan.note) {
-        return `${plan.period} · ${plan.note}`;
-    }
-    return plan.period || plan.note;
+    return `${count} ${plural[plan.billingUnit]}`;
 }
 
-function splitGymPriceSubtitle(raw) {
-    if (!raw) {
-        return { period: "", note: "" };
+function isGymDayPass(plan) {
+    const count = Number(plan.billingCount) || 1;
+    return (plan.billingUnit === "day" && count === 1) || (plan.billingUnit === "session" && count === 1);
+}
+
+function gymPriceMonthlyAmount(plan) {
+    const amount = parseFloat(String(plan.price).replace(",", "."));
+    const count = Number(plan.billingCount) || 1;
+    if (!amount || count <= 0 || plan.billingUnit === "session" || isGymDayPass(plan)) {
+        return null;
     }
-    if (raw.includes(" · ")) {
-        const parts = raw.split(" · ");
-        return { period: parts[0], note: parts.slice(1).join(" · ") };
+    if (plan.billingUnit === "day") {
+        return amount * 30 / count;
     }
-    return { period: raw, note: "" };
+    if (plan.billingUnit === "week") {
+        return amount * (52 / 12) / count;
+    }
+    if (plan.billingUnit === "month") {
+        return amount / count;
+    }
+    if (plan.billingUnit === "year") {
+        return amount / (count * 12);
+    }
+    return null;
+}
+
+function formatGymMonthly(amount) {
+    const rounded = Math.round(amount * 100) / 100;
+    const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+    return `€${text} / mo`;
 }
 
 function renderGymPricesTable(plans) {
@@ -433,13 +454,18 @@ function renderGymPricesTable(plans) {
     tbody.innerHTML = "";
     plans.forEach((plan) => {
         const tr = document.createElement("tr");
-        const meta = gymPriceSubtitle(plan);
+        const note = plan.note || "";
+        tr.setAttribute("data-billing-count", plan.billingCount);
+        tr.setAttribute("data-billing-unit", plan.billingUnit);
+        tr.setAttribute("data-note", note);
+        const noteHtml = note ? `<span class="text-xs text-muted gym-price-plan-meta">${note}</span>` : "";
         tr.innerHTML = `
             <td>
                 <span class="fw-700">${plan.name}</span>
-                <span class="text-sm text-muted gym-price-plan-meta">${meta}</span>
+                ${noteHtml}
             </td>
-            <td class="fw-700 gym-price-cell">${formatGymPriceDisplay(plan.price)}</td>
+            <td class="gym-price-amount fw-700">${formatGymPriceDisplay(plan.price)}</td>
+            <td class="gym-price-period text-xs text-muted">/${gymPriceReadPeriod(plan)}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -456,45 +482,25 @@ function renderGymPriceEditTable(plans) {
 
 function computeGymPriceHeadlines(plans) {
     let dayPass = "—";
-    let subscription = "—";
-    plans.forEach((plan) => {
-        if (plan.name.toLowerCase() === "day pass") {
-            dayPass = formatGymPriceDisplay(plan.price);
-        }
-    });
+    let dayPassAmount = null;
     let cheapestMonthly = null;
     plans.forEach((plan) => {
-        const nameLower = plan.name.toLowerCase();
-        if (nameLower === "day pass") {
-            return;
-        }
-        const noteLower = (plan.note || "").toLowerCase();
-        const periodLower = (plan.period || "").toLowerCase();
-        if (noteLower.includes("/ month") || noteLower.includes("≈") || periodLower.includes("12 month") || periodLower.includes("year")) {
-            const match = (plan.note || formatGymPriceDisplay(plan.price)).match(/€[\d.,]+/);
-            if (match) {
-                const val = match[0];
-                if (!cheapestMonthly) {
-                    cheapestMonthly = val + " / mo";
-                }
+        const amount = parseFloat(String(plan.price).replace(",", "."));
+        if (isGymDayPass(plan) && amount) {
+            if (dayPassAmount === null || amount < dayPassAmount) {
+                dayPassAmount = amount;
+                dayPass = formatGymPriceDisplay(plan.price);
             }
         }
-        if (nameLower.includes("yearly") && plan.note) {
-            const match = plan.note.match(/€[\d.,]+/);
-            if (match && !cheapestMonthly) {
-                cheapestMonthly = match[0] + " / mo";
-            }
+        const monthly = gymPriceMonthlyAmount(plan);
+        if (monthly !== null && (cheapestMonthly === null || monthly < cheapestMonthly)) {
+            cheapestMonthly = monthly;
         }
     });
-    if (!cheapestMonthly && plans.length > 1) {
-        const fallback = plans.find((p) => p.name.toLowerCase() !== "day pass");
-        if (fallback) {
-            subscription = formatGymPriceDisplay(fallback.price);
-        }
-    } else if (cheapestMonthly) {
-        subscription = cheapestMonthly;
-    }
-    return { dayPass, subscription };
+    return {
+        dayPass,
+        subscription: cheapestMonthly === null ? "—" : formatGymMonthly(cheapestMonthly),
+    };
 }
 
 function updateGymPriceHeadlineCards(plans) {
@@ -539,6 +545,8 @@ function appendGymPriceEditRow(plan) {
     }
     const tr = document.createElement("tr");
     tr.className = "gym-price-edit-row";
+    const grid = document.createElement("div");
+    grid.className = "gym-price-edit-grid";
     const name = document.createElement("input");
     name.type = "text";
     name.className = "form-control gym-price-edit-name";
@@ -547,10 +555,13 @@ function appendGymPriceEditRow(plan) {
     name.setAttribute("aria-label", "Title");
     const subtitle = document.createElement("input");
     subtitle.type = "text";
-    subtitle.className = "form-control gym-price-edit-period";
-    subtitle.value = gymPriceSubtitle(plan);
+    subtitle.className = "form-control gym-price-edit-note";
+    subtitle.value = plan.note || "";
     subtitle.placeholder = "Subtitle";
     subtitle.setAttribute("aria-label", "Subtitle");
+    const currency = document.createElement("span");
+    currency.className = "text-sm fw-700";
+    currency.textContent = "€";
     const price = document.createElement("input");
     price.type = "text";
     price.className = "form-control gym-price-edit-price";
@@ -558,26 +569,64 @@ function appendGymPriceEditRow(plan) {
     price.placeholder = "Price";
     price.setAttribute("aria-label", "Price");
     price.setAttribute("inputmode", "decimal");
-    const planCell = document.createElement("td");
-    planCell.className = "gym-price-edit-plan";
-    planCell.appendChild(name);
-    planCell.appendChild(subtitle);
-    const priceCell = document.createElement("td");
-    priceCell.className = "gym-price-cell";
-    priceCell.appendChild(price);
-    const deleteCell = document.createElement("td");
-    deleteCell.className = "gym-price-edit-delete";
+    const perLabel = document.createElement("span");
+    perLabel.className = "text-sm text-muted";
+    perLabel.textContent = "per";
+    const count = document.createElement("input");
+    count.type = "text";
+    count.className = "form-control gym-price-edit-count";
+    count.value = plan.billingCount || "1";
+    count.setAttribute("inputmode", "numeric");
+    count.setAttribute("aria-label", "Billing count");
+    const unit = document.createElement("select");
+    unit.className = "form-control gym-price-edit-unit";
+    unit.setAttribute("aria-label", "Billing period");
+    GYM_PRICE_UNITS.forEach((pair) => {
+        const option = document.createElement("option");
+        option.value = pair[0];
+        option.textContent = pair[1];
+        unit.appendChild(option);
+    });
+    unit.value = plan.billingUnit || "month";
+    const billing = document.createElement("div");
+    billing.className = "gym-price-edit-billing";
+    billing.appendChild(currency);
+    billing.appendChild(price);
+    billing.appendChild(perLabel);
+    billing.appendChild(count);
+    billing.appendChild(unit);
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
-    deleteBtn.className = "icon-btn icon-btn-danger";
+    deleteBtn.className = "icon-btn icon-btn-danger gym-price-edit-delete-btn";
     deleteBtn.setAttribute("data-function", "click->removeGymPriceRow");
     deleteBtn.setAttribute("aria-label", "Delete price");
     deleteBtn.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i>';
-    deleteCell.appendChild(deleteBtn);
-    tr.appendChild(planCell);
-    tr.appendChild(priceCell);
-    tr.appendChild(deleteCell);
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "icon-btn gym-price-move-btn gym-price-move-up";
+    upBtn.setAttribute("data-function", "click->moveGymPriceRow");
+    upBtn.setAttribute("data-direction", "up");
+    upBtn.setAttribute("aria-label", "Move price up");
+    upBtn.innerHTML = '<i class="fas fa-chevron-up" aria-hidden="true"></i>';
+    const downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "icon-btn gym-price-move-btn gym-price-move-down";
+    downBtn.setAttribute("data-function", "click->moveGymPriceRow");
+    downBtn.setAttribute("data-direction", "down");
+    downBtn.setAttribute("aria-label", "Move price down");
+    downBtn.innerHTML = '<i class="fas fa-chevron-down" aria-hidden="true"></i>';
+    grid.appendChild(name);
+    grid.appendChild(deleteBtn);
+    grid.appendChild(subtitle);
+    grid.appendChild(upBtn);
+    grid.appendChild(downBtn);
+    grid.appendChild(billing);
+    const cell = document.createElement("td");
+    cell.colSpan = 4;
+    cell.appendChild(grid);
+    tr.appendChild(cell);
     tbody.appendChild(tr);
+    syncGymPriceRowMoveButtons();
 }
 
 function readGymPriceEditRows() {
@@ -585,13 +634,14 @@ function readGymPriceEditRows() {
     const plans = [];
     rows.forEach((row) => {
         const name = row.querySelector(".gym-price-edit-name").value.trim();
-        const periodRaw = row.querySelector(".gym-price-edit-period").value.trim();
+        const note = row.querySelector(".gym-price-edit-note").value.trim();
         const price = stripGymPriceNumber(row.querySelector(".gym-price-edit-price").value.trim());
+        const billingCount = row.querySelector(".gym-price-edit-count").value.trim() || "1";
+        const billingUnit = row.querySelector(".gym-price-edit-unit").value;
         if (name === "" && price === "") {
             return;
         }
-        const split = splitGymPriceSubtitle(periodRaw);
-        plans.push({ name, period: split.period, note: split.note, price });
+        plans.push({ name, note, price, billingCount, billingUnit });
     });
     return plans;
 }
@@ -626,14 +676,49 @@ function saveGymPricesEdit() {
 }
 
 function addGymPriceRow() {
-    appendGymPriceEditRow({ name: "", period: "", note: "", price: "" });
+    appendGymPriceEditRow({ name: "", note: "", price: "", billingCount: "1", billingUnit: "month" });
 }
 
 function removeGymPriceRow(event) {
     const row = event.currentTarget.closest(".gym-price-edit-row");
     if (row) {
         row.remove();
+        syncGymPriceRowMoveButtons();
     }
+}
+
+function moveGymPriceRow(event) {
+    const row = event.currentTarget.closest(".gym-price-edit-row");
+    const tbody = document.getElementById("gym-prices-table-body");
+    if (!row || !tbody) {
+        return;
+    }
+    if (event.currentTarget.getAttribute("data-direction") === "up") {
+        const previous = row.previousElementSibling;
+        if (previous) {
+            tbody.insertBefore(row, previous);
+        }
+    } else {
+        const next = row.nextElementSibling;
+        if (next) {
+            tbody.insertBefore(next, row);
+        }
+    }
+    syncGymPriceRowMoveButtons();
+}
+
+function syncGymPriceRowMoveButtons() {
+    const rows = document.querySelectorAll("#gym-prices-table-body .gym-price-edit-row");
+    rows.forEach((row, index) => {
+        const upBtn = row.querySelector(".gym-price-move-up");
+        const downBtn = row.querySelector(".gym-price-move-down");
+        if (upBtn) {
+            upBtn.classList.toggle("is-hidden", index === 0);
+        }
+        if (downBtn) {
+            downBtn.classList.toggle("is-hidden", index === rows.length - 1);
+        }
+    });
 }
 
 function openGymDescriptionEdit() {

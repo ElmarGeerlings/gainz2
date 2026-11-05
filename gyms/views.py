@@ -57,9 +57,9 @@ def gym_detail_page(req_event):
     hour_time_options.append(f"00:00")
 
     photos = [
-        {"src": "img/gym-samples/sample1.jpg", "label": "Main floor"},
-        {"src": "img/gym-samples/sample2.png", "label": "Platforms"},
-        {"src": "img/gym-samples/sample3.png", "label": "Cardio area"},
+        {"src": "img/samples/sample1.jpg", "label": "Main floor"},
+        {"src": "img/samples/sample2.png", "label": "Platforms"},
+        {"src": "img/samples/sample3.png", "label": "Cardio area"},
     ]
 
     today_name = datetime.date.today().strftime("%A")
@@ -138,11 +138,12 @@ def gym_detail_page(req_event):
     ]
 
     price_plans = [
-        {"name": "Day pass", "price": "€12", "period": "single visit", "note": "Includes locker"},
-        {"name": "Weekly", "price": "€35", "period": "7 days", "note": ""},
-        {"name": "Monthly", "price": "€49", "period": "30 days", "note": "No contract"},
-        {"name": "Yearly", "price": "€399", "period": "12 months", "note": "≈ €33.25 / month"},
-        {"name": "Student monthly", "price": "€39", "period": "30 days", "note": "Student ID required"},
+        {"name": "Day pass", "price": "€12", "billing_count": 1, "billing_unit": "day", "read_period": "day", "note": "Includes locker"},
+        {"name": "Weekly", "price": "€35", "billing_count": 1, "billing_unit": "week", "read_period": "week", "note": ""},
+        {"name": "Fortnight", "price": "€60", "billing_count": 2, "billing_unit": "week", "read_period": "2 weeks", "note": ""},
+        {"name": "Monthly", "price": "€49", "billing_count": 1, "billing_unit": "month", "read_period": "month", "note": "No contract"},
+        {"name": "Yearly", "price": "€399", "billing_count": 1, "billing_unit": "year", "read_period": "year", "note": ""},
+        {"name": "Student monthly", "price": "€39", "billing_count": 1, "billing_unit": "month", "read_period": "month", "note": "Student ID required"},
     ]
     price_headline_day = "€12"
     price_headline_subscription = "€33.25 / mo"

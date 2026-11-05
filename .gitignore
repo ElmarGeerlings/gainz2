@@ -6,6 +6,7 @@ staticfiles/
 .env
 node_modules/
 android/
+static/img/samples/
 
 # Python
 __pycache__/

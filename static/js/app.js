@@ -265,7 +265,18 @@ document.addEventListener('keydown', (event) => {
   });
 });
 
+const boundAttributes = new WeakMap();
+
 function handle_attribute(element, attr) {
+  let bound = boundAttributes.get(element);
+  if (!bound) {
+    bound = new Set();
+    boundAttributes.set(element, bound);
+  }
+  if (bound.has(attr.name)) {
+    return;
+  }
+  bound.add(attr.name);
   const tokens = attr.value.trim().split(/\s+/);
   for (const value of tokens) {
     if (attr.name === 'data-endpoint') {

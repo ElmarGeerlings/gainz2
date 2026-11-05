@@ -9,18 +9,19 @@
         <thead>
             <tr>
                 <th>Plan</th>
-                <th>Price</th>
+                <th colspan="2">Price</th>
                 <th id="gym-prices-delete-head" class="gym-prices-delete-head hidden" hidden></th>
             </tr>
         </thead>
         <tbody id="gym-prices-table-body">
             {% for plan in price_plans %}
-            <tr>
+            <tr data-billing-count="{{ plan.billing_count }}" data-billing-unit="{{ plan.billing_unit }}" data-note="{{ plan.note }}">
                 <td>
                     <span class="fw-700">{{ plan.name }}</span>
-                    <span class="text-sm text-muted gym-price-plan-meta">{{ plan.period }}{% if plan.note %} · {{ plan.note }}{% endif %}</span>
+                    {% if plan.note %}<span class="text-xs text-muted gym-price-plan-meta">{{ plan.note }}</span>{% endif %}
                 </td>
-                <td class="fw-700 gym-price-cell">{{ plan.price }}</td>
+                <td class="gym-price-amount fw-700">{{ plan.price }}</td>
+                <td class="gym-price-period text-xs text-muted">/{{ plan.read_period }}</td>
             </tr>
             {% endfor %}
         </tbody>

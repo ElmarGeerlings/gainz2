@@ -149,10 +149,64 @@
     padding: var(--space-4);
 }
 
-.gym-price-edit-plan {
+.gym-price-edit-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    column-gap: var(--space-2);
+    row-gap: var(--space-1);
+    align-items: center;
+}
+
+.gym-price-edit-name {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.gym-price-edit-note {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.gym-price-edit-delete-btn {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.gym-price-move-up {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.gym-price-move-down {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.gym-price-edit-billing {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: start;
+    width: max-content;
+    max-width: 100%;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: var(--space-1);
+}
+
+.gym-price-edit-billing .form-control {
+    min-width: unset;
+}
+
+.gym-price-edit-count {
+    width: 3.25rem;
+}
+
+.gym-price-edit-unit {
+    width: auto;
+}
+
+.gym-price-move-btn.is-hidden {
+    visibility: hidden;
 }
 
 .gym-prices-modal-table .form-control {
@@ -385,9 +439,22 @@
     margin-bottom: 0;
 }
 
-.gym-prices-modal-table th:nth-child(2),
-.gym-prices-modal-table td.gym-price-cell {
+.gym-prices-modal-table th:nth-child(2) {
     text-align: right;
+}
+
+.gym-prices-modal-table td.gym-price-amount {
+    width: 1%;
+    padding-right: 0;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.gym-prices-modal-table td.gym-price-period {
+    width: 1%;
+    padding-left: 0;
+    text-align: left;
+    white-space: nowrap;
 }
 
 .gym-prices-modal-table th.gym-prices-delete-head,
@@ -402,8 +469,8 @@
 }
 
 .gym-price-edit-price {
-    width: 4.5rem;
-    max-width: 4.5rem;
+    width: 3.25rem;
+    max-width: 3.25rem;
 }
 
 #gym-hours-panel {

@@ -266,6 +266,14 @@ a:hover {
 
 /* ── Buttons ─────────────────────────────────── */
 
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:focus {
+    outline: none;
+}
+
 .btn {
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -468,11 +476,6 @@ textarea.form-control {
 
 .gainz-toggle-input:checked + .gainz-toggle-slider::before {
     transform: translateX(1.25rem);
-}
-
-.gainz-toggle-input:focus-visible + .gainz-toggle-slider {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
 }
 
 /* ── Exercise type badge ─────────────────────── */

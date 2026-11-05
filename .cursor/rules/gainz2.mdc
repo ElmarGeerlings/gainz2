@@ -48,6 +48,8 @@ Reuse existing templates, partials, handlers, and `data-endpoint` / `data-routin
 
 Prefer `data-endpoint`. Use `data-function` + `data-routing` when the client needs custom DOM work. Hardcode an endpoint in JS only when the handler is tied to one route.
 
+`data-endpoint` and `data-function` are bound once per element. Moving that element in the DOM does not add another listener. Setting a new value on an element that is already bound does nothing. Replace the HTML (`innerHTML` morph) when the handler should change. That creates a new element, which is bound from the new attribute.
+
 `ws_request` on response: 302 → redirect; `data-refresh` → reload; morph `json_content.target` + `html`; 200 + `data-close-modal` → hide; 200 + `toast_html` → `appendToast`.
 
 ## WebSocket
