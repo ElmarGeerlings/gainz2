@@ -1,0 +1,30 @@
+<form id="gym-edit-hours-form" class="form-stack">
+    <h2 class="title-md m-0 mb-3">Edit opening hours</h2>
+    <div class="stack-sm">
+        {% for row in hours %}
+        <div class="gym-hours-edit-row stack-xs" data-day="{{ row.day }}">
+            <span class="text-sm fw-700">{{ row.day }}</span>
+            <div class="row-between gap-sm flex-wrap">
+                <select class="form-control gym-hours-edit-open" aria-label="{{ row.day }} opening">
+                    {% for time in hour_time_options %}
+                    <option value="{{ time }}"{% if time == row.open %} selected{% endif %}>{{ time }}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-control gym-hours-edit-close" aria-label="{{ row.day }} closing">
+                    {% for time in hour_time_options %}
+                    <option value="{{ time }}"{% if time == row.close %} selected{% endif %}>{{ time }}</option>
+                    {% endfor %}
+                </select>
+                <label class="row-center gap-sm text-sm gym-hours-closed-label">
+                    <span>Closed</span>
+                    <label class="gainz-toggle-switch">
+                        <input type="checkbox" class="gainz-toggle-input gym-hours-edit-closed"{% if row.closed %} checked{% endif %}>
+                        <span class="gainz-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                </label>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-primary w-100 mt-4" data-function="click->saveGymHoursEdit">Save</button>
+</form>

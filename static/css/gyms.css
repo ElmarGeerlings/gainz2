@@ -142,6 +142,46 @@
     text-align: left;
     font: inherit;
     color: inherit;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    padding: var(--space-4);
+}
+
+.gym-price-edit-plan {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.gym-prices-modal-table .form-control {
+    min-width: 0;
+}
+
+.gym-amenity-edit-bubble {
+    cursor: pointer;
+    font: inherit;
+}
+
+.gym-amenity-edit-bubble.is-selected {
+    background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+    color: var(--text);
+}
+
+.gym-hours-edit-row .form-control {
+    flex: 1;
+    min-width: 0;
+}
+
+.gym-flex-1 {
+    flex: 1;
+}
+
+.gym-price-edit-row .gym-price-row-remove {
+    padding: 0;
+    min-height: auto;
 }
 
 .gym-open-text {
@@ -213,8 +253,8 @@
 }
 
 .gym-fact-badge--unknown {
-    background: var(--surface-soft);
-    color: var(--muted);
+    background: var(--toast-warning-bg);
+    color: var(--toast-warning-text);
 }
 
 .gym-contact-link {
@@ -259,6 +299,14 @@
     margin-top: -32px;
 }
 
+.gym-checklist-item + .gym-checklist-item {
+    margin-top: var(--space-2);
+}
+
+#gym-score-modal .gym-checklist {
+    margin-top: var(--space-4);
+}
+
 .gym-checklist-icon--yes {
     color: var(--success);
 }
@@ -281,30 +329,27 @@
 
 .gym-equip-search-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(50%, 1fr) minmax(4.75rem, 6.5rem) 42px;
     gap: var(--space-2);
-    align-items: stretch;
+    align-items: center;
 }
 
 .gym-equip-search-input {
     min-width: 0;
 }
 
-.gym-equip-add-btn {
-    justify-self: end;
-    white-space: nowrap;
-}
-
-.gym-equip-filter-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-2);
-}
-
-.gym-equip-filter-control {
+.gym-equip-bodypart {
     min-width: 0;
     font-size: 0.8125rem;
-    padding: var(--space-2);
+    padding-inline: var(--space-2);
+}
+
+.gym-equip-add-btn {
+    min-width: 42px;
+    min-height: 42px;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
 }
 
 .gym-equip-status {
@@ -340,9 +385,29 @@
     margin-bottom: 0;
 }
 
-.gym-prices-modal-table th:last-child,
-.gym-prices-modal-table td:last-child {
+.gym-prices-modal-table th:nth-child(2),
+.gym-prices-modal-table td.gym-price-cell {
     text-align: right;
+}
+
+.gym-prices-modal-table th.gym-prices-delete-head,
+.gym-prices-modal-table td.gym-price-edit-delete {
+    width: 2.75rem;
+    text-align: center;
+    vertical-align: top;
+}
+
+.gym-price-edit-row td {
+    vertical-align: top;
+}
+
+.gym-price-edit-price {
+    width: 4.5rem;
+    max-width: 4.5rem;
+}
+
+#gym-hours-panel {
+    scroll-margin-top: 7.5rem;
 }
 
 .gym-equip-status--confirmed {
@@ -351,9 +416,9 @@
 }
 
 .gym-equip-status--assumed {
-    background: var(--surface-soft);
-    color: var(--text);
-    border: 1px solid var(--border);
+    background: var(--toast-warning-bg);
+    border: 1px solid var(--toast-warning-border);
+    color: var(--toast-warning-text);
 }
 
 .gym-equip-status--missing {
@@ -386,9 +451,15 @@
     color: var(--toast-success-text);
 }
 
-.gym-status-btn.is-active.is-assumed {
-    border-color: var(--border);
-    background: var(--surface-soft);
+.gym-status-btn.is-active.is-stay {
+    border-color: var(--toast-warning-border);
+    background: var(--toast-warning-bg);
+    color: var(--toast-warning-text);
+}
+
+#gym-edit-vibe-form .gym-status-btn.is-active {
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+    background: color-mix(in srgb, var(--primary) 10%, var(--surface));
     color: var(--text);
 }
 
@@ -396,6 +467,28 @@
     border-color: var(--danger-border);
     background: var(--toast-danger-bg);
     color: var(--toast-danger-text);
+}
+
+#gym-panel-equipment .gym-status-btn[data-status="confirmed"] {
+    border-color: var(--success);
+    background: var(--toast-success-bg);
+    color: var(--toast-success-text);
+}
+
+#gym-panel-equipment .gym-status-btn[data-status="assumed"] {
+    border-color: var(--toast-warning-border);
+    background: var(--toast-warning-bg);
+    color: var(--toast-warning-text);
+}
+
+#gym-panel-equipment .gym-status-btn[data-status="missing"] {
+    border-color: var(--danger-border);
+    background: var(--toast-danger-bg);
+    color: var(--toast-danger-text);
+}
+
+#gym-panel-equipment .gym-status-btn[data-status]:not(.is-active) {
+    opacity: 0.3;
 }
 
 .gym-modal-scroll {

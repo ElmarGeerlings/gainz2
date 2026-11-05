@@ -20,6 +20,10 @@ Mobile-first, one template set per screen. Phone in the gym is the reference dev
 
 **Wiring:** `DJANGO_SETTINGS_MODULE` is `settings`. `gainz2/urls.py` = HTTP. `gainz2/routing.py` = socket URL. `gainz2/ws_dispatch.py` = `WS_ENDPOINT_REGISTRY`. `gainz2/consumers.py` stays thin. App handlers (e.g. `workouts/ws_handlers.py`) are imported into the registry. Shared JS is `static/js/app.js`; page JS via `extra_js`.
 
+## Dev server
+
+Do not start, restart, or stop the app server (Daphne, `runserver`, `gd`, or anything else that binds a port). The user runs the server. Do not kill a process on a port to reload templates or to verify in the browser. If the running server is stale, say so and ask the user to restart it.
+
 ## Agent workflow
 
 1. Classify: model, service, HTTP view, WS handler, template, CSS, JS.

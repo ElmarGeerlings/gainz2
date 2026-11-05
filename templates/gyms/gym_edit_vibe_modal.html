@@ -1,0 +1,11 @@
+<form id="gym-edit-vibe-form" class="form-stack">
+    <h2 class="title-md m-0 mb-3">Edit vibe</h2>
+    <p class="text-sm text-muted m-0 mb-2">Serious: people treat lifting as a sport. Casual: general fitness gym.</p>
+    <input type="hidden" id="gym-edit-vibe-value" name="vibe" value="{{ gym.vibe }}">
+    <div class="gym-status-btns">
+        <button type="button" class="gym-status-btn{% if gym.vibe == 'serious' %} is-active{% endif %}" data-function="click->pickGymVibeEdit" data-vibe="serious">Serious</button>
+        <button type="button" class="gym-status-btn{% if gym.vibe == 'casual' %} is-active{% endif %}" data-function="click->pickGymVibeEdit" data-vibe="casual">Casual</button>
+        <button type="button" class="gym-status-btn{% if gym.vibe == 'unknown' %} is-active{% endif %}" data-function="click->pickGymVibeEdit" data-vibe="unknown">Unknown</button>
+    </div>
+    <button type="button" class="btn btn-primary w-100 mt-4" data-function="click->saveGymVibeEdit">Save</button>
+</form>

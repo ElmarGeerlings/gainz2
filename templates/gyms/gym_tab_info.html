@@ -1,9 +1,14 @@
 <section id="gym-panel-info" class="gym-panel stack-md{% if tab != 'info' %} hidden{% endif %}" role="tabpanel" aria-labelledby="gym-tab-info"{% if tab != 'info' %} hidden{% endif %}>
     <section class="panel stack-sm">
-        <h2 class="title-sm m-0">Gym rules</h2>
-        <ul class="gym-fact-list">
+        <div class="row-between gap-sm">
+            <h2 class="title-sm m-0">Gym rules</h2>
+            <button type="button" class="icon-btn" aria-label="Edit gym rules" data-function="click->openGymRulesEdit">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
+        </div>
+        <ul class="gym-fact-list" id="gym-rules-display">
             {% for rule in rules %}
-            <li class="gym-fact-row row-between gap-sm">
+            <li class="gym-fact-row row-between gap-sm" data-rule-slug="{{ rule.slug }}" data-rule-state="{{ rule.state }}">
                 <span class="text-sm">{{ rule.label }}</span>
                 {% if rule.state == 'yes' %}
                 <span class="gym-fact-badge gym-fact-badge--yes">Yes</span>
@@ -17,72 +22,96 @@
         </ul>
     </section>
     <section class="panel stack-sm">
-        <h2 class="title-sm m-0">Amenities</h2>
-        {% if amenities_present %}
-        <div class="gym-amenity-bubbles">
-            {% for label in amenities_present %}
-            <span class="gym-amenity-bubble">{{ label }}</span>
-            {% endfor %}
+        <div class="row-between gap-sm">
+            <h2 class="title-sm m-0">Amenities</h2>
+            <button type="button" class="icon-btn" aria-label="Edit amenities" data-function="click->openGymAmenitiesEdit">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
         </div>
-        {% else %}
-        <p class="text-sm text-muted m-0">No amenity information yet</p>
-        {% endif %}
+        <div id="gym-amenities-display">
+            {% if amenities_present %}
+            <div class="gym-amenity-bubbles">
+                {% for label in amenities_present %}
+                <span class="gym-amenity-bubble">{{ label }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-muted m-0">No amenity information yet</p>
+            {% endif %}
+        </div>
     </section>
     <section class="panel stack-sm" id="gym-hours-panel">
-        <h2 class="title-sm m-0">Opening hours</h2>
-        <ul class="gym-fact-list">
+        <div class="row-between gap-sm">
+            <h2 class="title-sm m-0">Opening hours</h2>
+            <button type="button" class="icon-btn" aria-label="Edit opening hours" data-function="click->openGymHoursEdit">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
+        </div>
+        <ul class="gym-fact-list" id="gym-hours-display">
             {% for row in hours %}
-            <li class="gym-fact-row row-between gap-sm text-sm{% if row.is_today %} gym-hours-row--today{% endif %}">
+            <li class="gym-fact-row row-between gap-sm text-sm{% if row.is_today %} gym-hours-row--today{% endif %}" data-day="{{ row.day }}" data-open="{{ row.open }}" data-close="{{ row.close }}" data-closed="{% if row.closed %}true{% else %}false{% endif %}" data-is-today="{% if row.is_today %}true{% else %}false{% endif %}">
                 <span>{{ row.day }}</span>
-                <span class="fw-700">{{ row.hours }}</span>
+                <span class="fw-700 gym-hours-display-time">{{ row.hours }}</span>
             </li>
             {% endfor %}
         </ul>
     </section>
     <section class="panel stack-sm">
-        <h2 class="title-sm m-0">Contact</h2>
-        {% if gym.phone or gym.email or gym.website or gym.instagram %}
-        <ul class="gym-contact-list">
-            {% if gym.phone %}
-            <li class="gym-contact-row">
-                <a class="gym-contact-link row-center gap-sm text-sm" href="tel:{{ gym.phone }}">
-                    <i class="fas fa-phone" aria-hidden="true"></i>
-                    <span>{{ gym.phone }}</span>
-                </a>
-            </li>
+        <div class="row-between gap-sm">
+            <h2 class="title-sm m-0">Contact</h2>
+            <button type="button" class="icon-btn" aria-label="Edit contact" data-function="click->openGymContactEdit">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div id="gym-contact-display">
+            {% if gym.phone or gym.email or gym.website or gym.instagram %}
+            <ul class="gym-contact-list">
+                {% if gym.phone %}
+                <li class="gym-contact-row" data-contact-kind="phone">
+                    <a class="gym-contact-link row-center gap-sm text-sm" href="tel:{{ gym.phone }}">
+                        <i class="fas fa-phone" aria-hidden="true"></i>
+                        <span>{{ gym.phone }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if gym.email %}
+                <li class="gym-contact-row" data-contact-kind="email">
+                    <a class="gym-contact-link row-center gap-sm text-sm" href="mailto:{{ gym.email }}">
+                        <i class="fas fa-envelope" aria-hidden="true"></i>
+                        <span>{{ gym.email }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if gym.website %}
+                <li class="gym-contact-row" data-contact-kind="website">
+                    <a class="gym-contact-link row-center gap-sm text-sm" href="{{ gym.website }}" rel="noopener noreferrer">
+                        <i class="fas fa-globe" aria-hidden="true"></i>
+                        <span>{{ gym.website }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if gym.instagram %}
+                <li class="gym-contact-row" data-contact-kind="instagram">
+                    <a class="gym-contact-link row-center gap-sm text-sm" href="{{ gym.instagram }}" rel="noopener noreferrer">
+                        <i class="fab fa-instagram" aria-hidden="true"></i>
+                        <span>{{ gym.instagram_handle }}</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-muted m-0">No contact information yet</p>
             {% endif %}
-            {% if gym.email %}
-            <li class="gym-contact-row">
-                <a class="gym-contact-link row-center gap-sm text-sm" href="mailto:{{ gym.email }}">
-                    <i class="fas fa-envelope" aria-hidden="true"></i>
-                    <span>{{ gym.email }}</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if gym.website %}
-            <li class="gym-contact-row">
-                <a class="gym-contact-link row-center gap-sm text-sm" href="{{ gym.website }}" rel="noopener noreferrer">
-                    <i class="fas fa-globe" aria-hidden="true"></i>
-                    <span>{{ gym.website }}</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if gym.instagram %}
-            <li class="gym-contact-row">
-                <a class="gym-contact-link row-center gap-sm text-sm" href="{{ gym.instagram }}" rel="noopener noreferrer">
-                    <i class="fab fa-instagram" aria-hidden="true"></i>
-                    <span>{{ gym.instagram_handle }}</span>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-        {% else %}
-        <p class="text-sm text-muted m-0">No contact information yet</p>
-        {% endif %}
+        </div>
     </section>
     <section class="panel stack-sm">
-        <h2 class="title-sm m-0">Location</h2>
-        <a class="text-sm" href="{{ maps_search_url }}" rel="noopener noreferrer">{{ gym.address }}</a>
+        <div class="row-between gap-sm">
+            <h2 class="title-sm m-0">Location</h2>
+            <button type="button" class="icon-btn" aria-label="Edit location" data-function="click->openGymLocationEdit">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
+        </div>
+        <a class="text-sm" id="gym-address-display" href="{{ maps_search_url }}" rel="noopener noreferrer" data-street="{{ gym.address_street }}" data-postal-code="{{ gym.address_postal_code }}" data-city="{{ gym.address_city }}" data-country="{{ gym.address_country }}">{{ gym.address }}</a>
         <div class="gym-map-clip">
             <iframe class="gym-map-embed" title="Map preview" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="{{ osm_embed_url }}"></iframe>
         </div>

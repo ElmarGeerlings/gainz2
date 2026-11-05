@@ -1,22 +1,35 @@
-<h2 class="title-md m-0 mb-3">Prices</h2>
+<div class="row-between gap-sm mb-3">
+    <h2 class="title-md m-0">Prices</h2>
+    <button type="button" id="gym-prices-edit-btn" class="icon-btn" data-function="click->enterGymPricesEdit" aria-label="Edit prices">
+        <i class="fas fa-pen" aria-hidden="true"></i>
+    </button>
+</div>
 <div class="table-shell">
     <table class="table table-compact gym-prices-modal-table">
         <thead>
             <tr>
                 <th>Plan</th>
                 <th>Price</th>
+                <th id="gym-prices-delete-head" class="gym-prices-delete-head hidden" hidden></th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="gym-prices-table-body">
             {% for plan in price_plans %}
             <tr>
                 <td>
                     <span class="fw-700">{{ plan.name }}</span>
                     <span class="text-sm text-muted gym-price-plan-meta">{{ plan.period }}{% if plan.note %} · {{ plan.note }}{% endif %}</span>
                 </td>
-                <td class="fw-700">{{ plan.price }}</td>
+                <td class="fw-700 gym-price-cell">{{ plan.price }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+</div>
+<button type="button" id="gym-prices-add-row" class="btn btn-outline w-100 mt-3 hidden" hidden data-function="click->addGymPriceRow" aria-label="Add row">
+    <i class="fas fa-plus" aria-hidden="true"></i>
+</button>
+<div id="gym-prices-edit-actions" class="row-center gap-sm mt-3 hidden" hidden>
+    <button type="button" class="btn btn-outline gym-flex-1" data-function="click->cancelGymPricesEdit">Cancel</button>
+    <button type="button" class="btn btn-primary gym-flex-1" data-function="click->saveGymPricesEdit">Save</button>
 </div>

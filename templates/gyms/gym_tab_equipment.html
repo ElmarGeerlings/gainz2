@@ -1,22 +1,21 @@
 <section id="gym-panel-equipment" class="gym-panel stack-md{% if tab != 'equipment' %} hidden{% endif %}" role="tabpanel" aria-labelledby="gym-tab-equipment"{% if tab != 'equipment' %} hidden{% endif %}>
     <div class="gym-equip-toolbar stack-sm mb-3">
         <div class="gym-equip-search-row">
-            <input type="search" id="gym-equipment-search" class="form-control gym-equip-search-input" placeholder="Search equipment…" autocomplete="off" aria-label="Search equipment">
-            <button type="button" class="btn btn-outline btn-sm gym-equip-add-btn" data-function="click->ShowModal" data-modal-name="gym-add-equipment-modal">Add equipment</button>
-        </div>
-        <div class="gym-equip-filter-row">
-            <select id="gym-equipment-bodypart-filter" class="form-control gym-equip-filter-control" aria-label="Bodypart">
+            <input type="search" id="gym-equipment-search" class="form-control gym-equip-search-input" placeholder="Search equipment…" autocomplete="off" aria-label="Search equipment" data-function="input->filterGymEquipment">
+            <select id="gym-equipment-bodypart-filter" class="form-control gym-equip-bodypart" aria-label="Bodypart" data-function="change->filterGymEquipment">
                 <option value="">Bodyparts</option>
                 {% for group in equipment_filter_groups %}
                 <option value="{{ group.slug }}">{{ group.label }}</option>
                 {% endfor %}
             </select>
-            <select id="gym-equipment-status-filter" class="form-control gym-equip-filter-control" aria-label="Status">
-                <option value="">Status</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="assumed">Assumed</option>
-                <option value="missing">Missing</option>
-            </select>
+            <button type="button" class="icon-btn gym-equip-add-btn" data-function="click->ShowModal" data-modal-name="gym-add-equipment-modal" aria-label="Add equipment">
+                <i class="fas fa-plus" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="gym-status-btns">
+            <button type="button" class="gym-status-btn is-active is-confirmed" data-function="click->toggleGymEquipmentStatusFilter" data-status="confirmed" aria-pressed="true">Confirmed</button>
+            <button type="button" class="gym-status-btn is-active is-stay" data-function="click->toggleGymEquipmentStatusFilter" data-status="assumed" aria-pressed="true">Assumed</button>
+            <button type="button" class="gym-status-btn is-active is-missing" data-function="click->toggleGymEquipmentStatusFilter" data-status="missing" aria-pressed="true">Missing</button>
         </div>
     </div>
     {% for group in equipment_groups %}

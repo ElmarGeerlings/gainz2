@@ -1,0 +1,9 @@
+<form id="gym-edit-amenities-form" class="form-stack">
+    <h2 class="title-md m-0 mb-3">Edit amenities</h2>
+    <div class="gym-amenity-bubbles gym-amenity-edit-bubbles">
+        {% for row in amenities %}
+        <button type="button" class="gym-amenity-bubble gym-amenity-edit-bubble{% if row.selected %} is-selected{% endif %}" data-function="click->toggleGymAmenityEdit" data-amenity-slug="{{ row.slug }}" data-amenity-label="{{ row.label }}" aria-pressed="{% if row.selected %}true{% else %}false{% endif %}">{{ row.label }}</button>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-primary w-100 mt-4" data-function="click->saveGymAmenitiesEdit">Save</button>
+</form>

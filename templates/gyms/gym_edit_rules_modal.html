@@ -1,0 +1,17 @@
+<form id="gym-edit-rules-form" class="form-stack">
+    <h2 class="title-md m-0 mb-3">Edit gym rules</h2>
+    <div class="stack-sm">
+        {% for rule in rules %}
+        <div class="stack-xs gym-rule-edit-row" data-rule-slug="{{ rule.slug }}">
+            <span class="text-sm fw-700">{{ rule.label }}</span>
+            <input type="hidden" class="gym-rule-edit-value" name="rule_{{ rule.slug }}" value="{{ rule.state }}">
+            <div class="gym-status-btns gym-rule-edit-btns">
+                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'yes' %} is-active is-confirmed{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="yes">Yes</button>
+                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'no' %} is-active is-missing{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="no">No</button>
+                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'unknown' %} is-active is-stay{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="unknown">Unknown</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-primary w-100 mt-4" data-function="click->saveGymRulesEdit">Save</button>
+</form>

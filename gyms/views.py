@@ -24,6 +24,10 @@ def gym_detail_page(req_event):
     gym = {
         "name": "Iron District Lisboa",
         "city": "Lisbon",
+        "address_street": "Rua das Flores 42",
+        "address_postal_code": "1200-195",
+        "address_city": "Lisboa",
+        "address_country": "Portugal",
         "address": "Rua das Flores 42, 1200-195 Lisboa, Portugal",
         "description": (
             "Independent strength-focused gym in the heart of Lisbon. "
@@ -43,7 +47,14 @@ def gym_detail_page(req_event):
         "longitude": -9.1456,
         "saved": False,
         "has_photos": True,
+        "vibe": "unknown",
     }
+
+    hour_time_options = []
+    for hour in range(24):
+        for minute in (0, 30):
+            hour_time_options.append(f"{hour:02d}:{minute:02d}")
+    hour_time_options.append(f"00:00")
 
     photos = [
         {"src": "img/gym-samples/sample1.jpg", "label": "Main floor"},
@@ -53,32 +64,43 @@ def gym_detail_page(req_event):
 
     today_name = datetime.date.today().strftime("%A")
     hours = [
-        {"day": "Monday", "hours": "06:00 – 23:00"},
-        {"day": "Tuesday", "hours": "06:00 – 23:00"},
-        {"day": "Wednesday", "hours": "06:00 – 23:00"},
-        {"day": "Thursday", "hours": "06:00 – 23:00"},
-        {"day": "Friday", "hours": "06:00 – 23:00"},
-        {"day": "Saturday", "hours": "08:00 – 20:00"},
-        {"day": "Sunday", "hours": "08:00 – 18:00"},
+        {"day": "Monday", "open": "06:00", "close": "23:00", "closed": False},
+        {"day": "Tuesday", "open": "06:00", "close": "23:00", "closed": False},
+        {"day": "Wednesday", "open": "06:00", "close": "23:00", "closed": False},
+        {"day": "Thursday", "open": "06:00", "close": "23:00", "closed": False},
+        {"day": "Friday", "open": "06:00", "close": "23:00", "closed": False},
+        {"day": "Saturday", "open": "08:00", "close": "20:00", "closed": False},
+        {"day": "Sunday", "open": "08:00", "close": "18:00", "closed": False},
     ]
     for row in hours:
         row["is_today"] = row["day"] == today_name
+        if row["closed"]:
+            row["hours"] = "Closed"
+        else:
+            row["hours"] = f"{row['open']} – {row['close']}"
 
     rules = [
-        {"label": "Deadlifts allowed", "state": "yes"},
-        {"label": "Chalk allowed", "state": "yes"},
-        {"label": "Dropping weights allowed", "state": "unknown"},
-        {"label": "Filming allowed", "state": "no"},
+        {"slug": "deadlifts", "label": "Deadlifts allowed", "state": "yes"},
+        {"slug": "chalk", "label": "Chalk allowed", "state": "yes"},
+        {"slug": "dropping", "label": "Dropping weights allowed", "state": "unknown"},
+        {"slug": "filming", "label": "Filming allowed", "state": "no"},
     ]
 
     amenities = [
-        {"label": "Changing rooms", "state": "yes"},
-        {"label": "Showers", "state": "yes"},
-        {"label": "Sauna", "state": "no"},
-        {"label": "Parking", "state": "unknown"},
-        {"label": "Towel service", "state": "no"},
+        {"slug": "changing-rooms", "label": "Changing rooms", "selected": True},
+        {"slug": "showers", "label": "Showers", "selected": True},
+        {"slug": "sauna", "label": "Sauna", "selected": False},
+        {"slug": "parking", "label": "Parking", "selected": False},
+        {"slug": "towel-service", "label": "Towel service", "selected": False},
+        {"slug": "lockers", "label": "Lockers", "selected": True},
+        {"slug": "wifi", "label": "Wi‑Fi", "selected": False},
+        {"slug": "classes", "label": "Group classes", "selected": False},
     ]
-    amenities_present = [row["label"] for row in amenities if row["state"] == "yes"]
+    amenities = sorted(amenities, key=lambda row: row["label"].lower())
+    amenities_present = sorted(
+        [row["label"] for row in amenities if row["selected"]],
+        key=str.lower,
+    )
 
     powerlifting_checklist = [
         {"label": "Power rack or squat rack", "checked": True},
@@ -244,6 +266,9 @@ def gym_detail_page(req_event):
 
     equipment_filter_groups = [{"slug": group["filter_slug"], "label": group["title"]} for group in equipment_groups]
 
+    vibe_labels = {"unknown": "Unknown", "serious": "Serious", "casual": "Casual"}
+    gym["vibe_label"] = vibe_labels.get(gym["vibe"], "Unknown")
+
     response = {
         "title": gym["name"],
         "tab": tab,
@@ -262,5 +287,6 @@ def gym_detail_page(req_event):
         "equipment_filter_groups": equipment_filter_groups,
         "maps_search_url": maps_search_url,
         "osm_embed_url": osm_embed_url,
+        "hour_time_options": hour_time_options,
     }
     return render(req_event, "gyms/gym_detail.html", response)

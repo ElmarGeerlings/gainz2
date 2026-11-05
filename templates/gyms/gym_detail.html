@@ -73,10 +73,52 @@
         {% include "gyms/gym_score_modal.html" %}
     </div>
 </div>
-<div id="gym-prices-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
-    <div class="gainz-modal-content">
+<div id="gym-prices-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-reset-function="resetGymPricesModal">
+    <div class="gainz-modal-content gym-modal-scroll">
         <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
         {% include "gyms/gym_prices_modal.html" %}
+    </div>
+</div>
+<div id="gym-edit-description-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_edit_description_modal.html" %}
+    </div>
+</div>
+<div id="gym-edit-vibe-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_edit_vibe_modal.html" %}
+    </div>
+</div>
+<div id="gym-edit-rules-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content gym-modal-scroll">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_edit_rules_modal.html" %}
+    </div>
+</div>
+<div id="gym-edit-amenities-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_edit_amenities_modal.html" %}
+    </div>
+</div>
+<div id="gym-edit-hours-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content gym-modal-scroll">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_edit_hours_modal.html" %}
+    </div>
+</div>
+<div id="gym-edit-contact-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_edit_contact_modal.html" %}
+    </div>
+</div>
+<div id="gym-edit-location-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        {% include "gyms/gym_edit_location_modal.html" %}
     </div>
 </div>
 <div id="gym-equipment-item-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-modal-persist>

@@ -1,6 +1,21 @@
 <section id="gym-panel-overview" class="gym-panel stack-md{% if tab != 'overview' %} hidden{% endif %}" role="tabpanel" aria-labelledby="gym-tab-overview"{% if tab != 'overview' %} hidden{% endif %}>
     <section class="panel stack-sm">
-        <p class="text-sm m-0">{{ gym.description }}</p>
+        <div class="row-between gap-sm">
+            <h2 class="title-sm m-0">Description</h2>
+            <button type="button" class="icon-btn" aria-label="Edit description" data-function="click->openGymDescriptionEdit">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
+        </div>
+        <p class="text-sm m-0" id="gym-description-display">{{ gym.description }}</p>
+    </section>
+    <section class="panel stack-sm">
+        <div class="row-between gap-sm">
+            <h2 class="title-sm m-0">Vibe</h2>
+            <button type="button" class="icon-btn" aria-label="Edit vibe" data-function="click->openGymVibeEdit">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
+        </div>
+        <p class="text-sm m-0" id="gym-vibe-display" data-vibe="{{ gym.vibe }}">{{ gym.vibe_label }}</p>
     </section>
     <button type="button" class="panel w-100 gym-tap-card" data-function="click->jumpToGymHours">
         <div class="row-between gap-sm">
@@ -9,8 +24,9 @@
             {% else %}
             <span class="text-sm fw-700 gym-closed-text">Closed</span>
             {% endif %}
-            <span class="text-sm fw-700 m-0">{{ gym.today_hours }}</span>
+            <span class="text-sm fw-700 m-0" id="gym-open-now-hours">{{ gym.today_hours }}</span>
         </div>
+        <p class="text-sm text-muted m-0 mt-2">Holiday hours may vary.</p>
     </button>
     <button type="button" class="panel stack-sm w-100 gym-tap-card" data-function="click->ShowModal" data-modal-name="gym-score-modal">
         <h2 class="title-sm m-0">Discipline scores</h2>
@@ -21,15 +37,15 @@
         </div>
         {% endfor %}
     </button>
-    <button type="button" class="panel stack-sm w-100 gym-tap-card" data-function="click->ShowModal" data-modal-name="gym-prices-modal">
+    <button type="button" class="panel stack-sm w-100 gym-tap-card" data-function="click->openGymPricesRead">
         <h2 class="title-sm m-0">Prices</h2>
         <div class="row-between gap-sm text-sm">
             <span>Day pass</span>
-            <span class="fw-700">{{ price_headline_day }}</span>
+            <span class="fw-700" id="gym-price-headline-day">{{ price_headline_day }}</span>
         </div>
         <div class="row-between gap-sm text-sm">
             <span>Subscription</span>
-            <span class="fw-700">{{ price_headline_subscription }}</span>
+            <span class="fw-700" id="gym-price-headline-subscription">{{ price_headline_subscription }}</span>
         </div>
     </button>
 </section>

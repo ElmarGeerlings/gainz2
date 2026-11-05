@@ -1,0 +1,12 @@
+<form id="gym-edit-contact-form" class="form-stack">
+    <h2 class="title-md m-0 mb-3">Edit contact</h2>
+    <label for="gym-edit-phone">Phone</label>
+    <input type="text" id="gym-edit-phone" name="phone" class="form-control" value="{{ gym.phone }}" autocomplete="off">
+    <label for="gym-edit-email">Email</label>
+    <input type="email" id="gym-edit-email" name="email" class="form-control" value="{{ gym.email }}" autocomplete="off">
+    <label for="gym-edit-website">Website</label>
+    <input type="url" id="gym-edit-website" name="website" class="form-control" value="{{ gym.website }}" autocomplete="off">
+    <label for="gym-edit-instagram">Instagram handle</label>
+    <input type="text" id="gym-edit-instagram" name="instagram_handle" class="form-control" value="{{ gym.instagram_handle }}" autocomplete="off">
+    <button type="button" class="btn btn-primary w-100 mt-2" data-function="click->saveGymContactEdit">Save</button>
+</form>
