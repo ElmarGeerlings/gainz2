@@ -2,20 +2,20 @@
     <div class="gym-equip-toolbar stack-sm mb-3">
         <div class="gym-equip-search-row">
             <input type="search" id="gym-equipment-search" class="form-control gym-equip-search-input" placeholder="Search equipment…" autocomplete="off" aria-label="Search equipment" data-function="input->filterGymEquipment">
-            <select id="gym-equipment-bodypart-filter" class="form-control gym-equip-bodypart" aria-label="Bodypart" data-function="change->filterGymEquipment">
+            <select id="gym-equipment-bodypart-filter" class="form-control text-xs gym-equip-bodypart" aria-label="Bodypart" data-function="change->filterGymEquipment">
                 <option value="">Bodyparts</option>
                 {% for group in equipment_filter_groups %}
                 <option value="{{ group.slug }}">{{ group.label }}</option>
                 {% endfor %}
             </select>
-            <button type="button" class="icon-btn gym-equip-add-btn" data-function="click->ShowModal" data-modal-name="gym-add-equipment-modal" aria-label="Add equipment">
+            <button type="button" class="icon-btn icon-btn-primary" data-function="click->ShowModal" data-modal-name="gym-add-equipment-modal" aria-label="Add equipment">
                 <i class="fas fa-plus" aria-hidden="true"></i>
             </button>
         </div>
         <div class="gym-status-btns">
-            <button type="button" class="gym-status-btn is-active is-confirmed" data-function="click->toggleGymEquipmentStatusFilter" data-status="confirmed" aria-pressed="true">Confirmed</button>
-            <button type="button" class="gym-status-btn is-active is-stay" data-function="click->toggleGymEquipmentStatusFilter" data-status="assumed" aria-pressed="true">Assumed</button>
-            <button type="button" class="gym-status-btn is-active is-missing" data-function="click->toggleGymEquipmentStatusFilter" data-status="missing" aria-pressed="true">Missing</button>
+            <button type="button" class="gym-status-btn gym-tone-yes is-active" data-function="click->toggleGymEquipmentStatusFilter" data-status="confirmed" aria-pressed="true">Confirmed</button>
+            <button type="button" class="gym-status-btn gym-tone-unknown is-active" data-function="click->toggleGymEquipmentStatusFilter" data-status="assumed" aria-pressed="true">Assumed</button>
+            <button type="button" class="gym-status-btn gym-tone-no is-active" data-function="click->toggleGymEquipmentStatusFilter" data-status="missing" aria-pressed="true">Missing</button>
         </div>
     </div>
     {% for group in equipment_groups %}
@@ -23,9 +23,9 @@
         <h2 class="title-sm m-0">{{ group.title }}</h2>
         <div class="stack-sm">
             {% for item in group.items %}
-            <button type="button" class="panel row-between gap-sm w-100 gym-equip-row" data-equipment-row data-equipment-slug="{{ item.slug }}" data-equipment-name="{{ item.name }}" data-equipment-status="{{ item.status }}" data-equipment-quantity="{{ item.quantity }}" data-function="click->openGymEquipmentItemModal">
+            <button type="button" class="panel row-between gap-sm w-100" data-equipment-row data-equipment-slug="{{ item.slug }}" data-equipment-name="{{ item.name }}" data-equipment-status="{{ item.status }}" data-equipment-quantity="{{ item.quantity }}" data-function="click->openGymEquipmentItemModal">
                 <span class="text-sm fw-700 gym-equip-name">{{ item.name }}</span>
-                <span class="gym-equip-status gym-equip-status--{{ item.status }}" data-equipment-status-label>
+                <span class="gym-equip-status {% if item.status == 'confirmed' %}gym-tone-yes{% elif item.status == 'missing' %}gym-tone-no{% else %}gym-tone-unknown{% endif %}" data-equipment-status-label>
                     <span class="gym-equip-status-word">{{ item.status_word }}</span>
                     <span class="gym-equip-status-qty">{% if item.status_qty %}{{ item.status_qty }}{% endif %}</span>
                 </span>

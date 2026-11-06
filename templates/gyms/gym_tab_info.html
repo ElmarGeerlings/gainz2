@@ -6,16 +6,16 @@
                 <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
         </div>
-        <ul class="gym-fact-list" id="gym-rules-display">
+        <ul class="list-plain" id="gym-rules-display">
             {% for rule in rules %}
             <li class="gym-fact-row row-between gap-sm" data-rule-slug="{{ rule.slug }}" data-rule-state="{{ rule.state }}">
                 <span class="text-sm">{{ rule.label }}</span>
                 {% if rule.state == 'yes' %}
-                <span class="gym-fact-badge gym-fact-badge--yes">Yes</span>
+                <span class="pill gym-tone-yes">Yes</span>
                 {% elif rule.state == 'no' %}
-                <span class="gym-fact-badge gym-fact-badge--no">No</span>
+                <span class="pill gym-tone-no">No</span>
                 {% else %}
-                <span class="gym-fact-badge gym-fact-badge--unknown">Unknown</span>
+                <span class="pill gym-tone-unknown">Unknown</span>
                 {% endif %}
             </li>
             {% endfor %}
@@ -30,7 +30,7 @@
         </div>
         <div id="gym-amenities-display">
             {% if amenities_present %}
-            <div class="gym-amenity-bubbles">
+            <div class="gym-amenity-bubbles row-center flex-wrap gap-sm">
                 {% for label in amenities_present %}
                 <span class="gym-amenity-bubble">{{ label }}</span>
                 {% endfor %}
@@ -47,7 +47,7 @@
                 <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
         </div>
-        <ul class="gym-fact-list" id="gym-hours-display">
+        <ul class="list-plain" id="gym-hours-display">
             {% for row in hours %}
             <li class="gym-fact-row row-between gap-sm text-sm{% if row.is_today %} gym-hours-row--today{% endif %}" data-day="{{ row.day }}" data-open="{{ row.open }}" data-close="{{ row.close }}" data-closed="{% if row.closed %}true{% else %}false{% endif %}" data-is-today="{% if row.is_today %}true{% else %}false{% endif %}">
                 <span>{{ row.day }}</span>
@@ -65,7 +65,7 @@
         </div>
         <div id="gym-contact-display">
             {% if gym.phone or gym.email or gym.website or gym.instagram %}
-            <ul class="gym-contact-list">
+            <ul class="list-plain">
                 {% if gym.phone %}
                 <li class="gym-contact-row" data-contact-kind="phone">
                     <a class="gym-contact-link row-center gap-sm text-sm" href="tel:{{ gym.phone }}">

@@ -179,10 +179,20 @@ function equipmentStatusParts(status, quantity) {
     return { word: "Assumed", qty: "" };
 }
 
+function equipmentToneClass(status) {
+    if (status === "confirmed") {
+        return "gym-tone-yes";
+    }
+    if (status === "missing") {
+        return "gym-tone-no";
+    }
+    return "gym-tone-unknown";
+}
+
 function updateEquipmentStatusPill(labelEl, status, quantity) {
     const parts = equipmentStatusParts(status, quantity);
-    labelEl.classList.remove("gym-equip-status--confirmed", "gym-equip-status--assumed", "gym-equip-status--missing");
-    labelEl.classList.add(`gym-equip-status--${status}`);
+    labelEl.classList.remove("gym-tone-yes", "gym-tone-unknown", "gym-tone-no");
+    labelEl.classList.add(equipmentToneClass(status));
     const wordEl = labelEl.querySelector(".gym-equip-status-word");
     const qtyEl = labelEl.querySelector(".gym-equip-status-qty");
     if (wordEl) {
@@ -212,18 +222,10 @@ function syncGymEquipmentQuantityField() {
 function setGymEquipmentModalStatusButtons() {
     document.querySelectorAll("#gym-equipment-item-modal .gym-status-btn").forEach((btn) => {
         const status = btn.getAttribute("data-status");
-        btn.classList.remove("is-active", "is-confirmed", "is-assumed", "is-missing", "is-stay");
+        btn.classList.remove("is-active", "gym-tone-yes", "gym-tone-unknown", "gym-tone-no");
         if (status === gymEquipmentModalStatus) {
             btn.classList.add("is-active");
-            if (status === "confirmed") {
-                btn.classList.add("is-confirmed");
-            }
-            if (status === "missing") {
-                btn.classList.add("is-missing");
-            }
-            if (status === "assumed") {
-                btn.classList.add("is-stay");
-            }
+            btn.classList.add(equipmentToneClass(status));
         }
     });
     syncGymEquipmentQuantityField();
@@ -353,12 +355,12 @@ function commitFormDefaults(form) {
 
 function ruleBadgeHtml(state) {
     if (state === "yes") {
-        return '<span class="gym-fact-badge gym-fact-badge--yes">Yes</span>';
+        return '<span class="pill gym-tone-yes">Yes</span>';
     }
     if (state === "no") {
-        return '<span class="gym-fact-badge gym-fact-badge--no">No</span>';
+        return '<span class="pill gym-tone-no">No</span>';
     }
-    return '<span class="gym-fact-badge gym-fact-badge--unknown">Unknown</span>';
+    return '<span class="pill gym-tone-unknown">Unknown</span>';
 }
 
 function stripGymPriceNumber(raw) {
@@ -458,7 +460,7 @@ function renderGymPricesTable(plans) {
         tr.setAttribute("data-billing-count", plan.billingCount);
         tr.setAttribute("data-billing-unit", plan.billingUnit);
         tr.setAttribute("data-note", note);
-        const noteHtml = note ? `<span class="text-xs text-muted gym-price-plan-meta">${note}</span>` : "";
+        const noteHtml = note ? `<div class="text-xs text-muted mt-1">${note}</div>` : "";
         tr.innerHTML = `
             <td>
                 <span class="fw-700">${plan.name}</span>
@@ -589,7 +591,7 @@ function appendGymPriceEditRow(plan) {
     });
     unit.value = plan.billingUnit || "month";
     const billing = document.createElement("div");
-    billing.className = "gym-price-edit-billing";
+    billing.className = "gym-price-edit-billing row-center gap-sm";
     billing.appendChild(currency);
     billing.appendChild(price);
     billing.appendChild(perLabel);
@@ -792,17 +794,17 @@ function syncGymRuleEditRow(slug, state) {
         hidden.value = state;
     }
     row.querySelectorAll(".gym-rule-state-btn").forEach((btn) => {
-        btn.classList.remove("is-active", "is-confirmed", "is-missing", "is-assumed", "is-unknown", "is-stay");
+        btn.classList.remove("is-active", "gym-tone-yes", "gym-tone-unknown", "gym-tone-no");
         if (btn.getAttribute("data-state") === state) {
             btn.classList.add("is-active");
             if (state === "yes") {
-                btn.classList.add("is-confirmed");
+                btn.classList.add("gym-tone-yes");
             }
             if (state === "no") {
-                btn.classList.add("is-missing");
+                btn.classList.add("gym-tone-no");
             }
             if (state === "unknown") {
-                btn.classList.add("is-stay");
+                btn.classList.add("gym-tone-unknown");
             }
         }
     });
@@ -876,7 +878,7 @@ function saveGymAmenitiesEdit() {
     if (labels.length === 0) {
         container.innerHTML = '<p class="text-sm text-muted m-0">No amenity information yet</p>';
     } else {
-        container.innerHTML = '<div class="gym-amenity-bubbles"></div>';
+        container.innerHTML = '<div class="gym-amenity-bubbles row-center flex-wrap gap-sm"></div>';
         const wrap = container.querySelector(".gym-amenity-bubbles");
         labels.forEach((label) => {
             const span = document.createElement("span");
@@ -1008,8 +1010,8 @@ function saveGymContactEdit() {
     if (items.length === 0) {
         container.innerHTML = '<p class="text-sm text-muted m-0">No contact information yet</p>';
     } else {
-        container.innerHTML = '<ul class="gym-contact-list"></ul>';
-        const list = container.querySelector(".gym-contact-list");
+        container.innerHTML = '<ul class="list-plain"></ul>';
+        const list = container.querySelector(".list-plain");
         items.forEach((item) => {
             const li = document.createElement("li");
             li.className = "gym-contact-row";

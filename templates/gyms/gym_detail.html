@@ -36,7 +36,7 @@
                     <h1 class="title-lg m-0">{{ gym.name }}</h1>
                     <p class="text-sm m-0">{{ gym.city }}</p>
                 </div>
-                <button type="button" class="gym-save-btn icon-btn" aria-label="Save gym" aria-pressed="{% if gym.saved %}true{% else %}false{% endif %}">
+                <button type="button" class="gym-save-btn icon-btn text-danger" aria-label="Save gym" aria-pressed="{% if gym.saved %}true{% else %}false{% endif %}">
                     <i class="{% if gym.saved %}fas fa-heart{% else %}far fa-heart{% endif %}" aria-hidden="true"></i>
                 </button>
             </div>
@@ -44,9 +44,9 @@
     </header>
     <div class="gym-tabs-sticky">
         <div class="gym-tabs" role="tablist" aria-label="Gym sections">
-            <button type="button" id="gym-tab-overview" class="gym-tab{% if tab == 'overview' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'overview' %}true{% else %}false{% endif %}" aria-controls="gym-panel-overview" data-function="click->switchGymTab" data-tab="overview">Overview</button>
-            <button type="button" id="gym-tab-info" class="gym-tab{% if tab == 'info' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'info' %}true{% else %}false{% endif %}" aria-controls="gym-panel-info" data-function="click->switchGymTab" data-tab="info">Info</button>
-            <button type="button" id="gym-tab-equipment" class="gym-tab{% if tab == 'equipment' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'equipment' %}true{% else %}false{% endif %}" aria-controls="gym-panel-equipment" data-function="click->switchGymTab" data-tab="equipment">Equipment</button>
+            <button type="button" id="gym-tab-overview" class="gym-tab text-sm fw-700{% if tab == 'overview' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'overview' %}true{% else %}false{% endif %}" aria-controls="gym-panel-overview" data-function="click->switchGymTab" data-tab="overview">Overview</button>
+            <button type="button" id="gym-tab-info" class="gym-tab text-sm fw-700{% if tab == 'info' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'info' %}true{% else %}false{% endif %}" aria-controls="gym-panel-info" data-function="click->switchGymTab" data-tab="info">Info</button>
+            <button type="button" id="gym-tab-equipment" class="gym-tab text-sm fw-700{% if tab == 'equipment' %} is-active{% endif %}" role="tab" aria-selected="{% if tab == 'equipment' %}true{% else %}false{% endif %}" aria-controls="gym-panel-equipment" data-function="click->switchGymTab" data-tab="equipment">Equipment</button>
         </div>
     </div>
     <div class="gym-panels stack-md">
@@ -59,11 +59,11 @@
         <span id="gym-footer-equipment"{% if tab != 'equipment' %} hidden{% endif %}>Last updated {{ gym.equipment_updated_at }}</span>
     </footer>
 </main>
-<div id="gym-photo-viewer" class="gym-photo-viewer hidden" hidden data-function="click->closeGymPhotoViewer">
+<div id="gym-photo-viewer" class="gym-photo-viewer row-center justify-center p-4 hidden" hidden data-function="click->closeGymPhotoViewer">
     <button type="button" class="gym-photo-viewer-close icon-btn" data-function="click->closeGymPhotoViewer" aria-label="Close photo">
         <i class="fas fa-xmark" aria-hidden="true"></i>
     </button>
-    <div class="gym-photo-viewer-body" id="gym-photo-viewer-body">
+    <div class="gym-photo-viewer-body row-center justify-center w-100" id="gym-photo-viewer-body">
         <img id="gym-photo-viewer-img" class="gym-photo-viewer-img" alt="">
     </div>
 </div>

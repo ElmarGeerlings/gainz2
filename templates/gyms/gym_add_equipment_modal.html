@@ -6,10 +6,10 @@
     <option value="{{ group.slug }}">{{ group.label }}</option>
     {% endfor %}
 </select>
-<ul class="gym-catalog-list m-0 p-0">
+<ul class="list-plain">
     {% for name in equipment_catalog_not_on_page %}
     <li class="gym-catalog-item">
-        <button type="button" class="gym-catalog-btn text-sm">{{ name }}</button>
+        <button type="button" class="gym-catalog-btn w-100 text-sm">{{ name }}</button>
     </li>
     {% empty %}
     <li class="text-sm text-muted">Everything in the catalog is already on this page.</li>

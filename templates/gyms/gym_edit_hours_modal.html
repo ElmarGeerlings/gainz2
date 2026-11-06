@@ -5,12 +5,12 @@
         <div class="gym-hours-edit-row stack-xs" data-day="{{ row.day }}">
             <span class="text-sm fw-700">{{ row.day }}</span>
             <div class="row-between gap-sm flex-wrap">
-                <select class="form-control gym-hours-edit-open" aria-label="{{ row.day }} opening">
+                <select class="form-control flex-1 gym-hours-edit-open" aria-label="{{ row.day }} opening">
                     {% for time in hour_time_options %}
                     <option value="{{ time }}"{% if time == row.open %} selected{% endif %}>{{ time }}</option>
                     {% endfor %}
                 </select>
-                <select class="form-control gym-hours-edit-close" aria-label="{{ row.day }} closing">
+                <select class="form-control flex-1 gym-hours-edit-close" aria-label="{{ row.day }} closing">
                     {% for time in hour_time_options %}
                     <option value="{{ time }}"{% if time == row.close %} selected{% endif %}>{{ time }}</option>
                     {% endfor %}

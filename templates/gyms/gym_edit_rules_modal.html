@@ -6,9 +6,9 @@
             <span class="text-sm fw-700">{{ rule.label }}</span>
             <input type="hidden" class="gym-rule-edit-value" name="rule_{{ rule.slug }}" value="{{ rule.state }}">
             <div class="gym-status-btns gym-rule-edit-btns">
-                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'yes' %} is-active is-confirmed{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="yes">Yes</button>
-                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'no' %} is-active is-missing{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="no">No</button>
-                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'unknown' %} is-active is-stay{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="unknown">Unknown</button>
+                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'yes' %} is-active gym-tone-yes{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="yes">Yes</button>
+                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'no' %} is-active gym-tone-no{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="no">No</button>
+                <button type="button" class="gym-status-btn gym-rule-state-btn{% if rule.state == 'unknown' %} is-active gym-tone-unknown{% endif %}" data-function="click->pickGymRuleEdit" data-rule-slug="{{ rule.slug }}" data-state="unknown">Unknown</button>
             </div>
         </div>
         {% endfor %}

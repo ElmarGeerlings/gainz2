@@ -17,18 +17,18 @@
         </div>
         <p class="text-sm m-0" id="gym-vibe-display" data-vibe="{{ gym.vibe }}">{{ gym.vibe_label }}</p>
     </section>
-    <button type="button" class="panel w-100 gym-tap-card" data-function="click->jumpToGymHours">
+    <button type="button" class="panel w-100" data-function="click->jumpToGymHours">
         <div class="row-between gap-sm">
             {% if gym.is_open_now %}
-            <span class="text-sm fw-700 gym-open-text">Open now</span>
+            <span class="text-sm fw-700 text-success">Open now</span>
             {% else %}
-            <span class="text-sm fw-700 gym-closed-text">Closed</span>
+            <span class="text-sm fw-700 text-danger">Closed</span>
             {% endif %}
             <span class="text-sm fw-700 m-0" id="gym-open-now-hours">{{ gym.today_hours }}</span>
         </div>
         <p class="text-sm text-muted m-0 mt-2">Holiday hours may vary.</p>
     </button>
-    <button type="button" class="panel stack-sm w-100 gym-tap-card" data-function="click->ShowModal" data-modal-name="gym-score-modal">
+    <button type="button" class="panel stack-sm w-100" data-function="click->ShowModal" data-modal-name="gym-score-modal">
         <h2 class="title-sm m-0">Discipline scores</h2>
         {% for score in discipline_scores %}
         <div class="row-between gap-sm text-sm">
@@ -37,7 +37,7 @@
         </div>
         {% endfor %}
     </button>
-    <button type="button" class="panel stack-sm w-100 gym-tap-card" data-function="click->openGymPricesRead">
+    <button type="button" class="panel stack-sm w-100" data-function="click->openGymPricesRead">
         <h2 class="title-sm m-0">Prices</h2>
         <div class="row-between gap-sm text-sm">
             <span>Day pass</span>

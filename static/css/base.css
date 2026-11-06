@@ -109,6 +109,11 @@ a:hover {
     flex-wrap: wrap;
 }
 
+.flex-1 {
+    flex: 1;
+    min-width: 0;
+}
+
 .stack-xs > * + * {
     margin-top: var(--space-1);
 }
@@ -137,6 +142,14 @@ a:hover {
 
 .text-muted {
     color: var(--muted);
+}
+
+.text-success {
+    color: var(--success);
+}
+
+.text-danger {
+    color: var(--danger);
 }
 
 .title-lg {
@@ -349,6 +362,28 @@ button:focus {
 .icon-btn-danger {
     border-color: var(--danger-border);
     color: var(--danger);
+}
+
+.icon-btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.pill {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: var(--space-1) var(--space-2);
+    border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border-subtle);
+}
+
+.list-plain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 .link-btn {
