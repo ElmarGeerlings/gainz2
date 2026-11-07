@@ -6,9 +6,9 @@
             <h3 class="title-sm m-0">{{ score.name }}</h3>
             <span class="text-sm fw-700">{{ score.confirmed }}/{{ score.total }}</span>
         </div>
-        <ul class="gym-checklist list-plain stack-sm mt-4">
+        <ul class="list-plain stack-sm mt-4">
             {% for item in score.checklist %}
-            <li class="gym-checklist-item row-center gap-sm text-sm">
+            <li class="row-center gap-sm text-sm">
                 {% if item.checked %}
                 <i class="fas fa-check-circle text-success" aria-hidden="true"></i>
                 <span>{{ item.label }}</span>

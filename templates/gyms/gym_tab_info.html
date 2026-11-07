@@ -47,7 +47,10 @@
                 <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
         </div>
-        <ul class="list-plain" id="gym-hours-display">
+        {% if not has_hours %}
+        <p class="text-sm text-muted m-0">No opening hours</p>
+        {% endif %}
+        <ul class="list-plain" id="gym-hours-display"{% if not has_hours %} hidden{% endif %}>
             {% for row in hours %}
             <li class="gym-fact-row row-between gap-sm text-sm{% if row.is_today %} gym-hours-row--today{% endif %}" data-day="{{ row.day }}" data-open="{{ row.open }}" data-close="{{ row.close }}" data-closed="{% if row.closed %}true{% else %}false{% endif %}" data-is-today="{% if row.is_today %}true{% else %}false{% endif %}">
                 <span>{{ row.day }}</span>
@@ -92,9 +95,9 @@
                 {% endif %}
                 {% if gym.instagram %}
                 <li class="gym-contact-row" data-contact-kind="instagram">
-                    <a class="gym-contact-link row-center gap-sm text-sm" href="{{ gym.instagram }}" rel="noopener noreferrer">
+                    <a class="gym-contact-link row-center gap-sm text-sm" href="https://instagram.com/{{ gym.instagram }}" rel="noopener noreferrer">
                         <i class="fab fa-instagram" aria-hidden="true"></i>
-                        <span>{{ gym.instagram_handle }}</span>
+                        <span>{{ gym.instagram }}</span>
                     </a>
                 </li>
                 {% endif %}
@@ -111,9 +114,15 @@
                 <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
         </div>
-        <a class="text-sm" id="gym-address-display" href="{{ maps_search_url }}" rel="noopener noreferrer" data-street="{{ gym.address_street }}" data-postal-code="{{ gym.address_postal_code }}" data-city="{{ gym.address_city }}" data-country="{{ gym.address_country }}">{{ gym.address }}</a>
+        {% if address %}
+        <a class="text-sm" id="gym-address-display" href="{{ maps_search_url }}" rel="noopener noreferrer" data-street="{{ gym.address_street }}" data-postal-code="{{ gym.address_postal_code }}" data-city="{{ gym.address_city }}" data-country="{{ gym.address_country }}">{{ address }}</a>
+        {% else %}
+        <p class="text-sm text-muted m-0" id="gym-address-display">No address yet</p>
+        {% endif %}
+        {% if has_map %}
         <div class="gym-map-clip">
             <iframe class="gym-map-embed" title="Map preview" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="{{ osm_embed_url }}"></iframe>
         </div>
+        {% endif %}
     </section>
 </section>

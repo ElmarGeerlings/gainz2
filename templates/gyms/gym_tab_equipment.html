@@ -18,6 +18,9 @@
             <button type="button" class="gym-status-btn gym-tone-no is-active" data-function="click->toggleGymEquipmentStatusFilter" data-status="missing" aria-pressed="true">Missing</button>
         </div>
     </div>
+    {% if not equipment_groups %}
+    <p class="text-sm text-muted m-0">No equipment information yet</p>
+    {% endif %}
     {% for group in equipment_groups %}
     <div class="stack-sm" data-equipment-group="{{ group.filter_slug }}">
         <h2 class="title-sm m-0">{{ group.title }}</h2>

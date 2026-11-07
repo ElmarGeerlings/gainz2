@@ -16,11 +16,6 @@
     min-height: 220px;
 }
 
-.gym-hero {
-    position: relative;
-    margin-bottom: var(--space-3);
-}
-
 .gym-hero-carousel {
     overflow: hidden;
     touch-action: pan-y;

@@ -506,13 +506,32 @@ function computeGymPriceHeadlines(plans) {
 }
 
 function updateGymPriceHeadlineCards(plans) {
-    const headlines = computeGymPriceHeadlines(plans);
+    const emptyEl = document.getElementById("gym-price-headline-empty");
+    const dayRow = document.getElementById("gym-price-headline-day-row");
+    const subRow = document.getElementById("gym-price-headline-subscription-row");
     const dayEl = document.getElementById("gym-price-headline-day");
     const subEl = document.getElementById("gym-price-headline-subscription");
-    if (dayEl) {
+    if (!emptyEl || !dayRow || !subRow || !dayEl || !subEl) {
+        return;
+    }
+    if (plans.length === 0) {
+        emptyEl.hidden = false;
+        dayRow.hidden = true;
+        subRow.hidden = true;
+        return;
+    }
+    emptyEl.hidden = true;
+    dayRow.hidden = false;
+    const headlines = computeGymPriceHeadlines(plans);
+    if (headlines.dayPass === "—") {
+        dayEl.textContent = "No day pass";
+    } else {
         dayEl.textContent = headlines.dayPass;
     }
-    if (subEl) {
+    if (headlines.subscription === "—") {
+        subRow.hidden = true;
+    } else {
+        subRow.hidden = false;
         subEl.textContent = headlines.subscription;
     }
 }
@@ -737,8 +756,13 @@ function saveGymDescriptionEdit() {
     const form = document.getElementById("gym-edit-description-form");
     const input = document.getElementById("gym-edit-description");
     const display = document.getElementById("gym-description-display");
+    const emptyNote = document.getElementById("gym-description-empty");
     if (input && display) {
-        display.textContent = input.value.trim();
+        const text = input.value.trim();
+        display.textContent = text;
+        if (emptyNote) {
+            emptyNote.hidden = text !== "";
+        }
     }
     commitFormDefaults(form);
     hideGymModalById("gym-edit-description-modal");
