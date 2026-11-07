@@ -132,7 +132,7 @@ On response:
 
 1. **302** → redirect  
 2. **`data-refresh`** → reload  
-3. **Morph** — `json_content.target` + `html`, then each `{target, html}` in `json_content.morphs` → `innerHTML` (no full page reload; preserves carousel). The handler names every selector.  
+3. **Morph** — `json_content.target` + `html`, or each `{target, html}` in `json_content.morphs` → `innerHTML` (no full page reload; preserves carousel). The handler names every selector.  
 4. **200** + **`data-close-modal`** → hide modal  
 5. **200** + **`json_content.toast_html`** → `appendToast(html, toast_delay_ms)`  
 
@@ -184,7 +184,7 @@ Every handled message should include **`request_id`** (echoed from client) and *
 | Field | Use |
 |-------|-----|
 | `json_content.target` + `html` | **Morph** one element via `innerHTML` (row = three `<td>`s; warmup reorder = whole `[data-exercise-sets-for]` block). |
-| `json_content.morphs` | List of `{target, html}` morphs, applied after the single target. |
+| `json_content.morphs` | List of `{target, html}` morphs instead of a single target. |
 | `json_content.toast_html` | **Success** (etc.) server-rendered toast; append only on **200**. |
 | `json_content.toast_delay_ms` | Auto-dismiss delay (ms); separate from toast DOM. |
 | `json_content.error` | **Configured** errors (e.g. 404 unknown endpoint). Client should show on non-200 when implemented. |

@@ -1,0 +1,4 @@
+<p class="text-sm m-0" id="gym-description-display">{{ gym.description }}</p>
+{% if not gym.description %}
+<p class="text-sm text-muted m-0" id="gym-description-empty">No description yet</p>
+{% endif %}

@@ -2,14 +2,15 @@
     <section class="panel stack-sm">
         <div class="row-between gap-sm">
             <h2 class="title-sm m-0">Description</h2>
-            <button type="button" class="icon-btn" aria-label="Edit description" data-function="click->openGymDescriptionEdit">
+            {% if user.is_authenticated %}
+            <button type="button" class="icon-btn" aria-label="Edit description" data-function="click->ShowModal" data-modal-name="gym-edit-description-modal">
                 <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
+            {% endif %}
         </div>
-        <p class="text-sm m-0" id="gym-description-display">{{ gym.description }}</p>
-        {% if not gym.description %}
-        <p class="text-sm text-muted m-0" id="gym-description-empty">No description yet</p>
-        {% endif %}
+        <div id="gym-description-block">
+            {% include "gyms/gym_description_block.html" %}
+        </div>
     </section>
     <section class="panel stack-sm">
         <div class="row-between gap-sm">

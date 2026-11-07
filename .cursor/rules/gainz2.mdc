@@ -49,7 +49,7 @@ Prefer `data-endpoint`. Use `data-function` + `data-routing` when the client nee
 
 `data-endpoint` and `data-function` are bound once per element. Moving that element in the DOM does not add another listener. Setting a new value on an element that is already bound does nothing. Replace the HTML (`innerHTML` morph) when the handler should change. That creates a new element, which is bound from the new attribute.
 
-`ws_request` on response: 302 → redirect; `data-refresh` → reload; morph `json_content.target` + `html`, then each `{target, html}` in `json_content.morphs`; 200 + `data-close-modal` → hide; 200 + `toast_html` → `appendToast`.
+`ws_request` on response: 302 → redirect; `data-refresh` → reload; morph `json_content.target` + `html`, or each `{target, html}` in `json_content.morphs`; 200 + `data-close-modal` → hide; 200 + `toast_html` → `appendToast`.
 
 ## WebSocket
 
@@ -58,7 +58,7 @@ Client: `{ request_id, endpoint, attributes }`. `sendWsRequest` merges `closest(
 Server: echo `request_id`, set `status` (app-level). Payload in `json_content`:
 
 - `target` + `html` — morph one element via `innerHTML`
-- `morphs` — list of `{target, html}` morphs, applied after the single target. The handler names every selector.
+- `morphs` — list of `{target, html}` morphs instead of a single target. The handler names every selector.
 - `toast_html` + `toast_delay_ms` — success toast on 200 only (`render_toast` + `templates/components/toast.html`)
 - `error` — configured non-200 (unknown endpoint → `status: 404`)
 

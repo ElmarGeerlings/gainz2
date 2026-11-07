@@ -742,32 +742,6 @@ function syncGymPriceRowMoveButtons() {
     });
 }
 
-function openGymDescriptionEdit() {
-    const display = document.getElementById("gym-description-display");
-    const input = document.getElementById("gym-edit-description");
-    if (display && input) {
-        input.value = display.textContent.trim();
-        input.defaultValue = input.value;
-    }
-    showGymModal("gym-edit-description-modal");
-}
-
-function saveGymDescriptionEdit() {
-    const form = document.getElementById("gym-edit-description-form");
-    const input = document.getElementById("gym-edit-description");
-    const display = document.getElementById("gym-description-display");
-    const emptyNote = document.getElementById("gym-description-empty");
-    if (input && display) {
-        const text = input.value.trim();
-        display.textContent = text;
-        if (emptyNote) {
-            emptyNote.hidden = text !== "";
-        }
-    }
-    commitFormDefaults(form);
-    hideGymModalById("gym-edit-description-modal");
-}
-
 function syncGymVibeEditButtons(vibe) {
     document.querySelectorAll("#gym-edit-vibe-form .gym-status-btn").forEach((btn) => {
         btn.classList.remove("is-active", "is-confirmed", "is-assumed", "is-unknown");

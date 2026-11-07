@@ -1,4 +1,20 @@
 from decimal import Decimal, ROUND_HALF_UP
+from django.utils import timezone
+from gyms.models import Gym
+
+
+def save_gym_info(gym, update_fields):
+    gym.info_updated_at = timezone.now()
+    fields = list(update_fields)
+    fields.append("info_updated_at")
+    gym.save(update_fields=fields)
+
+
+def update_gym_description(gym_id, description):
+    gym = Gym.objects.get(pk=gym_id)
+    gym.description = description
+    save_gym_info(gym, ["description"])
+    return gym
 
 
 def refresh_gym_price_headlines(gym):
