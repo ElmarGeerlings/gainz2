@@ -107,7 +107,6 @@ function sendWsRequest(endpoint, element) {
 
 function ws_request(event, endpoint) {
   const trigger = event.currentTarget;
-  const target = trigger.getAttribute('data-target');
   const toRefresh = trigger.hasAttribute('data-refresh');
   const closeModalSelector = trigger.getAttribute('data-close-modal');
 
@@ -123,8 +122,10 @@ function ws_request(event, endpoint) {
     if (response.json_content?.target && response.json_content?.html) {
       document.querySelector(response.json_content.target).innerHTML =
         response.json_content.html;
-    } else if (target && response.json_content?.html) {
-      document.querySelector(target).innerHTML = response.json_content.html;
+    } else if (response.json_content?.morphs) {
+      for (const morph of response.json_content.morphs) {
+        document.querySelector(morph.target).innerHTML = morph.html;
+      }
     } else {
       console.log('WS response:', response);
     }

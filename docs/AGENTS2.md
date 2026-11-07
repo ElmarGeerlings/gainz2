@@ -113,7 +113,6 @@ project_root/
 | `data-routing="workouts/set_edit_modal_form"` | **WS route for a reusable `data-function`**. The function reads `data-routing` and calls `sendWsRequest` with custom client-side handling (e.g. morph into a modal, inline edit save). Same JS, different endpoints from the template — often `{{ endpoint_ns }}/...` for workout vs routine. |
 | `data-close-modal="#set-modal"` | On **200**, hide modal (used with `data-endpoint` on Confirm). |
 | `data-refresh` | Full page reload on response. |
-| `data-target` | Fallback morph selector if server omits `json_content.target`. |
 
 **Bundles**
 
@@ -133,7 +132,7 @@ On response:
 
 1. **302** → redirect  
 2. **`data-refresh`** → reload  
-3. **Morph** — `json_content.target` + `json_content.html` → `innerHTML` (no full page reload; preserves carousel)  
+3. **Morph** — `json_content.target` + `html`, then each `{target, html}` in `json_content.morphs` → `innerHTML` (no full page reload; preserves carousel). The handler names every selector.  
 4. **200** + **`data-close-modal`** → hide modal  
 5. **200** + **`json_content.toast_html`** → `appendToast(html, toast_delay_ms)`  
 
@@ -185,6 +184,7 @@ Every handled message should include **`request_id`** (echoed from client) and *
 | Field | Use |
 |-------|-----|
 | `json_content.target` + `html` | **Morph** one element via `innerHTML` (row = three `<td>`s; warmup reorder = whole `[data-exercise-sets-for]` block). |
+| `json_content.morphs` | List of `{target, html}` morphs, applied after the single target. |
 | `json_content.toast_html` | **Success** (etc.) server-rendered toast; append only on **200**. |
 | `json_content.toast_delay_ms` | Auto-dismiss delay (ms); separate from toast DOM. |
 | `json_content.error` | **Configured** errors (e.g. 404 unknown endpoint). Client should show on non-200 when implemented. |
