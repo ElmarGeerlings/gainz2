@@ -5,5 +5,7 @@
         <button type="button" class="gym-amenity-bubble gym-amenity-edit-bubble{% if row.selected %} is-selected{% endif %}" data-function="click->toggleGymAmenityEdit" data-amenity-slug="{{ row.slug }}" data-amenity-label="{{ row.label }}" aria-pressed="{% if row.selected %}true{% else %}false{% endif %}">{{ row.label }}</button>
         {% endfor %}
     </div>
-    <button type="button" class="btn btn-primary w-100 mt-4" data-function="click->saveGymAmenitiesEdit">Save</button>
+    <div class="set-modal-actions mt-4">
+        <button type="button" class="btn btn-primary w-40 mt-1" data-function="click->saveGymAmenitiesEdit">Save</button>
+    </div>
 </form>

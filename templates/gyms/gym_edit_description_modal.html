@@ -3,5 +3,7 @@
     <h2 class="title-md m-0 mb-3">Edit description</h2>
     <label for="gym-edit-description">Description</label>
     <textarea id="gym-edit-description" name="description" class="form-control" rows="6">{{ gym.description }}</textarea>
-    <button type="button" class="btn btn-primary w-100 mt-2" data-endpoint="click->gyms/update_description" data-close-modal="#gym-edit-description-modal">Save</button>
+    <div class="set-modal-actions mt-4">
+        <button type="button" class="btn btn-primary w-40 mt-1" data-endpoint="click->gyms/update_description" data-close-modal="#gym-edit-description-modal">Save</button>
+    </div>
 </form>

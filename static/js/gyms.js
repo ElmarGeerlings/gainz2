@@ -219,19 +219,6 @@ function syncGymEquipmentQuantityField() {
     }
 }
 
-function syncGymEquipmentModalChoiceButtons() {
-    const hidden = document.getElementById("gym-equipment-item-status");
-    const status = hidden ? hidden.value : gymEquipmentModalStatus;
-    gymEquipmentModalStatus = status;
-    const group = document.querySelector("#gym-equipment-item-modal .gym-status-btns");
-    if (group) {
-        group.querySelectorAll(".gym-status-btn").forEach((btn) => {
-            btn.classList.toggle("is-active", btn.getAttribute("data-value") === status);
-        });
-    }
-    syncGymEquipmentQuantityField();
-}
-
 function openGymEquipmentItemModal(event) {
     const row = event.currentTarget;
     gymEquipmentModalSlug = row.getAttribute("data-equipment-slug");
@@ -245,59 +232,25 @@ function openGymEquipmentItemModal(event) {
     if (slugInput) {
         slugInput.value = gymEquipmentModalSlug;
     }
-    const statusInput = document.getElementById("gym-equipment-item-status");
-    if (statusInput) {
-        statusInput.value = gymEquipmentModalStatus;
+    const statusRadio = document.querySelector(`#gym-equipment-item-modal input[name="equipment_status"][value="${value}"]`)(gymEquipmentModalStatus);
+    if (statusRadio) {
+        statusRadio.checked = true;
+        statusRadio.defaultChecked = true;
+        document.querySelectorAll('#gym-equipment-item-modal input[name="equipment_status"]').forEach((radio) => {
+            if (radio !== statusRadio) {
+                radio.defaultChecked = false;
+            }
+        });
     }
-    syncGymEquipmentModalChoiceButtons();
+    syncGymEquipmentQuantityField();
     const modal = document.getElementById("gym-equipment-item-modal");
     if (modal) {
         modal.style.display = "flex";
     }
 }
 
-function gymChoiceHiddenInput(group) {
-    const hidden = group.previousElementSibling;
-    if (hidden && hidden.tagName === "INPUT" && hidden.type === "hidden") {
-        return hidden;
-    }
-    return null;
-}
-
-function pickGymChoice(event) {
-    const btn = event.currentTarget;
-    const group = btn.closest(".gym-status-btns");
-    if (!group) {
-        return;
-    }
-    const value = btn.getAttribute("data-value");
-    const hidden = gymChoiceHiddenInput(group);
-    if (hidden) {
-        hidden.value = value;
-    }
-    group.querySelectorAll(".gym-status-btn").forEach((choiceBtn) => {
-        choiceBtn.classList.toggle("is-active", choiceBtn === btn);
-    });
-}
-
-function resetGymChoiceModal(modal) {
-    modal.querySelectorAll("form").forEach((form) => form.reset());
-    modal.querySelectorAll(".gym-status-btns").forEach((group) => {
-        const hidden = gymChoiceHiddenInput(group);
-        if (!hidden) {
-            return;
-        }
-        const value = hidden.value;
-        group.querySelectorAll(".gym-status-btn").forEach((btn) => {
-            btn.classList.toggle("is-active", btn.getAttribute("data-value") === value);
-        });
-    });
-}
-
 function pickGymEquipmentItemStatus(event) {
-    pickGymChoice(event);
-    const hidden = document.getElementById("gym-equipment-item-status");
-    gymEquipmentModalStatus = hidden ? hidden.value : gymEquipmentModalStatus;
+    gymEquipmentModalStatus = event.currentTarget.value;
     syncGymEquipmentQuantityField();
 }
 
@@ -305,6 +258,10 @@ function applyGymEquipmentItemModal() {
     const row = document.querySelector(`[data-equipment-slug="${gymEquipmentModalSlug}"]`);
     if (!row) {
         return;
+    }
+    const checked = document.querySelector('#gym-equipment-item-modal input[name="equipment_status"]:checked');
+    if (checked) {
+        gymEquipmentModalStatus = checked.value;
     }
     let quantity = gymEquipmentModalQuantity;
     if (gymEquipmentModalStatus === "confirmed") {
@@ -780,15 +737,17 @@ function syncGymPriceRowMoveButtons() {
 function saveGymRulesEdit() {
     document.querySelectorAll(".gym-rule-edit-row").forEach((editRow) => {
         const slug = editRow.getAttribute("data-rule-slug");
-        const state = editRow.querySelector(".gym-rule-edit-value").value;
+        const checked = editRow.querySelector('input[type="radio"]:checked');
+        const state = checked ? checked.value : "unknown";
         const displayRow = document.querySelector(`#gym-rules-display [data-rule-slug="${slug}"]`);
         if (displayRow) {
             displayRow.setAttribute("data-rule-state", state);
             const labelText = displayRow.querySelector(".text-sm").textContent;
             displayRow.innerHTML = `<span class="text-sm">${labelText}</span>${ruleBadgeHtml(state)}`;
         }
-        const hidden = editRow.querySelector(".gym-rule-edit-value");
-        hidden.defaultValue = state;
+        editRow.querySelectorAll('input[type="radio"]').forEach((radio) => {
+            radio.defaultChecked = radio.checked;
+        });
     });
     hideGymModalById("gym-edit-rules-modal");
 }

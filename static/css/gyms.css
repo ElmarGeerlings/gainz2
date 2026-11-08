@@ -347,11 +347,15 @@ button.gym-amenity-bubble {
 }
 
 .gym-status-btn {
+    position: relative;
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     min-height: 44px;
     padding: var(--space-2);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border-radius: 12px;
     background: var(--surface);
     color: var(--muted);
     font: inherit;
@@ -360,7 +364,20 @@ button.gym-amenity-bubble {
     cursor: pointer;
 }
 
+.gym-status-radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .gym-status-btn.gym-tone-yes.is-active,
+.gym-status-btn.gym-tone-yes:has(.gym-status-radio:checked),
 #gym-panel-equipment .gym-status-btn.gym-tone-yes {
     background: var(--toast-success-bg);
     color: var(--toast-success-text);
@@ -368,6 +385,7 @@ button.gym-amenity-bubble {
 }
 
 .gym-status-btn.gym-tone-unknown.is-active,
+.gym-status-btn.gym-tone-unknown:has(.gym-status-radio:checked),
 #gym-panel-equipment .gym-status-btn.gym-tone-unknown {
     background: var(--toast-warning-bg);
     color: var(--toast-warning-text);
@@ -375,13 +393,15 @@ button.gym-amenity-bubble {
 }
 
 .gym-status-btn.gym-tone-no.is-active,
+.gym-status-btn.gym-tone-no:has(.gym-status-radio:checked),
 #gym-panel-equipment .gym-status-btn.gym-tone-no {
     background: var(--toast-danger-bg);
     color: var(--toast-danger-text);
     border-color: var(--danger-border);
 }
 
-#gym-edit-vibe-form .gym-status-btn.is-active {
+#gym-edit-vibe-form .gym-status-btn.is-active,
+#gym-edit-vibe-form .gym-status-btn:has(.gym-status-radio:checked) {
     border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
     background: color-mix(in srgb, var(--primary) 10%, var(--surface));
     color: var(--text);
