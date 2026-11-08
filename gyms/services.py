@@ -17,6 +17,13 @@ def update_gym_description(gym_id, description):
     return gym
 
 
+def update_gym_vibe(gym_id, vibe):
+    gym = Gym.objects.get(pk=gym_id)
+    gym.vibe = vibe
+    save_gym_info(gym, ["vibe"])
+    return gym
+
+
 def refresh_gym_price_headlines(gym):
     day_pass_price = None
     cheapest_monthly = None

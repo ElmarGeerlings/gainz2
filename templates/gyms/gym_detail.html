@@ -73,7 +73,7 @@
         {% include "gyms/gym_score_modal.html" %}
     </div>
 </div>
-<div id="gym-prices-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-reset-function="resetGymPricesModal">
+<div id="gym-prices-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-reset-function="cancelGymPricesEdit">
     <div class="gainz-modal-content gym-modal-scroll">
         <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
         {% include "gyms/gym_prices_modal.html" %}
@@ -87,13 +87,15 @@
         </div>
     </div>
 </div>
-<div id="gym-edit-vibe-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+<div id="gym-edit-vibe-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-reset-function="resetGymChoiceModal">
     <div class="gainz-modal-content">
         <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
-        {% include "gyms/gym_edit_vibe_modal.html" %}
+        <div id="gym-edit-vibe-body">
+            {% include "gyms/gym_edit_vibe_modal.html" %}
+        </div>
     </div>
 </div>
-<div id="gym-edit-rules-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+<div id="gym-edit-rules-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-reset-function="resetGymChoiceModal">
     <div class="gainz-modal-content gym-modal-scroll">
         <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
         {% include "gyms/gym_edit_rules_modal.html" %}

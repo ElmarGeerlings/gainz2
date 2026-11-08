@@ -244,7 +244,8 @@ Every handled message should include **`request_id`** (echoed from client) and *
 2. Implement or extend **services** (and **enqueue** when the task belongs on a worker).  
 3. Wire **view** and/or **consumer** to services; build the response.  
 4. Update **templates** and **`data-*`**; extend **`app.js`** only when the generic pipeline is not enough.  
-5. Add or adjust **scoped CSS**; keep **`base.css`** for shared tokens.
+5. Add or adjust **scoped CSS**; keep **`base.css`** for shared tokens.  
+6. **Finish:** In the same turn, a short implementation breakdown (what changed, why, non-obvious helpers or framework behavior, how to test). Enough that the owner does not have to ask. Skip for question-only or review-only turns with no code changes.
 
 ### 11.1 Agent code style
 

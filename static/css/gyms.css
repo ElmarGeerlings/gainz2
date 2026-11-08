@@ -360,19 +360,22 @@ button.gym-amenity-bubble {
     cursor: pointer;
 }
 
-.gym-status-btn.gym-tone-yes {
+.gym-status-btn.gym-tone-yes.is-active,
+#gym-panel-equipment .gym-status-btn.gym-tone-yes {
     background: var(--toast-success-bg);
     color: var(--toast-success-text);
     border-color: var(--success);
 }
 
-.gym-status-btn.gym-tone-unknown {
+.gym-status-btn.gym-tone-unknown.is-active,
+#gym-panel-equipment .gym-status-btn.gym-tone-unknown {
     background: var(--toast-warning-bg);
     color: var(--toast-warning-text);
     border-color: var(--toast-warning-border);
 }
 
-.gym-status-btn.gym-tone-no {
+.gym-status-btn.gym-tone-no.is-active,
+#gym-panel-equipment .gym-status-btn.gym-tone-no {
     background: var(--toast-danger-bg);
     color: var(--toast-danger-text);
     border-color: var(--danger-border);
@@ -384,7 +387,7 @@ button.gym-amenity-bubble {
     color: var(--text);
 }
 
-#gym-panel-equipment .gym-status-btn[data-status]:not(.is-active) {
+#gym-panel-equipment .gym-status-btn[data-value]:not(.is-active) {
     opacity: 0.3;
 }
 

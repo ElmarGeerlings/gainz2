@@ -15,11 +15,13 @@
     <section class="panel stack-sm">
         <div class="row-between gap-sm">
             <h2 class="title-sm m-0">Vibe</h2>
-            <button type="button" class="icon-btn" aria-label="Edit vibe" data-function="click->openGymVibeEdit">
+            {% if user.is_authenticated %}
+            <button type="button" class="icon-btn" aria-label="Edit vibe" data-function="click->ShowModal" data-modal-name="gym-edit-vibe-modal">
                 <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
+            {% endif %}
         </div>
-        <p class="text-sm m-0" id="gym-vibe-display" data-vibe="{{ gym.vibe }}">{{ gym.get_vibe_display }}</p>
+        <p class="text-sm m-0" id="gym-vibe-display">{{ gym.get_vibe_display }}</p>
     </section>
     <button type="button" class="panel w-100" data-function="click->jumpToGymHours">
         {% if has_hours %}

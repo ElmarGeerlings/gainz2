@@ -31,6 +31,7 @@ Do not start, restart, or stop the app server (Daphne, `runserver`, `gd`, or any
 3. Wire the view or WS handler; reuse the same service from HTTP and WS.
 4. Update templates and `data-*`. Extend `app.js` only when `ws_request` is not enough.
 5. Area CSS for page glue; `base.css` for shared tokens/components.
+6. **Finish:** In the same turn (before you stop), give a short implementation breakdown: what changed, why, non-obvious mechanisms (helpers, framework conventions, DOM contracts), and how to test. Not line-by-line; enough that the user does not have to ask. Skip only for question-only or review-only turns with no code changes.
 
 Reuse existing templates, partials, handlers, and `data-endpoint` / `data-routing` before adding parallel HTML or JS. Do not extract a function used once or that is a single trivial line — inline it. Imports at module top unless there is a real circular import or a rare/heavy dependency.
 

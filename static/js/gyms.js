@@ -219,15 +219,16 @@ function syncGymEquipmentQuantityField() {
     }
 }
 
-function setGymEquipmentModalStatusButtons() {
-    document.querySelectorAll("#gym-equipment-item-modal .gym-status-btn").forEach((btn) => {
-        const status = btn.getAttribute("data-status");
-        btn.classList.remove("is-active", "gym-tone-yes", "gym-tone-unknown", "gym-tone-no");
-        if (status === gymEquipmentModalStatus) {
-            btn.classList.add("is-active");
-            btn.classList.add(equipmentToneClass(status));
-        }
-    });
+function syncGymEquipmentModalChoiceButtons() {
+    const hidden = document.getElementById("gym-equipment-item-status");
+    const status = hidden ? hidden.value : gymEquipmentModalStatus;
+    gymEquipmentModalStatus = status;
+    const group = document.querySelector("#gym-equipment-item-modal .gym-status-btns");
+    if (group) {
+        group.querySelectorAll(".gym-status-btn").forEach((btn) => {
+            btn.classList.toggle("is-active", btn.getAttribute("data-value") === status);
+        });
+    }
     syncGymEquipmentQuantityField();
 }
 
@@ -244,16 +245,60 @@ function openGymEquipmentItemModal(event) {
     if (slugInput) {
         slugInput.value = gymEquipmentModalSlug;
     }
-    setGymEquipmentModalStatusButtons();
+    const statusInput = document.getElementById("gym-equipment-item-status");
+    if (statusInput) {
+        statusInput.value = gymEquipmentModalStatus;
+    }
+    syncGymEquipmentModalChoiceButtons();
     const modal = document.getElementById("gym-equipment-item-modal");
     if (modal) {
         modal.style.display = "flex";
     }
 }
 
+function gymChoiceHiddenInput(group) {
+    const hidden = group.previousElementSibling;
+    if (hidden && hidden.tagName === "INPUT" && hidden.type === "hidden") {
+        return hidden;
+    }
+    return null;
+}
+
+function pickGymChoice(event) {
+    const btn = event.currentTarget;
+    const group = btn.closest(".gym-status-btns");
+    if (!group) {
+        return;
+    }
+    const value = btn.getAttribute("data-value");
+    const hidden = gymChoiceHiddenInput(group);
+    if (hidden) {
+        hidden.value = value;
+    }
+    group.querySelectorAll(".gym-status-btn").forEach((choiceBtn) => {
+        choiceBtn.classList.toggle("is-active", choiceBtn === btn);
+    });
+}
+
+function resetGymChoiceModal(modal) {
+    modal.querySelectorAll("form").forEach((form) => form.reset());
+    modal.querySelectorAll(".gym-status-btns").forEach((group) => {
+        const hidden = gymChoiceHiddenInput(group);
+        if (!hidden) {
+            return;
+        }
+        const value = hidden.value;
+        group.querySelectorAll(".gym-status-btn").forEach((btn) => {
+            btn.classList.toggle("is-active", btn.getAttribute("data-value") === value);
+        });
+    });
+}
+
 function pickGymEquipmentItemStatus(event) {
-    gymEquipmentModalStatus = event.currentTarget.getAttribute("data-status");
-    setGymEquipmentModalStatusButtons();
+    pickGymChoice(event);
+    const hidden = document.getElementById("gym-equipment-item-status");
+    gymEquipmentModalStatus = hidden ? hidden.value : gymEquipmentModalStatus;
+    syncGymEquipmentQuantityField();
 }
 
 function applyGymEquipmentItemModal() {
@@ -294,9 +339,9 @@ function filterGymEquipment() {
     const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
     const bodypart = bodypartSelect ? bodypartSelect.value : "";
     const allowed = new Set();
-    document.querySelectorAll("#gym-panel-equipment .gym-status-btns .gym-status-btn[data-status]").forEach((btn) => {
+    document.querySelectorAll("#gym-panel-equipment .gym-status-btns .gym-status-btn[data-value]").forEach((btn) => {
         if (btn.getAttribute("aria-pressed") === "true") {
-            allowed.add(btn.getAttribute("data-status"));
+            allowed.add(btn.getAttribute("data-value"));
         }
     });
     document.querySelectorAll("[data-equipment-group]").forEach((group) => {
@@ -319,12 +364,6 @@ function filterGymEquipment() {
 
 let gymPricesPlans = [];
 let gymPricesEditSnapshot = [];
-
-const GYM_VIBE_LABELS = {
-    unknown: "Unknown",
-    serious: "Serious",
-    casual: "Casual",
-};
 
 function showGymModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -684,10 +723,6 @@ function cancelGymPricesEdit() {
     setGymPricesMode(false);
 }
 
-function resetGymPricesModal() {
-    cancelGymPricesEdit();
-}
-
 function saveGymPricesEdit() {
     gymPricesPlans = readGymPriceEditRows();
     gymPricesEditSnapshot = JSON.parse(JSON.stringify(gymPricesPlans));
@@ -740,91 +775,6 @@ function syncGymPriceRowMoveButtons() {
             downBtn.classList.toggle("is-hidden", index === rows.length - 1);
         }
     });
-}
-
-function syncGymVibeEditButtons(vibe) {
-    document.querySelectorAll("#gym-edit-vibe-form .gym-status-btn").forEach((btn) => {
-        btn.classList.remove("is-active", "is-confirmed", "is-assumed", "is-unknown");
-        if (btn.getAttribute("data-vibe") === vibe) {
-            btn.classList.add("is-active");
-        }
-    });
-    const hidden = document.getElementById("gym-edit-vibe-value");
-    if (hidden) {
-        hidden.value = vibe;
-    }
-}
-
-function openGymVibeEdit() {
-    const display = document.getElementById("gym-vibe-display");
-    const vibe = display ? display.getAttribute("data-vibe") : "unknown";
-    syncGymVibeEditButtons(vibe);
-    const hidden = document.getElementById("gym-edit-vibe-value");
-    if (hidden) {
-        hidden.defaultValue = vibe;
-    }
-    showGymModal("gym-edit-vibe-modal");
-}
-
-function pickGymVibeEdit(event) {
-    syncGymVibeEditButtons(event.currentTarget.getAttribute("data-vibe"));
-}
-
-function saveGymVibeEdit() {
-    const hidden = document.getElementById("gym-edit-vibe-value");
-    const display = document.getElementById("gym-vibe-display");
-    const vibe = hidden ? hidden.value : "unknown";
-    if (display) {
-        display.setAttribute("data-vibe", vibe);
-        display.textContent = GYM_VIBE_LABELS[vibe] || GYM_VIBE_LABELS.unknown;
-    }
-    hidden.defaultValue = vibe;
-    hideGymModalById("gym-edit-vibe-modal");
-}
-
-function syncGymRuleEditRow(slug, state) {
-    const row = document.querySelector(`.gym-rule-edit-row[data-rule-slug="${slug}"]`);
-    if (!row) {
-        return;
-    }
-    const hidden = row.querySelector(".gym-rule-edit-value");
-    if (hidden) {
-        hidden.value = state;
-    }
-    row.querySelectorAll(".gym-rule-state-btn").forEach((btn) => {
-        btn.classList.remove("is-active", "gym-tone-yes", "gym-tone-unknown", "gym-tone-no");
-        if (btn.getAttribute("data-state") === state) {
-            btn.classList.add("is-active");
-            if (state === "yes") {
-                btn.classList.add("gym-tone-yes");
-            }
-            if (state === "no") {
-                btn.classList.add("gym-tone-no");
-            }
-            if (state === "unknown") {
-                btn.classList.add("gym-tone-unknown");
-            }
-        }
-    });
-}
-
-function openGymRulesEdit() {
-    document.querySelectorAll("#gym-rules-display .gym-fact-row").forEach((row) => {
-        const slug = row.getAttribute("data-rule-slug");
-        const state = row.getAttribute("data-rule-state");
-        syncGymRuleEditRow(slug, state);
-        const hidden = document.querySelector(`.gym-rule-edit-row[data-rule-slug="${slug}"] .gym-rule-edit-value`);
-        if (hidden) {
-            hidden.defaultValue = state;
-        }
-    });
-    showGymModal("gym-edit-rules-modal");
-}
-
-function pickGymRuleEdit(event) {
-    const slug = event.currentTarget.getAttribute("data-rule-slug");
-    const state = event.currentTarget.getAttribute("data-state");
-    syncGymRuleEditRow(slug, state);
 }
 
 function saveGymRulesEdit() {
