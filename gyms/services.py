@@ -1,7 +1,9 @@
 from decimal import Decimal, ROUND_HALF_UP
 from django.db import transaction
 from django.utils import timezone
-from gyms.models import Gym, GymPrice
+from django.utils.text import slugify
+
+from gyms.models import Gym, GymPrice, GymRule, Rule
 
 PERIOD_SINGULAR = {
     "day": "day",
@@ -131,3 +133,34 @@ def refresh_gym_price_headlines(gym):
     gym.day_pass_price = day_pass_price
     gym.monthly_price = monthly_price
     gym.save(update_fields=["day_pass_price", "monthly_price"])
+
+
+def gym_rule_rows(gym):
+    state_by_rule_id = {row.rule_id: row.state for row in gym.rules.all()}
+    rows = []
+    for rule in Rule.objects.order_by("name"):
+        rows.append({
+            "slug": slugify(rule.name),
+            "label": rule.name,
+            "state": state_by_rule_id.get(rule.id, "unknown"),
+        })
+    return rows
+
+
+def update_gym_rules(gym_id, states):
+    gym = Gym.objects.get(pk=gym_id)
+    rules_by_slug = {slugify(rule.name): rule for rule in Rule.objects.all()}
+    for slug, state in states.items():
+        rule = rules_by_slug.get(slug)
+        if rule is None:
+            continue
+        gym_rule, created = GymRule.objects.get_or_create(
+            gym=gym,
+            rule=rule,
+            defaults={"state": state},
+        )
+        if not created:
+            gym_rule.state = state
+            gym_rule.save(update_fields=["state"])
+    save_gym_info(gym, [])
+    return Gym.objects.prefetch_related("rules").get(pk=gym_id)

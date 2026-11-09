@@ -57,6 +57,7 @@ from progress.ws_handlers import (
 from gyms.ws_handlers import (
     handle_update_gym_description,
     handle_update_gym_prices,
+    handle_update_gym_rules,
     handle_update_gym_vibe,
 )
 from workouts.ws_handlers import (
@@ -156,6 +157,7 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "gyms/update_description": handle_update_gym_description,
     "gyms/update_vibe": handle_update_gym_vibe,
     "gyms/update_prices": handle_update_gym_prices,
+    "gyms/update_rules": handle_update_gym_rules,
 }
 
 

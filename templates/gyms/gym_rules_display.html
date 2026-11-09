@@ -1,0 +1,12 @@
+{% for rule in rules %}
+<li class="gym-fact-row row-between gap-sm" data-rule-slug="{{ rule.slug }}" data-rule-state="{{ rule.state }}">
+    <span class="text-sm">{{ rule.label }}</span>
+    {% if rule.state == 'yes' %}
+    <span class="pill gym-tone-yes">Yes</span>
+    {% elif rule.state == 'no' %}
+    <span class="pill gym-tone-no">No</span>
+    {% else %}
+    <span class="pill gym-tone-unknown">Unknown</span>
+    {% endif %}
+</li>
+{% endfor %}

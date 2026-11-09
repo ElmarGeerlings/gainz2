@@ -11,8 +11,8 @@
 </div>
 {% if gym.monthly_price is not None %}
 <div class="row-between gap-sm text-sm">
-    <span>Subscription</span>
-    <span class="fw-700">€{{ gym.monthly_price|floatformat:"-2" }} / mo</span>
+    <span>Monthly price</span>
+    <span class="fw-700">€{{ gym.monthly_price|floatformat:"-2" }}</span>
 </div>
 {% endif %}
 {% endif %}

@@ -1,4 +1,5 @@
 <form id="gym-edit-rules-form" class="form-stack">
+    <input type="hidden" name="gym_id" value="{{ gym.id }}">
     <h2 class="title-md m-0 mb-3">Edit gym rules</h2>
     <div class="stack-sm">
         {% for rule in rules %}
@@ -22,6 +23,6 @@
         {% endfor %}
     </div>
     <div class="set-modal-actions mt-4">
-        <button type="button" class="btn btn-primary w-40 mt-1" data-function="click->saveGymRulesEdit">Save</button>
+        <button type="button" class="btn btn-primary w-40 mt-1" data-endpoint="click->gyms/update_rules" data-close-modal="#gym-edit-rules-modal">Save</button>
     </div>
 </form>

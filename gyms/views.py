@@ -4,8 +4,8 @@ from zoneinfo import ZoneInfo
 from django.shortcuts import render
 from django.utils.text import slugify
 
-from gyms.models import Amenity, Equipment, Gym, GymPrice, Rule
-from gyms.services import build_price_plans
+from gyms.models import Amenity, Equipment, Gym, GymPrice
+from gyms.services import build_price_plans, gym_rule_rows
 
 STATUS_SORT_ORDER = {"confirmed": 0, "assumed": 1, "missing": 2}
 
@@ -71,14 +71,7 @@ def gym_detail_page(req_event):
             hour_time_options.append(f"{hour:02d}:{minute:02d}")
     hour_time_options.append("00:00")
 
-    state_by_rule_id = {row.rule_id: row.state for row in gym.rules.all()}
-    rules = []
-    for rule in Rule.objects.order_by("name"):
-        rules.append({
-            "slug": slugify(rule.name),
-            "label": rule.name,
-            "state": state_by_rule_id.get(rule.id, "unknown"),
-        })
+    rules = gym_rule_rows(gym)
 
     selected_amenity_ids = {row.amenity_id for row in gym.amenities.all()}
     amenities = []

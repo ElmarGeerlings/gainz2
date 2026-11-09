@@ -346,16 +346,6 @@ function commitFormDefaults(form) {
     });
 }
 
-function ruleBadgeHtml(state) {
-    if (state === "yes") {
-        return '<span class="pill gym-tone-yes">Yes</span>';
-    }
-    if (state === "no") {
-        return '<span class="pill gym-tone-no">No</span>';
-    }
-    return '<span class="pill gym-tone-unknown">Unknown</span>';
-}
-
 function cloneGymPriceEditRow() {
     const template = document.getElementById("gym-price-edit-row-template");
     return template.content.firstElementChild.cloneNode(true);
@@ -506,24 +496,6 @@ function syncGymPriceRowMoveButtons() {
             downBtn.classList.toggle("is-hidden", index === rows.length - 1);
         }
     });
-}
-
-function saveGymRulesEdit() {
-    document.querySelectorAll(".gym-rule-edit-row").forEach((editRow) => {
-        const slug = editRow.getAttribute("data-rule-slug");
-        const checked = editRow.querySelector('input[type="radio"]:checked');
-        const state = checked ? checked.value : "unknown";
-        const displayRow = document.querySelector(`#gym-rules-display [data-rule-slug="${slug}"]`);
-        if (displayRow) {
-            displayRow.setAttribute("data-rule-state", state);
-            const labelText = displayRow.querySelector(".text-sm").textContent;
-            displayRow.innerHTML = `<span class="text-sm">${labelText}</span>${ruleBadgeHtml(state)}`;
-        }
-        editRow.querySelectorAll('input[type="radio"]').forEach((radio) => {
-            radio.defaultChecked = radio.checked;
-        });
-    });
-    hideGymModalById("gym-edit-rules-modal");
 }
 
 function openGymAmenitiesEdit() {
