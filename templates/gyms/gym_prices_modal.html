@@ -1,32 +1,72 @@
+<input type="hidden" id="gym-prices-gym-id" value="{{ gym.pk }}">
 <div class="row-between gap-sm mb-3">
     <h2 class="title-md m-0">Prices</h2>
+    {% if user.is_authenticated %}
     <button type="button" id="gym-prices-edit-btn" class="icon-btn" data-function="click->enterGymPricesEdit" aria-label="Edit prices">
         <i class="fas fa-pen" aria-hidden="true"></i>
     </button>
+    {% endif %}
 </div>
-<div class="table-shell">
-    <table class="table table-compact gym-prices-modal-table">
-        <thead>
-            <tr>
-                <th>Plan</th>
-                <th colspan="2">Price</th>
-                <th id="gym-prices-delete-head" class="gym-prices-delete-head hidden" hidden></th>
-            </tr>
-        </thead>
-        <tbody id="gym-prices-table-body">
-            {% for plan in price_plans %}
-            <tr data-billing-count="{{ plan.billing_count }}" data-billing-unit="{{ plan.billing_unit }}" data-note="{{ plan.note }}">
-                <td>
-                    <span class="fw-700">{{ plan.name }}</span>
-                    {% if plan.note %}<div class="text-xs text-muted mt-1">{{ plan.note }}</div>{% endif %}
-                </td>
-                <td class="gym-price-amount fw-700">{{ plan.price }}</td>
-                <td class="gym-price-period text-xs text-muted">/{{ plan.read_period }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div id="gym-prices-read">
+    <div class="table-shell">
+        <table class="table table-compact gym-prices-modal-table">
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th colspan="2">Price</th>
+                    <th id="gym-prices-delete-head" class="gym-prices-delete-head hidden" hidden></th>
+                </tr>
+            </thead>
+            <tbody id="gym-prices-table-body">
+                {% include "gyms/gym_prices_table_body.html" %}
+            </tbody>
+        </table>
+    </div>
 </div>
+<div id="gym-prices-edit" class="hidden" hidden>
+    <div class="table-shell">
+        <table class="table table-compact gym-prices-modal-table">
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th colspan="2">Price</th>
+                    <th class="gym-prices-delete-head"></th>
+                </tr>
+            </thead>
+            <tbody id="gym-prices-edit-body"></tbody>
+        </table>
+    </div>
+</div>
+<template id="gym-price-edit-row-template">
+    <tr class="gym-price-edit-row">
+        <td colspan="4">
+            <div class="gym-price-edit-grid">
+                <input type="text" class="form-control gym-price-edit-name" placeholder="Title" aria-label="Title">
+                <input type="text" class="form-control gym-price-edit-note" placeholder="Subtitle" aria-label="Subtitle">
+                <div class="gym-price-edit-billing row-center gap-sm">
+                    <span class="text-sm fw-700">€</span>
+                    <input type="text" class="form-control gym-price-edit-price" placeholder="Price" aria-label="Price" inputmode="decimal">
+                    <span class="text-sm text-muted">per</span>
+                    <input type="text" class="form-control gym-price-edit-count" value="1" inputmode="numeric" aria-label="Billing count">
+                    <select class="form-control gym-price-edit-unit" aria-label="Billing period">
+                        {% for value, label in price_billing_unit_choices %}
+                        <option value="{{ value }}">{{ label }}(s)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" class="icon-btn icon-btn-danger gym-price-edit-delete-btn" data-function="click->removeGymPriceRow" aria-label="Delete price">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="icon-btn gym-price-move-btn gym-price-move-up" data-function="click->moveGymPriceRow" data-direction="up" aria-label="Move price up">
+                    <i class="fas fa-chevron-up" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="icon-btn gym-price-move-btn gym-price-move-down" data-function="click->moveGymPriceRow" data-direction="down" aria-label="Move price down">
+                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                </button>
+            </div>
+        </td>
+    </tr>
+</template>
 <button type="button" id="gym-prices-add-row" class="btn btn-outline w-100 mt-3 hidden" hidden data-function="click->addGymPriceRow" aria-label="Add row">
     <i class="fas fa-plus" aria-hidden="true"></i>
 </button>

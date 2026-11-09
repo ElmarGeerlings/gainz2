@@ -47,39 +47,10 @@
         </div>
         {% endfor %}
     </button>
-    <button type="button" class="panel stack-sm w-100" data-function="click->openGymPricesRead">
+    <button type="button" class="panel stack-sm w-100" data-function="click->ShowModal" data-modal-name="gym-prices-modal">
         <h2 class="title-sm m-0">Prices</h2>
-        {% if not price_plans %}
-        <p class="text-sm text-muted m-0" id="gym-price-headline-empty">No price information available</p>
-        <div id="gym-price-headline-day-row" class="row-between gap-sm text-sm" hidden>
-            <span>Day pass</span>
-            <span class="fw-700" id="gym-price-headline-day"></span>
+        <div id="gym-price-headlines">
+            {% include "gyms/gym_price_headlines.html" %}
         </div>
-        <div id="gym-price-headline-subscription-row" class="row-between gap-sm text-sm" hidden>
-            <span>Subscription</span>
-            <span class="fw-700" id="gym-price-headline-subscription"></span>
-        </div>
-        {% else %}
-        <p class="text-sm text-muted m-0" id="gym-price-headline-empty" hidden>No price information available</p>
-        <div id="gym-price-headline-day-row" class="row-between gap-sm text-sm">
-            <span>Day pass</span>
-            {% if gym.day_pass_price is not None %}
-            <span class="fw-700" id="gym-price-headline-day">€{{ gym.day_pass_price|floatformat:"-2" }}</span>
-            {% else %}
-            <span class="fw-700" id="gym-price-headline-day">No day pass</span>
-            {% endif %}
-        </div>
-        {% if gym.monthly_price is not None %}
-        <div id="gym-price-headline-subscription-row" class="row-between gap-sm text-sm">
-            <span>Subscription</span>
-            <span class="fw-700" id="gym-price-headline-subscription">€{{ gym.monthly_price|floatformat:"-2" }} / mo</span>
-        </div>
-        {% else %}
-        <div id="gym-price-headline-subscription-row" class="row-between gap-sm text-sm" hidden>
-            <span>Subscription</span>
-            <span class="fw-700" id="gym-price-headline-subscription"></span>
-        </div>
-        {% endif %}
-        {% endif %}
     </button>
 </section>

@@ -54,7 +54,11 @@ from progress.ws_handlers import (
     handle_progress_workout_sets,
     handle_refresh_progress_exercise_options,
 )
-from gyms.ws_handlers import handle_update_gym_description, handle_update_gym_vibe
+from gyms.ws_handlers import (
+    handle_update_gym_description,
+    handle_update_gym_prices,
+    handle_update_gym_vibe,
+)
 from workouts.ws_handlers import (
     handle_add_exercise,
     handle_delete_exercise,
@@ -151,6 +155,7 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "progress/workout_sets": handle_progress_workout_sets,
     "gyms/update_description": handle_update_gym_description,
     "gyms/update_vibe": handle_update_gym_vibe,
+    "gyms/update_prices": handle_update_gym_prices,
 }
 
 

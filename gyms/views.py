@@ -4,7 +4,8 @@ from zoneinfo import ZoneInfo
 from django.shortcuts import render
 from django.utils.text import slugify
 
-from gyms.models import Amenity, Equipment, Gym, Rule
+from gyms.models import Amenity, Equipment, Gym, GymPrice, Rule
+from gyms.services import build_price_plans
 
 STATUS_SORT_ORDER = {"confirmed": 0, "assumed": 1, "missing": 2}
 
@@ -17,23 +18,6 @@ DAY_SCHEDULE = [
     ("Saturday", "saturday"),
     ("Sunday", "sunday"),
 ]
-
-PERIOD_SINGULAR = {
-    "day": "day",
-    "week": "week",
-    "month": "month",
-    "year": "year",
-    "session": "session",
-}
-
-PERIOD_PLURAL = {
-    "day": "days",
-    "week": "weeks",
-    "month": "months",
-    "year": "years",
-    "session": "sessions",
-}
-
 
 def gym_detail_page(req_event):
     tab = req_event.GET.get("tab", "overview")
@@ -109,27 +93,7 @@ def gym_detail_page(req_event):
         if selected:
             amenities_present.append(amenity.name)
 
-    price_plans = []
-    for row in gym.prices.all():
-        count = row.billing_count
-        unit = row.billing_unit
-        normalized = row.amount.normalize()
-        if normalized == normalized.to_integral_value():
-            price_text = f"€{int(normalized)}"
-        else:
-            price_text = f"€{format(normalized, 'f').rstrip('0').rstrip('.')}"
-        if count == 1:
-            read_period = PERIOD_SINGULAR[unit]
-        else:
-            read_period = f"{count} {PERIOD_PLURAL[unit]}"
-        price_plans.append({
-            "name": row.title,
-            "price": price_text,
-            "billing_count": count,
-            "billing_unit": unit,
-            "read_period": read_period,
-            "note": row.subtitle,
-        })
+    price_plans = build_price_plans(gym)
 
     gym_items = list(gym.equipment_items.all())
     on_page_equipment_ids = {row.equipment_id for row in gym_items}
@@ -254,6 +218,7 @@ def gym_detail_page(req_event):
         "amenities_present": amenities_present,
         "discipline_scores": discipline_scores,
         "price_plans": price_plans,
+        "price_billing_unit_choices": GymPrice.BILLING_UNIT_CHOICES,
         "equipment_groups": equipment_groups,
         "equipment_catalog_not_on_page": equipment_catalog_not_on_page,
         "equipment_filter_groups": equipment_filter_groups,

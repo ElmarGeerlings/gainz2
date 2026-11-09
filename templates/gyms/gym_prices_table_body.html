@@ -1,0 +1,10 @@
+{% for plan in price_plans %}
+<tr data-title="{{ plan.name }}" data-subtitle="{{ plan.note }}" data-amount="{{ plan.amount }}" data-billing-count="{{ plan.billing_count }}" data-billing-unit="{{ plan.billing_unit }}">
+    <td>
+        <span class="fw-700">{{ plan.name }}</span>
+        {% if plan.note %}<div class="text-xs text-muted mt-1">{{ plan.note }}</div>{% endif %}
+    </td>
+    <td class="gym-price-amount fw-700">{{ plan.price }}</td>
+    <td class="gym-price-period text-xs text-muted">/{{ plan.read_period }}</td>
+</tr>
+{% endfor %}

@@ -1,6 +1,13 @@
+import json
 from django.template.defaultfilters import date
 from django.template.loader import render_to_string
-from gyms.services import update_gym_description, update_gym_vibe
+
+from gyms.services import (
+    build_price_plans,
+    replace_gym_prices,
+    update_gym_description,
+    update_gym_vibe,
+)
 
 
 def gym_footer(updated_at):
@@ -51,6 +58,38 @@ def handle_update_gym_vibe(user, attributes):
             "html": render_to_string(
                 "gyms/gym_edit_vibe_modal.html",
                 {"gym": gym},
+            ),
+        },
+        {
+            "target": "#gym-footer-info",
+            "html": gym_footer(gym.info_updated_at),
+        },
+    ]
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {"morphs": morphs},
+    }
+
+
+def handle_update_gym_prices(user, attributes):
+    gym_id = int(attributes["gym_id"])
+    rows = json.loads(attributes["prices"])
+    gym = replace_gym_prices(gym_id, rows)
+    price_plans = build_price_plans(gym)
+    morphs = [
+        {
+            "target": "#gym-prices-table-body",
+            "html": render_to_string(
+                "gyms/gym_prices_table_body.html",
+                {"price_plans": price_plans},
+            ),
+        },
+        {
+            "target": "#gym-price-headlines",
+            "html": render_to_string(
+                "gyms/gym_price_headlines.html",
+                {"gym": gym, "price_plans": price_plans},
             ),
         },
         {

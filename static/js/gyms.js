@@ -319,9 +319,6 @@ function filterGymEquipment() {
     });
 }
 
-let gymPricesPlans = [];
-let gymPricesEditSnapshot = [];
-
 function showGymModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
@@ -359,184 +356,34 @@ function ruleBadgeHtml(state) {
     return '<span class="pill gym-tone-unknown">Unknown</span>';
 }
 
-function stripGymPriceNumber(raw) {
-    return raw.replace(/€/g, "").split("/")[0].trim();
+function cloneGymPriceEditRow() {
+    const template = document.getElementById("gym-price-edit-row-template");
+    return template.content.firstElementChild.cloneNode(true);
 }
 
-function formatGymPriceDisplay(raw) {
-    const stripped = stripGymPriceNumber(raw);
-    if (stripped === "") {
-        return "";
-    }
-    return "€" + stripped;
-}
-
-const GYM_PRICE_UNITS = [
-    ["day", "day(s)"],
-    ["week", "week(s)"],
-    ["month", "month(s)"],
-    ["year", "year(s)"],
-    ["session", "session(s)"],
-];
-
-function parseGymPricesFromTable() {
-    const tbody = document.getElementById("gym-prices-table-body");
-    if (!tbody) {
-        return [];
-    }
-    const plans = [];
-    tbody.querySelectorAll("tr").forEach((row) => {
-        const nameEl = row.querySelector(".fw-700");
-        const priceEl = row.querySelector(".gym-price-amount");
-        if (!nameEl || !priceEl) {
-            return;
-        }
-        plans.push({
-            name: nameEl.textContent.trim(),
-            note: row.getAttribute("data-note") || "",
-            price: stripGymPriceNumber(priceEl.textContent.trim()),
-            billingCount: row.getAttribute("data-billing-count") || "1",
-            billingUnit: row.getAttribute("data-billing-unit") || "month",
-        });
-    });
-    return plans;
-}
-
-function gymPriceReadPeriod(plan) {
-    const count = Number(plan.billingCount) || 1;
-    const singular = { day: "day", week: "week", month: "month", year: "year", session: "session" };
-    const plural = { day: "days", week: "weeks", month: "months", year: "years", session: "sessions" };
-    if (count === 1) {
-        return singular[plan.billingUnit];
-    }
-    return `${count} ${plural[plan.billingUnit]}`;
-}
-
-function isGymDayPass(plan) {
-    const count = Number(plan.billingCount) || 1;
-    return (plan.billingUnit === "day" && count === 1) || (plan.billingUnit === "session" && count === 1);
-}
-
-function gymPriceMonthlyAmount(plan) {
-    const amount = parseFloat(String(plan.price).replace(",", "."));
-    const count = Number(plan.billingCount) || 1;
-    if (!amount || count <= 0 || plan.billingUnit === "session" || isGymDayPass(plan)) {
-        return null;
-    }
-    if (plan.billingUnit === "day") {
-        return amount * 30 / count;
-    }
-    if (plan.billingUnit === "week") {
-        return amount * (52 / 12) / count;
-    }
-    if (plan.billingUnit === "month") {
-        return amount / count;
-    }
-    if (plan.billingUnit === "year") {
-        return amount / (count * 12);
-    }
-    return null;
-}
-
-function formatGymMonthly(amount) {
-    const rounded = Math.round(amount * 100) / 100;
-    const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
-    return `€${text} / mo`;
-}
-
-function renderGymPricesTable(plans) {
-    const tbody = document.getElementById("gym-prices-table-body");
-    if (!tbody) {
-        return;
-    }
-    tbody.innerHTML = "";
-    plans.forEach((plan) => {
-        const tr = document.createElement("tr");
-        const note = plan.note || "";
-        tr.setAttribute("data-billing-count", plan.billingCount);
-        tr.setAttribute("data-billing-unit", plan.billingUnit);
-        tr.setAttribute("data-note", note);
-        const noteHtml = note ? `<div class="text-xs text-muted mt-1">${note}</div>` : "";
-        tr.innerHTML = `
-            <td>
-                <span class="fw-700">${plan.name}</span>
-                ${noteHtml}
-            </td>
-            <td class="gym-price-amount fw-700">${formatGymPriceDisplay(plan.price)}</td>
-            <td class="gym-price-period text-xs text-muted">/${gymPriceReadPeriod(plan)}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-function renderGymPriceEditTable(plans) {
-    const tbody = document.getElementById("gym-prices-table-body");
-    if (!tbody) {
-        return;
-    }
-    tbody.innerHTML = "";
-    plans.forEach((plan) => appendGymPriceEditRow(plan));
-}
-
-function computeGymPriceHeadlines(plans) {
-    let dayPass = "—";
-    let dayPassAmount = null;
-    let cheapestMonthly = null;
-    plans.forEach((plan) => {
-        const amount = parseFloat(String(plan.price).replace(",", "."));
-        if (isGymDayPass(plan) && amount) {
-            if (dayPassAmount === null || amount < dayPassAmount) {
-                dayPassAmount = amount;
-                dayPass = formatGymPriceDisplay(plan.price);
-            }
-        }
-        const monthly = gymPriceMonthlyAmount(plan);
-        if (monthly !== null && (cheapestMonthly === null || monthly < cheapestMonthly)) {
-            cheapestMonthly = monthly;
-        }
-    });
-    return {
-        dayPass,
-        subscription: cheapestMonthly === null ? "—" : formatGymMonthly(cheapestMonthly),
-    };
-}
-
-function updateGymPriceHeadlineCards(plans) {
-    const emptyEl = document.getElementById("gym-price-headline-empty");
-    const dayRow = document.getElementById("gym-price-headline-day-row");
-    const subRow = document.getElementById("gym-price-headline-subscription-row");
-    const dayEl = document.getElementById("gym-price-headline-day");
-    const subEl = document.getElementById("gym-price-headline-subscription");
-    if (!emptyEl || !dayRow || !subRow || !dayEl || !subEl) {
-        return;
-    }
-    if (plans.length === 0) {
-        emptyEl.hidden = false;
-        dayRow.hidden = true;
-        subRow.hidden = true;
-        return;
-    }
-    emptyEl.hidden = true;
-    dayRow.hidden = false;
-    const headlines = computeGymPriceHeadlines(plans);
-    if (headlines.dayPass === "—") {
-        dayEl.textContent = "No day pass";
-    } else {
-        dayEl.textContent = headlines.dayPass;
-    }
-    if (headlines.subscription === "—") {
-        subRow.hidden = true;
-    } else {
-        subRow.hidden = false;
-        subEl.textContent = headlines.subscription;
-    }
+function fillGymPriceEditRow(row, readTr) {
+    row.querySelector(".gym-price-edit-name").value = readTr.getAttribute("data-title") || "";
+    row.querySelector(".gym-price-edit-note").value = readTr.getAttribute("data-subtitle") || "";
+    row.querySelector(".gym-price-edit-price").value = readTr.getAttribute("data-amount") || "";
+    row.querySelector(".gym-price-edit-count").value = readTr.getAttribute("data-billing-count") || "1";
+    row.querySelector(".gym-price-edit-unit").value = readTr.getAttribute("data-billing-unit") || "month";
 }
 
 function setGymPricesMode(editMode) {
+    const readWrap = document.getElementById("gym-prices-read");
+    const editWrap = document.getElementById("gym-prices-edit");
     const editBtn = document.getElementById("gym-prices-edit-btn");
     const addBtn = document.getElementById("gym-prices-add-row");
     const actions = document.getElementById("gym-prices-edit-actions");
     const deleteHead = document.getElementById("gym-prices-delete-head");
+    if (readWrap) {
+        readWrap.classList.toggle("hidden", editMode);
+        readWrap.hidden = editMode;
+    }
+    if (editWrap) {
+        editWrap.classList.toggle("hidden", !editMode);
+        editWrap.hidden = !editMode;
+    }
     if (editBtn) {
         editBtn.classList.toggle("hidden", editMode);
         editBtn.hidden = editMode;
@@ -555,141 +402,68 @@ function setGymPricesMode(editMode) {
     }
 }
 
-function appendGymPriceEditRow(plan) {
-    const tbody = document.getElementById("gym-prices-table-body");
-    if (!tbody) {
-        return;
-    }
-    const tr = document.createElement("tr");
-    tr.className = "gym-price-edit-row";
-    const grid = document.createElement("div");
-    grid.className = "gym-price-edit-grid";
-    const name = document.createElement("input");
-    name.type = "text";
-    name.className = "form-control gym-price-edit-name";
-    name.value = plan.name || "";
-    name.placeholder = "Title";
-    name.setAttribute("aria-label", "Title");
-    const subtitle = document.createElement("input");
-    subtitle.type = "text";
-    subtitle.className = "form-control gym-price-edit-note";
-    subtitle.value = plan.note || "";
-    subtitle.placeholder = "Subtitle";
-    subtitle.setAttribute("aria-label", "Subtitle");
-    const currency = document.createElement("span");
-    currency.className = "text-sm fw-700";
-    currency.textContent = "€";
-    const price = document.createElement("input");
-    price.type = "text";
-    price.className = "form-control gym-price-edit-price";
-    price.value = stripGymPriceNumber(plan.price || "");
-    price.placeholder = "Price";
-    price.setAttribute("aria-label", "Price");
-    price.setAttribute("inputmode", "decimal");
-    const perLabel = document.createElement("span");
-    perLabel.className = "text-sm text-muted";
-    perLabel.textContent = "per";
-    const count = document.createElement("input");
-    count.type = "text";
-    count.className = "form-control gym-price-edit-count";
-    count.value = plan.billingCount || "1";
-    count.setAttribute("inputmode", "numeric");
-    count.setAttribute("aria-label", "Billing count");
-    const unit = document.createElement("select");
-    unit.className = "form-control gym-price-edit-unit";
-    unit.setAttribute("aria-label", "Billing period");
-    GYM_PRICE_UNITS.forEach((pair) => {
-        const option = document.createElement("option");
-        option.value = pair[0];
-        option.textContent = pair[1];
-        unit.appendChild(option);
-    });
-    unit.value = plan.billingUnit || "month";
-    const billing = document.createElement("div");
-    billing.className = "gym-price-edit-billing row-center gap-sm";
-    billing.appendChild(currency);
-    billing.appendChild(price);
-    billing.appendChild(perLabel);
-    billing.appendChild(count);
-    billing.appendChild(unit);
-    const deleteBtn = document.createElement("button");
-    deleteBtn.type = "button";
-    deleteBtn.className = "icon-btn icon-btn-danger gym-price-edit-delete-btn";
-    deleteBtn.setAttribute("data-function", "click->removeGymPriceRow");
-    deleteBtn.setAttribute("aria-label", "Delete price");
-    deleteBtn.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i>';
-    const upBtn = document.createElement("button");
-    upBtn.type = "button";
-    upBtn.className = "icon-btn gym-price-move-btn gym-price-move-up";
-    upBtn.setAttribute("data-function", "click->moveGymPriceRow");
-    upBtn.setAttribute("data-direction", "up");
-    upBtn.setAttribute("aria-label", "Move price up");
-    upBtn.innerHTML = '<i class="fas fa-chevron-up" aria-hidden="true"></i>';
-    const downBtn = document.createElement("button");
-    downBtn.type = "button";
-    downBtn.className = "icon-btn gym-price-move-btn gym-price-move-down";
-    downBtn.setAttribute("data-function", "click->moveGymPriceRow");
-    downBtn.setAttribute("data-direction", "down");
-    downBtn.setAttribute("aria-label", "Move price down");
-    downBtn.innerHTML = '<i class="fas fa-chevron-down" aria-hidden="true"></i>';
-    grid.appendChild(name);
-    grid.appendChild(deleteBtn);
-    grid.appendChild(subtitle);
-    grid.appendChild(upBtn);
-    grid.appendChild(downBtn);
-    grid.appendChild(billing);
-    const cell = document.createElement("td");
-    cell.colSpan = 4;
-    cell.appendChild(grid);
-    tr.appendChild(cell);
-    tbody.appendChild(tr);
-    syncGymPriceRowMoveButtons();
-}
-
 function readGymPriceEditRows() {
-    const rows = document.querySelectorAll("#gym-prices-table-body .gym-price-edit-row");
+    const rows = document.querySelectorAll("#gym-prices-edit-body .gym-price-edit-row");
     const plans = [];
     rows.forEach((row) => {
-        const name = row.querySelector(".gym-price-edit-name").value.trim();
-        const note = row.querySelector(".gym-price-edit-note").value.trim();
-        const price = stripGymPriceNumber(row.querySelector(".gym-price-edit-price").value.trim());
-        const billingCount = row.querySelector(".gym-price-edit-count").value.trim() || "1";
-        const billingUnit = row.querySelector(".gym-price-edit-unit").value;
-        if (name === "" && price === "") {
+        const title = row.querySelector(".gym-price-edit-name").value.trim();
+        const subtitle = row.querySelector(".gym-price-edit-note").value.trim();
+        const amount = row.querySelector(".gym-price-edit-price").value.trim();
+        const billing_count = row.querySelector(".gym-price-edit-count").value.trim() || "1";
+        const billing_unit = row.querySelector(".gym-price-edit-unit").value;
+        if (title === "" && amount === "") {
             return;
         }
-        plans.push({ name, note, price, billingCount, billingUnit });
+        plans.push({ title, subtitle, amount, billing_count, billing_unit });
     });
     return plans;
 }
 
-function openGymPricesRead() {
-    setGymPricesMode(false);
-    showGymModal("gym-prices-modal");
-}
-
 function enterGymPricesEdit() {
-    gymPricesEditSnapshot = JSON.parse(JSON.stringify(gymPricesPlans));
+    const readBody = document.getElementById("gym-prices-table-body");
+    const editBody = document.getElementById("gym-prices-edit-body");
+    editBody.innerHTML = "";
+    readBody.querySelectorAll("tr").forEach((readTr) => {
+        const row = cloneGymPriceEditRow();
+        fillGymPriceEditRow(row, readTr);
+        editBody.appendChild(row);
+    });
+    syncGymPriceRowMoveButtons();
     setGymPricesMode(true);
-    renderGymPriceEditTable(gymPricesPlans);
 }
 
 function cancelGymPricesEdit() {
-    gymPricesPlans = JSON.parse(JSON.stringify(gymPricesEditSnapshot));
-    renderGymPricesTable(gymPricesPlans);
+    const editBody = document.getElementById("gym-prices-edit-body");
+    if (editBody) {
+        editBody.innerHTML = "";
+    }
     setGymPricesMode(false);
 }
 
-function saveGymPricesEdit() {
-    gymPricesPlans = readGymPriceEditRows();
-    gymPricesEditSnapshot = JSON.parse(JSON.stringify(gymPricesPlans));
-    renderGymPricesTable(gymPricesPlans);
-    updateGymPriceHeadlineCards(gymPricesPlans);
-    setGymPricesMode(false);
+function saveGymPricesEdit(event) {
+    const trigger = event.currentTarget;
+    const gymIdEl = document.getElementById("gym-prices-gym-id");
+    if (gymIdEl) {
+        trigger.setAttribute("gym_id", gymIdEl.value);
+    }
+    trigger.setAttribute("prices", JSON.stringify(readGymPriceEditRows()));
+    sendWsRequest("gyms/update_prices", trigger).then((response) => {
+        if (response.json_content?.morphs) {
+            for (const morph of response.json_content.morphs) {
+                document.querySelector(morph.target).innerHTML = morph.html;
+            }
+        }
+        if (response.status === 200) {
+            cancelGymPricesEdit();
+        }
+    });
 }
 
 function addGymPriceRow() {
-    appendGymPriceEditRow({ name: "", note: "", price: "", billingCount: "1", billingUnit: "month" });
+    const editBody = document.getElementById("gym-prices-edit-body");
+    const row = cloneGymPriceEditRow();
+    editBody.appendChild(row);
+    syncGymPriceRowMoveButtons();
 }
 
 function removeGymPriceRow(event) {
@@ -702,7 +476,7 @@ function removeGymPriceRow(event) {
 
 function moveGymPriceRow(event) {
     const row = event.currentTarget.closest(".gym-price-edit-row");
-    const tbody = document.getElementById("gym-prices-table-body");
+    const tbody = document.getElementById("gym-prices-edit-body");
     if (!row || !tbody) {
         return;
     }
@@ -721,7 +495,7 @@ function moveGymPriceRow(event) {
 }
 
 function syncGymPriceRowMoveButtons() {
-    const rows = document.querySelectorAll("#gym-prices-table-body .gym-price-edit-row");
+    const rows = document.querySelectorAll("#gym-prices-edit-body .gym-price-edit-row");
     rows.forEach((row, index) => {
         const upBtn = row.querySelector(".gym-price-move-up");
         const downBtn = row.querySelector(".gym-price-move-down");
@@ -981,8 +755,6 @@ function saveGymLocationEdit() {
 
 document.addEventListener("DOMContentLoaded", () => {
     initGymPhotoCarousel();
-    gymPricesPlans = parseGymPricesFromTable();
-    gymPricesEditSnapshot = JSON.parse(JSON.stringify(gymPricesPlans));
     document.querySelectorAll(".gym-hours-edit-row").forEach((row) => {
         const closedInput = row.querySelector(".gym-hours-edit-closed");
         closedInput.addEventListener("change", () => syncGymHoursEditRowDisabled(row));
