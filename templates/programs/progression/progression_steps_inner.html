@@ -2,7 +2,6 @@
 {% if not template.is_system %}
 <section class="panel stack-sm progression-settings mb-3">
     <form id="progression-settings-form" class="stack-sm">
-        <input type="hidden" name="template_id" value="{{ template.pk }}">
         {% if show_min or show_max %}
         <div class="progression-settings-rep-range{% if show_min and show_max %} row-between gap-sm{% endif %}">
             {% if show_min %}

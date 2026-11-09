@@ -16,7 +16,7 @@ def gym_footer(updated_at):
     return f"Last updated {date(updated_at, 'j M Y')}"
 
 def handle_update_gym_description(user, attributes):
-    gym_id = int(attributes["gym_id"])
+    gym_id = int(attributes["data-gym-id"])
     description = attributes["description"]
     gym = update_gym_description(gym_id, description)
     morphs = [
@@ -47,7 +47,7 @@ def handle_update_gym_description(user, attributes):
 
 
 def handle_update_gym_vibe(user, attributes):
-    gym_id = int(attributes["gym_id"])
+    gym_id = int(attributes["data-gym-id"])
     vibe = attributes["vibe"]
     gym = update_gym_vibe(gym_id, vibe)
     morphs = [
@@ -75,7 +75,7 @@ def handle_update_gym_vibe(user, attributes):
 
 
 def handle_update_gym_rules(user, attributes):
-    gym_id = int(attributes["gym_id"])
+    gym_id = int(attributes["data-gym-id"])
     states = {}
     for key, value in attributes.items():
         if key.startswith("rule_"):
@@ -110,7 +110,7 @@ def handle_update_gym_rules(user, attributes):
 
 
 def handle_update_gym_prices(user, attributes):
-    gym_id = int(attributes["gym_id"])
+    gym_id = int(attributes["data-gym-id"])
     rows = json.loads(attributes["prices"])
     gym = replace_gym_prices(gym_id, rows)
     price_plans = build_price_plans(gym)

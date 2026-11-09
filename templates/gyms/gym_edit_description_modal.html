@@ -1,9 +1,8 @@
 <form id="gym-edit-description-form" class="form-stack">
-    <input type="hidden" name="gym_id" value="{{ gym.pk }}">
     <h2 class="title-md m-0 mb-3">Edit description</h2>
     <label for="gym-edit-description">Description</label>
     <textarea id="gym-edit-description" name="description" class="form-control" rows="6">{{ gym.description }}</textarea>
     <div class="set-modal-actions mt-4">
-        <button type="button" class="btn btn-primary w-40 mt-1" data-endpoint="click->gyms/update_description" data-close-modal="#gym-edit-description-modal">Save</button>
+        <button type="button" class="btn btn-primary w-40 mt-1" data-gym-id="{{ gym.pk }}" data-endpoint="click->gyms/update_description" data-close-modal="#gym-edit-description-modal">Save</button>
     </div>
 </form>

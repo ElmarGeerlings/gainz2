@@ -1,11 +1,6 @@
 <section class="panel stack-sm mt-5">
     <h3 class="title-sm">{{ section_title }}</h3>
     <form class="form-stack">
-        {% if session_kind == "workout" %}
-        <input type="hidden" name="workout_id" value="{{ session_pk }}">
-        {% else %}
-        <input type="hidden" name="routine_id" value="{{ session_pk }}">
-        {% endif %}
         <span class="form-label">Exercise</span>
         <select
             id="bodypart-select-{{ session_pk }}"

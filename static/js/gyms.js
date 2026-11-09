@@ -432,10 +432,6 @@ function cancelGymPricesEdit() {
 
 function saveGymPricesEdit(event) {
     const trigger = event.currentTarget;
-    const gymIdEl = document.getElementById("gym-prices-gym-id");
-    if (gymIdEl) {
-        trigger.setAttribute("gym_id", gymIdEl.value);
-    }
     trigger.setAttribute("prices", JSON.stringify(readGymPriceEditRows()));
     sendWsRequest("gyms/update_prices", trigger).then((response) => {
         if (response.json_content?.morphs) {

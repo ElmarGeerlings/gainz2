@@ -104,7 +104,7 @@ def handle_delete_progression_template(user, attributes):
 
 
 def handle_update_progression_template(user, attributes):
-    template_id = int(attributes["template_id"])
+    template_id = int(attributes["data-template-id"])
     name = attributes["name"]
     notes = attributes.get("notes", "")
     template = update_progression_template(user, template_id, name, notes)
@@ -214,7 +214,7 @@ def handle_update_progression_settings(user, attributes):
 
 
 def handle_create_progression_step(user, attributes):
-    template_id = int(attributes["progression_template_id"])
+    template_id = int(attributes["data-template-id"])
     weight = Decimal(attributes["weight_delta"])
     reps = int(float(attributes["reps_delta"]))
     step, template = create_progression_step(user, template_id, weight, reps)
@@ -237,7 +237,7 @@ def handle_create_progression_step(user, attributes):
 
 
 def handle_update_progression_step(user, attributes):
-    step_id = int(attributes["step_id"])
+    step_id = int(attributes["data-step-id"])
     weight = Decimal(attributes["weight_delta"])
     reps = int(float(attributes["reps_delta"]))
     step, template = update_progression_step(user, step_id, weight, reps)

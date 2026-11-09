@@ -1,5 +1,4 @@
 <form id="gym-edit-vibe-form" class="form-stack">
-    <input type="hidden" name="gym_id" value="{{ gym.pk }}">
     <h2 class="title-md m-0 mb-3">Edit vibe</h2>
     <p class="text-sm text-muted m-0 mb-2">Serious: people treat lifting as a sport. Casual: general fitness gym.</p>
     <div class="gym-status-btns" role="radiogroup" aria-label="Vibe">
@@ -17,6 +16,6 @@
         </label>
     </div>
     <div class="set-modal-actions mt-4">
-        <button type="button" class="btn btn-primary w-40 mt-1" data-endpoint="click->gyms/update_vibe" data-close-modal="#gym-edit-vibe-modal">Save</button>
+        <button type="button" class="btn btn-primary w-40 mt-1" data-gym-id="{{ gym.pk }}" data-endpoint="click->gyms/update_vibe" data-close-modal="#gym-edit-vibe-modal">Save</button>
     </div>
 </form>

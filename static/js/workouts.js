@@ -721,12 +721,13 @@ function openWorkoutEditModal(req_event) {
     const section = header.querySelector("section");
     const nameInput = document.getElementById(`${kind}-edit-name`);
     const notesInput = document.getElementById(`${kind}-edit-notes`);
-    const idInput = document.getElementById(`${kind}-edit-id`);
     const notesText = document.getElementById(`${kind}-notes-text`);
     const nameEl = document.getElementById(`${kind}-name`);
     const idKey = kind === "workout" ? "workoutId" : "routineId";
+    const idAttr = kind === "workout" ? "data-workout-id" : "data-routine-id";
+    const saveButton = document.querySelector(`#${kind}-edit-form [data-endpoint]`);
 
-    idInput.value = section.dataset[idKey];
+    saveButton.setAttribute(idAttr, section.dataset[idKey]);
     nameInput.value = nameEl.textContent;
     notesInput.value = notesText ? notesText.textContent : "";
 

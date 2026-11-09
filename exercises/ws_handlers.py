@@ -84,7 +84,7 @@ def handle_create_exercise(user, attributes):
 
 
 def handle_update_exercise(user, attributes):
-    exercise_id = int(attributes["exercise_id"])
+    exercise_id = int(attributes["data-exercise-id"])
     result = update_custom_exercise(user, exercise_id, attributes)
     if "error" in result:
         toast_html = render_toast(result["error"], variant="danger")

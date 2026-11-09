@@ -83,7 +83,7 @@ async function saveExercise(req_event) {
         return;
     }
 
-    const exerciseId = form.querySelector("#exercise-modal-id")?.value || "";
+    const exerciseId = btn.getAttribute("data-exercise-id") || "";
     const endpoint = exerciseId
         ? "exercises/update_exercise"
         : "exercises/create_exercise";

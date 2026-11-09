@@ -35,7 +35,7 @@ function openProgressionStepModal(req_event) {
 function openProgressionEditModal() {
     const header = document.getElementById("progression-header");
     const section = header.querySelector("section");
-    document.getElementById("progression-edit-id").value = section.dataset.templateId;
+    document.querySelector("#progression-edit-form [data-endpoint]").setAttribute("data-template-id", section.dataset.templateId);
     document.getElementById("progression-edit-name").value = document.getElementById("progression-name").textContent;
     document.getElementById("progression-edit-notes").value = document.getElementById("progression-notes-text").textContent;
     document.getElementById("progression-modal").style.display = "flex";

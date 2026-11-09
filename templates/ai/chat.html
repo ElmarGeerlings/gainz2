@@ -33,7 +33,6 @@
             {% include "ai/chat_choices.html" %}
         </div>
         <form id="ai-chat-form" class="ai-chat-composer row-center gap-sm">
-            <input type="hidden" name="session_id" value="{{ session_id }}">
             <textarea
                 name="message"
                 id="ai-chat-input"
@@ -49,6 +48,7 @@
                 type="button"
                 id="ai-chat-send"
                 class="btn btn-primary"
+                data-session-id="{{ session_id }}"
                 {% if composer_disabled %}disabled{% endif %}
                 data-function="click->sendAiChatMessage"
             >Send</button>

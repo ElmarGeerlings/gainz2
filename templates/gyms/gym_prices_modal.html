@@ -1,4 +1,3 @@
-<input type="hidden" id="gym-prices-gym-id" value="{{ gym.pk }}">
 <div class="row-between gap-sm mb-3">
     <h2 class="title-md m-0">Prices</h2>
     {% if user.is_authenticated %}
@@ -72,5 +71,5 @@
 </button>
 <div id="gym-prices-edit-actions" class="set-modal-actions mt-3 hidden" hidden>
     <button type="button" class="btn btn-outline w-40 mt-1" data-function="click->cancelGymPricesEdit">Cancel</button>
-    <button type="button" class="btn btn-primary w-40 mt-1" data-function="click->saveGymPricesEdit">Save</button>
+    <button type="button" class="btn btn-primary w-40 mt-1" data-gym-id="{{ gym.pk }}" data-function="click->saveGymPricesEdit">Save</button>
 </div>

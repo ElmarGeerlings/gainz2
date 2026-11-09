@@ -120,7 +120,7 @@ def handle_set_edit_modal_form(user, attributes):
 
 
 def handle_create_set(user, attributes):
-    workout_exercise_id = int(attributes["workout_exercise_id"])
+    workout_exercise_id = int(attributes["data-workout-exercise-id"])
     weight = Decimal(attributes["weight"])
     reps = int(float(attributes["reps"]))
     is_warmup = attributes.get("is_warmup", False)
@@ -317,7 +317,7 @@ def handle_delete_workout(user, attributes):
 
 
 def handle_update_workout(user, attributes):
-    workout_id = int(attributes["workout_id"])
+    workout_id = int(attributes["data-workout-id"])
     name = attributes["name"]
     date_str = attributes["date"]
     notes = attributes.get("notes", "")
@@ -411,7 +411,7 @@ def handle_refresh_exercise_view(user, attributes):
 
 
 def handle_update_set(user, attributes):
-    set_id = int(attributes["set_id"])
+    set_id = int(attributes["data-set-id"])
     weight = Decimal(attributes["weight"])
     reps = int(float(attributes["reps"]))
     is_warmup = attributes.get("is_warmup", False)
