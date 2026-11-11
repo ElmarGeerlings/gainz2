@@ -15,20 +15,14 @@
     <section class="panel stack-sm">
         <div class="row-between gap-sm">
             <h2 class="title-sm m-0">Amenities</h2>
-            <button type="button" class="icon-btn" aria-label="Edit amenities" data-function="click->openGymAmenitiesEdit">
+            {% if user.is_authenticated %}
+            <button type="button" class="icon-btn" aria-label="Edit amenities" data-function="click->ShowModal" data-modal-name="gym-edit-amenities-modal">
                 <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
+            {% endif %}
         </div>
         <div id="gym-amenities-display">
-            {% if amenities_present %}
-            <div class="gym-amenity-bubbles row-center flex-wrap gap-sm">
-                {% for label in amenities_present %}
-                <span class="gym-amenity-bubble">{{ label }}</span>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-sm text-muted m-0">No amenity information yet</p>
-            {% endif %}
+            {% include "gyms/gym_amenities_display.html" %}
         </div>
     </section>
     <section class="panel stack-sm" id="gym-hours-panel">

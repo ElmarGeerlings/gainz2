@@ -3,7 +3,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from gyms.models import Gym, GymPrice, GymRule, Rule
+from gyms.models import Amenity, Gym, GymAmenity, GymPrice, GymRule, Rule
 
 PERIOD_SINGULAR = {
     "day": "day",
@@ -164,3 +164,31 @@ def update_gym_rules(gym_id, states):
             gym_rule.save(update_fields=["state"])
     save_gym_info(gym, [])
     return Gym.objects.prefetch_related("rules").get(pk=gym_id)
+
+
+def gym_amenity_rows(gym):
+    selected_amenity_ids = {row.amenity_id for row in gym.amenities.all()}
+    rows = []
+    for amenity in Amenity.objects.order_by("name"):
+        rows.append({
+            "slug": slugify(amenity.name),
+            "label": amenity.name,
+            "selected": amenity.id in selected_amenity_ids,
+        })
+    return rows
+
+
+def update_gym_amenities(gym_id, selected_slugs):
+    gym = Gym.objects.get(pk=gym_id)
+    selected_slug_set = set(selected_slugs)
+    existing_ids = {row.amenity_id for row in gym.amenities.all()}
+    for amenity in Amenity.objects.order_by("name"):
+        slug = slugify(amenity.name)
+        selected = slug in selected_slug_set
+        has_row = amenity.id in existing_ids
+        if selected and not has_row:
+            GymAmenity.objects.create(gym=gym, amenity=amenity)
+        elif not selected and has_row:
+            gym.amenities.filter(amenity_id=amenity.id).delete()
+    save_gym_info(gym, [])
+    return Gym.objects.prefetch_related("amenities").get(pk=gym_id)

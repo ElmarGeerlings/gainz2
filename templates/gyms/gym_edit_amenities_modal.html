@@ -2,10 +2,13 @@
     <h2 class="title-md m-0 mb-3">Edit amenities</h2>
     <div class="gym-amenity-bubbles row-center flex-wrap gap-sm">
         {% for row in amenities %}
-        <button type="button" class="gym-amenity-bubble gym-amenity-edit-bubble{% if row.selected %} is-selected{% endif %}" data-function="click->toggleGymAmenityEdit" data-amenity-slug="{{ row.slug }}" data-amenity-label="{{ row.label }}" aria-pressed="{% if row.selected %}true{% else %}false{% endif %}">{{ row.label }}</button>
+        <label class="gym-amenity-bubble gym-amenity-edit-bubble">
+            <input type="checkbox" class="gym-amenity-checkbox" name="amenity_{{ row.slug }}" value="on"{% if row.selected %} checked{% endif %}>
+            <span class="gym-amenity-edit-label">{{ row.label }}</span>
+        </label>
         {% endfor %}
     </div>
     <div class="set-modal-actions mt-4">
-        <button type="button" class="btn btn-primary w-40 mt-1" data-function="click->saveGymAmenitiesEdit">Save</button>
+        <button type="button" class="btn btn-primary w-40 mt-1" data-gym-id="{{ gym.pk }}" data-endpoint="click->gyms/update_amenities" data-close-modal="#gym-edit-amenities-modal">Save</button>
     </div>
 </form>

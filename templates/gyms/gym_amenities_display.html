@@ -1,0 +1,9 @@
+{% if amenities_present %}
+<div class="gym-amenity-bubbles row-center flex-wrap gap-sm">
+    {% for label in amenities_present %}
+    <span class="gym-amenity-bubble">{{ label }}</span>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-sm text-muted m-0">No amenity information yet</p>
+{% endif %}

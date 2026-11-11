@@ -189,7 +189,19 @@ button.gym-amenity-bubble {
     font: inherit;
 }
 
-.gym-amenity-edit-bubble.is-selected {
+.gym-amenity-checkbox {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.gym-amenity-edit-bubble:has(.gym-amenity-checkbox:checked) {
     background: color-mix(in srgb, var(--primary) 10%, var(--surface));
     border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
     color: var(--text);

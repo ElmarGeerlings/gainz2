@@ -494,51 +494,6 @@ function syncGymPriceRowMoveButtons() {
     });
 }
 
-function openGymAmenitiesEdit() {
-    const selected = new Set();
-    document.querySelectorAll("#gym-amenities-display .gym-amenity-bubble").forEach((bubble) => {
-        selected.add(bubble.textContent.trim());
-    });
-    document.querySelectorAll(".gym-amenity-edit-bubble").forEach((btn) => {
-        const label = btn.getAttribute("data-amenity-label");
-        const isSelected = selected.has(label);
-        btn.classList.toggle("is-selected", isSelected);
-        btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
-    });
-    showGymModal("gym-edit-amenities-modal");
-}
-
-function toggleGymAmenityEdit(event) {
-    const btn = event.currentTarget;
-    const isSelected = btn.classList.toggle("is-selected");
-    btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
-}
-
-function saveGymAmenitiesEdit() {
-    const container = document.getElementById("gym-amenities-display");
-    if (!container) {
-        return;
-    }
-    const labels = [];
-    document.querySelectorAll(".gym-amenity-edit-bubble.is-selected").forEach((btn) => {
-        labels.push(btn.getAttribute("data-amenity-label"));
-    });
-    labels.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-    if (labels.length === 0) {
-        container.innerHTML = '<p class="text-sm text-muted m-0">No amenity information yet</p>';
-    } else {
-        container.innerHTML = '<div class="gym-amenity-bubbles row-center flex-wrap gap-sm"></div>';
-        const wrap = container.querySelector(".gym-amenity-bubbles");
-        labels.forEach((label) => {
-            const span = document.createElement("span");
-            span.className = "gym-amenity-bubble";
-            span.textContent = label;
-            wrap.appendChild(span);
-        });
-    }
-    hideGymModalById("gym-edit-amenities-modal");
-}
-
 function syncGymHoursEditRowDisabled(row) {
     const closed = row.querySelector(".gym-hours-edit-closed").checked;
     row.querySelector(".gym-hours-edit-open").disabled = closed;
