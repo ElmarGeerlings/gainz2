@@ -114,7 +114,9 @@
 <div id="gym-edit-hours-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
     <div class="gainz-modal-content gym-modal-scroll">
         <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
-        {% include "gyms/gym_edit_hours_modal.html" %}
+        <div id="gym-edit-hours-body">
+            {% include "gyms/gym_edit_hours_modal.html" %}
+        </div>
     </div>
 </div>
 <div id="gym-edit-contact-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">

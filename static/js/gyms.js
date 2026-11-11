@@ -500,67 +500,11 @@ function syncGymHoursEditRowDisabled(row) {
     row.querySelector(".gym-hours-edit-close").disabled = closed;
 }
 
-function openGymHoursEdit() {
-    document.querySelectorAll("#gym-hours-display .gym-fact-row").forEach((displayRow) => {
-        const day = displayRow.getAttribute("data-day");
-        const editRow = document.querySelector(`.gym-hours-edit-row[data-day="${day}"]`);
-        if (!editRow) {
-            return;
-        }
-        const closed = displayRow.getAttribute("data-closed") === "true";
-        const openSelect = editRow.querySelector(".gym-hours-edit-open");
-        const closeSelect = editRow.querySelector(".gym-hours-edit-close");
-        const closedInput = editRow.querySelector(".gym-hours-edit-closed");
-        openSelect.value = displayRow.getAttribute("data-open");
-        closeSelect.value = displayRow.getAttribute("data-close");
-        closedInput.checked = closed;
-        openSelect.defaultValue = openSelect.value;
-        closeSelect.defaultValue = closeSelect.value;
-        closedInput.defaultChecked = closed;
-        syncGymHoursEditRowDisabled(editRow);
-    });
-    showGymModal("gym-edit-hours-modal");
-}
-
-function saveGymHoursEdit() {
-    const displayList = document.getElementById("gym-hours-display");
-    let todayHours = "";
-    document.querySelectorAll(".gym-hours-edit-row").forEach((editRow) => {
-        const day = editRow.getAttribute("data-day");
-        const closed = editRow.querySelector(".gym-hours-edit-closed").checked;
-        const openVal = editRow.querySelector(".gym-hours-edit-open").value;
-        const closeVal = editRow.querySelector(".gym-hours-edit-close").value;
-        const displayRow = displayList.querySelector(`[data-day="${day}"]`);
-        if (!displayRow) {
-            return;
-        }
-        displayRow.setAttribute("data-open", openVal);
-        displayRow.setAttribute("data-close", closeVal);
-        displayRow.setAttribute("data-closed", closed ? "true" : "false");
-        const timeEl = displayRow.querySelector(".gym-hours-display-time");
-        if (closed) {
-            timeEl.textContent = "Closed";
-        } else {
-            timeEl.textContent = `${openVal} – ${closeVal}`;
-        }
-        if (displayRow.getAttribute("data-is-today") === "true" && !closed) {
-            todayHours = `${openVal} – ${closeVal}`;
-        }
-        if (displayRow.getAttribute("data-is-today") === "true" && closed) {
-            todayHours = "Closed";
-        }
-        const openSelect = editRow.querySelector(".gym-hours-edit-open");
-        const closeSelect = editRow.querySelector(".gym-hours-edit-close");
-        const closedInput = editRow.querySelector(".gym-hours-edit-closed");
-        openSelect.defaultValue = openVal;
-        closeSelect.defaultValue = closeVal;
-        closedInput.defaultChecked = closed;
-    });
-    const openNowEl = document.getElementById("gym-open-now-hours");
-    if (openNowEl && todayHours) {
-        openNowEl.textContent = todayHours;
+function onGymHoursClosedChange(event) {
+    const row = event.currentTarget.closest(".gym-hours-edit-row");
+    if (row) {
+        syncGymHoursEditRowDisabled(row);
     }
-    hideGymModalById("gym-edit-hours-modal");
 }
 
 function openGymContactEdit() {
@@ -679,8 +623,6 @@ function saveGymLocationEdit() {
 document.addEventListener("DOMContentLoaded", () => {
     initGymPhotoCarousel();
     document.querySelectorAll(".gym-hours-edit-row").forEach((row) => {
-        const closedInput = row.querySelector(".gym-hours-edit-closed");
-        closedInput.addEventListener("change", () => syncGymHoursEditRowDisabled(row));
         syncGymHoursEditRowDisabled(row);
     });
 });

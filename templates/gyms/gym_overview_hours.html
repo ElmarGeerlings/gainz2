@@ -1,0 +1,13 @@
+{% if has_hours %}
+<div class="row-between gap-sm">
+    {% if is_open_now %}
+    <span class="text-sm fw-700 text-success">Open now</span>
+    {% else %}
+    <span class="text-sm fw-700 text-danger">Closed</span>
+    {% endif %}
+    <span class="text-sm fw-700 m-0" id="gym-open-now-hours">{{ today_hours }}</span>
+</div>
+<p class="text-sm text-muted m-0 mt-2">Holiday hours may vary.</p>
+{% else %}
+<span class="text-sm fw-700 text-muted m-0" id="gym-open-now-hours">No opening hours</span>
+{% endif %}

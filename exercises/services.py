@@ -83,45 +83,52 @@ def get_exercise_for_modal(user, exercise_id):
     return exercise
 
 
-def create_custom_exercise(user, attributes):
-    name = attributes.get("name", "").strip()
+def create_custom_exercise(
+    user,
+    name,
+    description,
+    primary_bodypart,
+    secondary_bodypart,
+    exercise_type,
+    weight_increment,
+):
+    name = name.strip()
     if exercise_name_exists(user, name):
         return {"error": f'An exercise named "{name}" already exists.'}
-
-    description = attributes.get("description", "")
-    primary_bodypart = attributes.get("primary_bodypart") or None
-    secondary_bodypart = attributes.get("secondary_bodypart") or None
-    exercise_type = attributes.get("exercise_type") or "accessory"
-    weight_increment = parse_weight_increment(
-        attributes.get("weight_increment", DEFAULT_WEIGHT_INCREMENT)
-    )
 
     exercise = Exercise.objects.create(
         user=user,
         name=name,
         description=description,
         is_custom=True,
-        exercise_type=exercise_type,
-        primary_bodypart=primary_bodypart,
-        secondary_bodypart=secondary_bodypart,
-        weight_increment=weight_increment,
+        exercise_type=exercise_type or "accessory",
+        primary_bodypart=primary_bodypart or None,
+        secondary_bodypart=secondary_bodypart or None,
+        weight_increment=parse_weight_increment(weight_increment),
     )
     return {"exercise": exercise}
 
 
-def update_custom_exercise(user, exercise_id, attributes):
+def update_custom_exercise(
+    user,
+    exercise_id,
+    name,
+    description,
+    primary_bodypart,
+    secondary_bodypart,
+    exercise_type,
+    weight_increment,
+):
     exercise = Exercise.objects.get(pk=exercise_id, is_custom=True, user=user)
-    name = attributes.get("name", "").strip()
+    name = name.strip()
     if exercise_name_exists(user, name, exclude_id=exercise_id):
         return {"error": f'An exercise named "{name}" already exists.'}
 
     exercise.name = name
-    exercise.description = attributes.get("description", "")
-    exercise.primary_bodypart = attributes.get("primary_bodypart") or None
-    exercise.secondary_bodypart = attributes.get("secondary_bodypart") or None
-    exercise.exercise_type = attributes.get("exercise_type") or "accessory"
-    exercise.weight_increment = parse_weight_increment(
-        attributes.get("weight_increment", exercise.weight_increment)
-    )
+    exercise.description = description
+    exercise.primary_bodypart = primary_bodypart or None
+    exercise.secondary_bodypart = secondary_bodypart or None
+    exercise.exercise_type = exercise_type or "accessory"
+    exercise.weight_increment = parse_weight_increment(weight_increment)
     exercise.save()
     return {"exercise": exercise}

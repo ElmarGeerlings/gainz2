@@ -979,8 +979,7 @@ def apply_review_choice(ctx, session_id, choice_id, choice_label):
     return {"expired": False, "history": history, "intake": intake}
 
 
-def apply_intake_choice(ctx, session_id, choice_id, attributes=None):
-    attributes = attributes or {}
+def apply_intake_choice(ctx, session_id, choice_id, comment=""):
     intake = get_intake(ctx.owner_key, session_id)
     if not intake:
         return {"expired": True}
@@ -989,7 +988,6 @@ def apply_intake_choice(ctx, session_id, choice_id, attributes=None):
     history = get_history(ctx.owner_key, session_id)
 
     if phase == "feedback_comment" and choice_id == "skip":
-        comment = attributes.get("message") or attributes.get("data-message") or ""
         history.append({"role": "user", "content": "Skip"})
         return skip_feedback_from_comment(ctx, session_id, history, intake, comment)
 

@@ -5,20 +5,20 @@
         <div class="gym-hours-edit-row stack-xs" data-day="{{ row.day }}">
             <span class="text-sm fw-700">{{ row.day }}</span>
             <div class="row-between gap-sm flex-wrap">
-                <select class="form-control flex-1 gym-hours-edit-open" aria-label="{{ row.day }} opening">
-                    {% for time in hour_time_options %}
+                <select class="form-control flex-1 gym-hours-edit-open" name="{{ row.prefix }}_open" aria-label="{{ row.day }} opening"{% if row.closed %} disabled{% endif %}>
+                    {% for time in hour_open_options %}
                     <option value="{{ time }}"{% if time == row.open %} selected{% endif %}>{{ time }}</option>
                     {% endfor %}
                 </select>
-                <select class="form-control flex-1 gym-hours-edit-close" aria-label="{{ row.day }} closing">
-                    {% for time in hour_time_options %}
+                <select class="form-control flex-1 gym-hours-edit-close" name="{{ row.prefix }}_close" aria-label="{{ row.day }} closing"{% if row.closed %} disabled{% endif %}>
+                    {% for time in hour_close_options %}
                     <option value="{{ time }}"{% if time == row.close %} selected{% endif %}>{{ time }}</option>
                     {% endfor %}
                 </select>
                 <label class="row-center gap-sm text-sm gym-hours-closed-label">
                     <span>Closed</span>
                     <label class="gainz-toggle-switch">
-                        <input type="checkbox" class="gainz-toggle-input gym-hours-edit-closed"{% if row.closed %} checked{% endif %}>
+                        <input type="checkbox" class="gainz-toggle-input gym-hours-edit-closed" name="{{ row.prefix }}_closed" value="on"{% if row.closed %} checked{% endif %} data-function="change->onGymHoursClosedChange">
                         <span class="gainz-toggle-slider" aria-hidden="true"></span>
                     </label>
                 </label>
@@ -27,6 +27,6 @@
         {% endfor %}
     </div>
     <div class="set-modal-actions mt-4">
-        <button type="button" class="btn btn-primary w-40 mt-1" data-function="click->saveGymHoursEdit">Save</button>
+        <button type="button" class="btn btn-primary w-40 mt-1" data-gym-id="{{ gym.pk }}" data-endpoint="click->gyms/update_hours" data-close-modal="#gym-edit-hours-modal">Save</button>
     </div>
 </form>

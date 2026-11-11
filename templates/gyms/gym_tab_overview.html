@@ -24,19 +24,9 @@
         <p class="text-sm m-0" id="gym-vibe-display">{{ gym.get_vibe_display }}</p>
     </section>
     <button type="button" class="panel w-100" data-function="click->jumpToGymHours">
-        {% if has_hours %}
-        <div class="row-between gap-sm">
-            {% if is_open_now %}
-            <span class="text-sm fw-700 text-success">Open now</span>
-            {% else %}
-            <span class="text-sm fw-700 text-danger">Closed</span>
-            {% endif %}
-            <span class="text-sm fw-700 m-0" id="gym-open-now-hours">{{ today_hours }}</span>
+        <div id="gym-overview-hours">
+            {% include "gyms/gym_overview_hours.html" %}
         </div>
-        <p class="text-sm text-muted m-0 mt-2">Holiday hours may vary.</p>
-        {% else %}
-        <span class="text-sm fw-700 text-muted m-0" id="gym-open-now-hours">No opening hours</span>
-        {% endif %}
     </button>
     <button type="button" class="panel stack-sm w-100" data-function="click->ShowModal" data-modal-name="gym-score-modal">
         <h2 class="title-sm m-0">Discipline scores</h2>

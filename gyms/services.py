@@ -1,9 +1,22 @@
+import datetime
 from decimal import Decimal, ROUND_HALF_UP
+from zoneinfo import ZoneInfo
+
 from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
 from gyms.models import Amenity, Gym, GymAmenity, GymPrice, GymRule, Rule
+
+DAY_SCHEDULE = [
+    ("Monday", "monday"),
+    ("Tuesday", "tuesday"),
+    ("Wednesday", "wednesday"),
+    ("Thursday", "thursday"),
+    ("Friday", "friday"),
+    ("Saturday", "saturday"),
+    ("Sunday", "sunday"),
+]
 
 PERIOD_SINGULAR = {
     "day": "day",
@@ -192,3 +205,109 @@ def update_gym_amenities(gym_id, selected_slugs):
             gym.amenities.filter(amenity_id=amenity.id).delete()
     save_gym_info(gym, [])
     return Gym.objects.prefetch_related("amenities").get(pk=gym_id)
+
+
+def hour_time_options(for_close=False):
+    options = []
+    for hour in range(24):
+        for minute in (0, 30):
+            if for_close and hour == 0 and minute == 0:
+                continue
+            options.append(f"{hour:02d}:{minute:02d}")
+    if for_close:
+        options.append("24:00")
+    return options
+
+
+def parse_hour_time(text):
+    if not text:
+        return None
+    if text == "24:00":
+        return datetime.time(23, 59, 59)
+    return datetime.datetime.strptime(text, "%H:%M").time()
+
+
+def gym_hours_context(gym):
+    tz_name = gym.timezone if gym.timezone else "UTC"
+    now = datetime.datetime.now(ZoneInfo(tz_name))
+    today_name = now.strftime("%A")
+    hours = []
+    today_hours = ""
+    is_open_now = False
+    has_hours = False
+    for day_label, prefix in DAY_SCHEDULE:
+        closed = getattr(gym, f"{prefix}_closed")
+        opening_time = getattr(gym, f"{prefix}_opening_time")
+        closing_time = getattr(gym, f"{prefix}_closing_time")
+        if closed or opening_time or closing_time:
+            has_hours = True
+        open_text = opening_time.strftime("%H:%M") if opening_time else ""
+        if (
+            not closed
+            and opening_time == datetime.time(0, 0)
+            and closing_time == datetime.time(0, 0)
+        ):
+            close_text = "24:00"
+        elif closing_time == datetime.time(23, 59, 59):
+            close_text = "24:00"
+        elif closing_time:
+            close_text = closing_time.strftime("%H:%M")
+        else:
+            close_text = ""
+        is_today = day_label == today_name
+        if closed:
+            hours_text = "Closed"
+        else:
+            hours_text = f"{open_text} – {close_text}"
+        hours.append({
+            "day": day_label,
+            "prefix": prefix,
+            "open": open_text,
+            "close": close_text,
+            "closed": closed,
+            "is_today": is_today,
+            "hours": hours_text,
+        })
+        if is_today and has_hours:
+            today_hours = hours_text
+            if not closed and opening_time and closing_time:
+                now_time = now.time()
+                if opening_time == datetime.time(0, 0) and closing_time == datetime.time(0, 0):
+                    is_open_now = True
+                else:
+                    is_open_now = opening_time <= now_time < closing_time
+    return {
+        "hours": hours,
+        "has_hours": has_hours,
+        "today_hours": today_hours,
+        "is_open_now": is_open_now,
+        "hour_open_options": hour_time_options(for_close=False),
+        "hour_close_options": hour_time_options(for_close=True),
+    }
+
+
+def update_gym_hours(gym_id, schedule):
+    gym = Gym.objects.get(pk=gym_id)
+    for day_label, prefix in DAY_SCHEDULE:
+        day = schedule[prefix]
+        if day["closed"]:
+            continue
+        opening_time = parse_hour_time(day["open"])
+        closing_time = parse_hour_time(day["close"])
+        if closing_time <= opening_time:
+            return {
+                "error": f"{day_label}: closing time must be after opening time.",
+            }
+    update_fields = []
+    for day_label, prefix in DAY_SCHEDULE:
+        day = schedule[prefix]
+        closed = day["closed"]
+        setattr(gym, f"{prefix}_closed", closed)
+        update_fields.append(f"{prefix}_closed")
+        if not closed:
+            setattr(gym, f"{prefix}_opening_time", parse_hour_time(day["open"]))
+            setattr(gym, f"{prefix}_closing_time", parse_hour_time(day["close"]))
+            update_fields.append(f"{prefix}_opening_time")
+            update_fields.append(f"{prefix}_closing_time")
+    save_gym_info(gym, update_fields)
+    return {"gym": gym}

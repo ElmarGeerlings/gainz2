@@ -2,7 +2,7 @@
 
 from django.template.loader import render_to_string
 
-from gainz2.utils import WEIGHT_INCREMENT_CHOICES, render_toast
+from gainz2.utils import DEFAULT_WEIGHT_INCREMENT, WEIGHT_INCREMENT_CHOICES, render_toast
 from exercises.services import (
     create_custom_exercise,
     get_exercise_for_modal,
@@ -57,7 +57,15 @@ def handle_exercise_form(user, attributes):
 
 
 def handle_create_exercise(user, attributes):
-    result = create_custom_exercise(user, attributes)
+    result = create_custom_exercise(
+        user,
+        attributes.get("name", ""),
+        attributes.get("description", ""),
+        attributes.get("primary_bodypart"),
+        attributes.get("secondary_bodypart"),
+        attributes.get("exercise_type"),
+        attributes.get("weight_increment", DEFAULT_WEIGHT_INCREMENT),
+    )
     if "error" in result:
         toast_html = render_toast(result["error"], variant="danger")
         return {
@@ -85,7 +93,16 @@ def handle_create_exercise(user, attributes):
 
 def handle_update_exercise(user, attributes):
     exercise_id = int(attributes["data-exercise-id"])
-    result = update_custom_exercise(user, exercise_id, attributes)
+    result = update_custom_exercise(
+        user,
+        exercise_id,
+        attributes.get("name", ""),
+        attributes.get("description", ""),
+        attributes.get("primary_bodypart"),
+        attributes.get("secondary_bodypart"),
+        attributes.get("exercise_type"),
+        attributes.get("weight_increment", DEFAULT_WEIGHT_INCREMENT),
+    )
     if "error" in result:
         toast_html = render_toast(result["error"], variant="danger")
         return {

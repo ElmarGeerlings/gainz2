@@ -1,23 +1,10 @@
-import datetime
-from zoneinfo import ZoneInfo
-
 from django.shortcuts import render
 from django.utils.text import slugify
 
 from gyms.models import Equipment, Gym, GymPrice
-from gyms.services import build_price_plans, gym_amenity_rows, gym_rule_rows
+from gyms.services import build_price_plans, gym_amenity_rows, gym_hours_context, gym_rule_rows
 
 STATUS_SORT_ORDER = {"confirmed": 0, "assumed": 1, "missing": 2}
-
-DAY_SCHEDULE = [
-    ("Monday", "monday"),
-    ("Tuesday", "tuesday"),
-    ("Wednesday", "wednesday"),
-    ("Thursday", "thursday"),
-    ("Friday", "friday"),
-    ("Saturday", "saturday"),
-    ("Sunday", "sunday"),
-]
 
 def gym_detail_page(req_event):
     tab = req_event.GET.get("tab", "overview")
@@ -31,45 +18,13 @@ def gym_detail_page(req_event):
         "equipment_items__equipment",
     ).get(name="Iron District Lisboa")
 
-    tz_name = gym.timezone if gym.timezone else "UTC"
-    now = datetime.datetime.now(ZoneInfo(tz_name))
-    today_name = now.strftime("%A")
-    hours = []
-    today_hours = ""
-    is_open_now = False
-    has_hours = False
-    for day_label, prefix in DAY_SCHEDULE:
-        closed = getattr(gym, f"{prefix}_closed")
-        opening_time = getattr(gym, f"{prefix}_opening_time")
-        closing_time = getattr(gym, f"{prefix}_closing_time")
-        if closed or opening_time or closing_time:
-            has_hours = True
-        open_text = opening_time.strftime("%H:%M") if opening_time else ""
-        close_text = closing_time.strftime("%H:%M") if closing_time else ""
-        is_today = day_label == today_name
-        if closed:
-            hours_text = "Closed"
-        else:
-            hours_text = f"{open_text} – {close_text}"
-        hours.append({
-            "day": day_label,
-            "open": open_text,
-            "close": close_text,
-            "closed": closed,
-            "is_today": is_today,
-            "hours": hours_text,
-        })
-        if is_today and has_hours:
-            today_hours = hours_text
-            if not closed and opening_time and closing_time:
-                now_time = now.time()
-                is_open_now = opening_time <= now_time < closing_time
-
-    hour_time_options = []
-    for hour in range(24):
-        for minute in (0, 30):
-            hour_time_options.append(f"{hour:02d}:{minute:02d}")
-    hour_time_options.append("00:00")
+    hours_ctx = gym_hours_context(gym)
+    hours = hours_ctx["hours"]
+    has_hours = hours_ctx["has_hours"]
+    today_hours = hours_ctx["today_hours"]
+    is_open_now = hours_ctx["is_open_now"]
+    hour_open_options = hours_ctx["hour_open_options"]
+    hour_close_options = hours_ctx["hour_close_options"]
 
     rules = gym_rule_rows(gym)
 
@@ -207,6 +162,7 @@ def gym_detail_page(req_event):
         "equipment_filter_groups": equipment_filter_groups,
         "maps_search_url": maps_search_url,
         "osm_embed_url": osm_embed_url,
-        "hour_time_options": hour_time_options,
+        "hour_open_options": hour_open_options,
+        "hour_close_options": hour_close_options,
     }
     return render(req_event, "gyms/gym_detail.html", response)

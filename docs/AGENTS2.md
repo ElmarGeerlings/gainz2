@@ -24,7 +24,7 @@ Scope grows only when the product owner extends it in writing.
 ## 2. Architectural principles
 
 1. **Operations first**  
-   Business behavior lives in plain Python **service** functions in `workouts/services.py` (etc.). **HTTP views** and **WS handlers** parse input, call services, build response dicts / render templates.
+   Business behavior lives in plain Python **service** functions in `workouts/services.py` (etc.). **HTTP views** and **WS handlers** parse input, call services, build response dicts / render templates. Handlers parse; services implement. Service functions take explicit arguments (ids, strings, bools, lists, domain dicts such as `rule_slug → state`). Do not pass WebSocket `attributes` or other raw client payloads into `services.py`.
 
 2. **Interactive client ↔ server**  
    Mutations and partial updates use **WebSocket** (see §7). **HTTP** handles first paint, auth, health checks, normal GET.

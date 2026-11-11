@@ -125,7 +125,8 @@ def run_send_message_generation(ctx, session_id, history):
 def handle_intake_choice(ctx, attributes):
     session_id = attributes.get("session_id") or attributes.get("data-session-id", "")
     choice_id = attributes.get("choice") or attributes.get("data-choice", "")
-    result = apply_intake_choice(ctx, session_id, choice_id, attributes)
+    comment = attributes.get("message") or attributes.get("data-message") or ""
+    result = apply_intake_choice(ctx, session_id, choice_id, comment=comment)
     if result.get("expired"):
         return build_expired_chat_response()
     if result.get("error") == "no_draft":

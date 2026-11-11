@@ -1,0 +1,11 @@
+{% if not has_hours %}
+<p class="text-sm text-muted m-0">No opening hours</p>
+{% endif %}
+<ul class="list-plain" id="gym-hours-display"{% if not has_hours %} hidden{% endif %}>
+    {% for row in hours %}
+    <li class="gym-fact-row row-between gap-sm text-sm{% if row.is_today %} gym-hours-row--today{% endif %}" data-day="{{ row.day }}" data-open="{{ row.open }}" data-close="{{ row.close }}" data-closed="{% if row.closed %}true{% else %}false{% endif %}" data-is-today="{% if row.is_today %}true{% else %}false{% endif %}">
+        <span>{{ row.day }}</span>
+        <span class="fw-700 gym-hours-display-time">{{ row.hours }}</span>
+    </li>
+    {% endfor %}
+</ul>

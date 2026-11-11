@@ -2,13 +2,17 @@ import json
 from django.template.defaultfilters import date
 from django.template.loader import render_to_string
 
+from gainz2.utils import render_toast
 from gyms.services import (
+    DAY_SCHEDULE,
     build_price_plans,
     gym_amenity_rows,
+    gym_hours_context,
     gym_rule_rows,
     replace_gym_prices,
     update_gym_amenities,
     update_gym_description,
+    update_gym_hours,
     update_gym_rules,
     update_gym_vibe,
 )
@@ -97,6 +101,74 @@ def handle_update_gym_rules(user, attributes):
             "html": render_to_string(
                 "gyms/gym_edit_rules_modal.html",
                 {"gym": gym, "rules": rules},
+            ),
+        },
+        {
+            "target": "#gym-footer-info",
+            "html": gym_footer(gym.info_updated_at),
+        },
+    ]
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {"morphs": morphs},
+    }
+
+
+def handle_update_gym_hours(user, attributes):
+    gym_id = int(attributes["data-gym-id"])
+    schedule = {}
+    for day_label, prefix in DAY_SCHEDULE:
+        schedule[prefix] = {
+            "closed": attributes.get(f"{prefix}_closed") == "on",
+            "open": attributes.get(f"{prefix}_open", ""),
+            "close": attributes.get(f"{prefix}_close", ""),
+        }
+    result = update_gym_hours(gym_id, schedule)
+    if "error" in result:
+        toast_html = render_toast(result["error"], variant="danger")
+        return {
+            "status": 400,
+            "headers": [],
+            "json_content": {
+                "toast_html": toast_html,
+                "toast_delay_ms": 3000,
+            },
+        }
+    gym = result["gym"]
+    ctx = gym_hours_context(gym)
+    morphs = [
+        {
+            "target": "#gym-hours-panel-body",
+            "html": render_to_string(
+                "gyms/gym_hours_panel_body.html",
+                {
+                    "hours": ctx["hours"],
+                    "has_hours": ctx["has_hours"],
+                },
+            ),
+        },
+        {
+            "target": "#gym-edit-hours-body",
+            "html": render_to_string(
+                "gyms/gym_edit_hours_modal.html",
+                {
+                    "gym": gym,
+                    "hours": ctx["hours"],
+                    "hour_open_options": ctx["hour_open_options"],
+                    "hour_close_options": ctx["hour_close_options"],
+                },
+            ),
+        },
+        {
+            "target": "#gym-overview-hours",
+            "html": render_to_string(
+                "gyms/gym_overview_hours.html",
+                {
+                    "has_hours": ctx["has_hours"],
+                    "is_open_now": ctx["is_open_now"],
+                    "today_hours": ctx["today_hours"],
+                },
             ),
         },
         {

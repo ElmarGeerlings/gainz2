@@ -12,6 +12,7 @@ Mobile-first, one template set per screen. Phone in the gym is the reference dev
 ## Architecture
 
 - Business logic lives in app `services.py`. HTTP views and WS handlers parse input, call services, build the response.
+- **Services:** handlers parse wire input; services implement behavior. Service functions take explicit arguments (ids, strings, bools, lists, domain dicts such as `rule_slug → state`). Do not pass WebSocket `attributes` or other raw client payloads into `services.py`.
 - HTTP: first paint, auth, health, normal GET. WebSocket: mutations and HTML swaps.
 - Sync Django and sync ORM. Channels uses `database_sync_to_async` around dispatch in `MainConsumer`.
 - Python 3.10. PostgreSQL. Redis + django-rq for work that should not sit inside the request.
