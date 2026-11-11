@@ -1,4 +1,5 @@
 import datetime
+import re
 from decimal import Decimal, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
 
@@ -288,10 +289,13 @@ def gym_hours_context(gym):
 
 def update_gym_hours(gym_id, schedule):
     gym = Gym.objects.get(pk=gym_id)
-    for day_label, prefix in DAY_SCHEDULE:
-        day = schedule[prefix]
+    if not schedule:
+        return {"gym": gym}
+    prefix_to_label = {prefix: day_label for day_label, prefix in DAY_SCHEDULE}
+    for prefix, day in schedule.items():
         if day["closed"]:
             continue
+        day_label = prefix_to_label[prefix]
         opening_time = parse_hour_time(day["open"])
         closing_time = parse_hour_time(day["close"])
         if closing_time <= opening_time:
@@ -299,15 +303,61 @@ def update_gym_hours(gym_id, schedule):
                 "error": f"{day_label}: closing time must be after opening time.",
             }
     update_fields = []
-    for day_label, prefix in DAY_SCHEDULE:
-        day = schedule[prefix]
+    for prefix, day in schedule.items():
         closed = day["closed"]
         setattr(gym, f"{prefix}_closed", closed)
         update_fields.append(f"{prefix}_closed")
-        if not closed:
+        if closed:
+            setattr(gym, f"{prefix}_opening_time", None)
+            setattr(gym, f"{prefix}_closing_time", None)
+        else:
             setattr(gym, f"{prefix}_opening_time", parse_hour_time(day["open"]))
             setattr(gym, f"{prefix}_closing_time", parse_hour_time(day["close"]))
-            update_fields.append(f"{prefix}_opening_time")
-            update_fields.append(f"{prefix}_closing_time")
+        update_fields.append(f"{prefix}_opening_time")
+        update_fields.append(f"{prefix}_closing_time")
     save_gym_info(gym, update_fields)
+    return {"gym": gym}
+
+
+def update_gym_contact(gym_id, phone=None, email=None, website=None, instagram=None):
+    gym = Gym.objects.get(pk=gym_id)
+    pending = {}
+    if phone is not None:
+        phone = phone.strip()
+        if phone:
+            compact = phone.replace(" ", "")
+            if not re.fullmatch(r"\+?[0-9]+", compact):
+                return {"error": "Invalid phone number."}
+            pending["phone"] = compact
+        else:
+            pending["phone"] = ""
+    if email is not None:
+        email = email.strip()
+        if email:
+            if "@" not in email:
+                return {"error": "Invalid email address."}
+            local, _, domain = email.partition("@")
+            if not local or not domain or "." not in domain:
+                return {"error": "Invalid email address."}
+            pending["email"] = email
+        else:
+            pending["email"] = ""
+    if website is not None:
+        website = website.strip()
+        if website:
+            lower = website.lower()
+            if not lower.startswith("http://") and not lower.startswith("https://"):
+                pending["website"] = f"https://{website}"
+            else:
+                pending["website"] = website
+        else:
+            pending["website"] = ""
+    if instagram is not None:
+        instagram = instagram.strip()
+        pending["instagram"] = instagram.lstrip("@") if instagram else ""
+    if not pending:
+        return {"gym": gym}
+    for field, value in pending.items():
+        setattr(gym, field, value)
+    save_gym_info(gym, list(pending.keys()))
     return {"gym": gym}

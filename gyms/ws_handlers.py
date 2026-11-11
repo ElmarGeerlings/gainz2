@@ -12,6 +12,7 @@ from gyms.services import (
     replace_gym_prices,
     update_gym_amenities,
     update_gym_description,
+    update_gym_contact,
     update_gym_hours,
     update_gym_rules,
     update_gym_vibe,
@@ -169,6 +170,53 @@ def handle_update_gym_hours(user, attributes):
                     "is_open_now": ctx["is_open_now"],
                     "today_hours": ctx["today_hours"],
                 },
+            ),
+        },
+        {
+            "target": "#gym-footer-info",
+            "html": gym_footer(gym.info_updated_at),
+        },
+    ]
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {"morphs": morphs},
+    }
+
+
+def handle_update_gym_contact(user, attributes):
+    gym_id = int(attributes["data-gym-id"])
+    result = update_gym_contact(
+        gym_id,
+        str(attributes.get("phone", "")),
+        str(attributes.get("email", "")),
+        str(attributes.get("website", "")),
+        str(attributes.get("instagram", "")),
+    )
+    if "error" in result:
+        toast_html = render_toast(result["error"], variant="danger")
+        return {
+            "status": 400,
+            "headers": [],
+            "json_content": {
+                "toast_html": toast_html,
+                "toast_delay_ms": 3000,
+            },
+        }
+    gym = result["gym"]
+    morphs = [
+        {
+            "target": "#gym-contact-display",
+            "html": render_to_string(
+                "gyms/gym_contact_display.html",
+                {"gym": gym},
+            ),
+        },
+        {
+            "target": "#gym-edit-contact-body",
+            "html": render_to_string(
+                "gyms/gym_edit_contact_modal.html",
+                {"gym": gym},
             ),
         },
         {

@@ -1,0 +1,38 @@
+{% if gym.phone or gym.email or gym.website or gym.instagram %}
+<ul class="list-plain">
+    {% if gym.phone %}
+    <li class="gym-contact-row" data-contact-kind="phone">
+        <a class="gym-contact-link row-center gap-sm text-sm" href="tel:{{ gym.phone }}">
+            <i class="fas fa-phone" aria-hidden="true"></i>
+            <span>{{ gym.phone }}</span>
+        </a>
+    </li>
+    {% endif %}
+    {% if gym.email %}
+    <li class="gym-contact-row" data-contact-kind="email">
+        <a class="gym-contact-link row-center gap-sm text-sm" href="mailto:{{ gym.email }}">
+            <i class="fas fa-envelope" aria-hidden="true"></i>
+            <span>{{ gym.email }}</span>
+        </a>
+    </li>
+    {% endif %}
+    {% if gym.website %}
+    <li class="gym-contact-row" data-contact-kind="website">
+        <a class="gym-contact-link row-center gap-sm text-sm" href="{{ gym.website }}" rel="noopener noreferrer">
+            <i class="fas fa-globe" aria-hidden="true"></i>
+            <span>{{ gym.website }}</span>
+        </a>
+    </li>
+    {% endif %}
+    {% if gym.instagram %}
+    <li class="gym-contact-row" data-contact-kind="instagram">
+        <a class="gym-contact-link row-center gap-sm text-sm" href="https://instagram.com/{{ gym.instagram }}" rel="noopener noreferrer">
+            <i class="fab fa-instagram" aria-hidden="true"></i>
+            <span>{{ gym.instagram }}</span>
+        </a>
+    </li>
+    {% endif %}
+</ul>
+{% else %}
+<p class="text-sm text-muted m-0">No contact information yet</p>
+{% endif %}
