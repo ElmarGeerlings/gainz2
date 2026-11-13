@@ -33,8 +33,15 @@
         <div class="gym-hero-overlay stack-xs">
             <div class="row-between gap-sm">
                 <div class="stack-xs">
-                    <h1 class="title-lg m-0">{{ gym.name }}</h1>
-                    <p class="text-sm m-0">{{ gym.address_city }}</p>
+                    <div class="row-center gap-sm">
+                        <h1 class="title-lg m-0"><span id="gym-hero-title">{{ gym.name }}</span></h1>
+                        {% if user.is_authenticated %}
+                        <button type="button" class="icon-btn gym-hero-name-edit" aria-label="Edit gym name" data-function="click->ShowModal" data-modal-name="gym-edit-name-modal">
+                            <i class="fas fa-pen" aria-hidden="true"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm m-0"><span id="gym-hero-city">{{ gym.city }}</span></p>
                 </div>
                 <button type="button" class="gym-save-btn icon-btn text-danger" aria-label="Save gym" aria-pressed="{% if gym.saved %}true{% else %}false{% endif %}">
                     <i class="{% if gym.saved %}fas fa-heart{% else %}far fa-heart{% endif %}" aria-hidden="true"></i>
@@ -130,7 +137,17 @@
 <div id="gym-edit-location-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
     <div class="gainz-modal-content">
         <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
-        {% include "gyms/gym_edit_location_modal.html" %}
+        <div id="gym-edit-location-body">
+            {% include "gyms/gym_edit_location_modal.html" %}
+        </div>
+    </div>
+</div>
+<div id="gym-edit-name-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal">
+    <div class="gainz-modal-content">
+        <span class="gainz-modal-close" aria-hidden="true"><i class="fas fa-xmark"></i></span>
+        <div id="gym-edit-name-body">
+            {% include "gyms/gym_edit_name_modal.html" %}
+        </div>
     </div>
 </div>
 <div id="gym-equipment-item-modal" class="gainz-modal" style="display: none;" data-function="click->CloseModal" data-modal-persist>

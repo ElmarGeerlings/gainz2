@@ -507,49 +507,6 @@ function onGymHoursClosedChange(event) {
     }
 }
 
-function formatGymAddress(street, postalCode, city, country) {
-    const locality = [postalCode, city].filter(Boolean).join(" ");
-    return [street, locality, country].filter(Boolean).join(", ");
-}
-
-function openGymLocationEdit() {
-    const display = document.getElementById("gym-address-display");
-    const street = document.getElementById("gym-edit-street");
-    const postalCode = document.getElementById("gym-edit-postal-code");
-    const city = document.getElementById("gym-edit-address-city");
-    const country = document.getElementById("gym-edit-country");
-    if (display && street && postalCode && city && country) {
-        street.value = display.getAttribute("data-street") || "";
-        postalCode.value = display.getAttribute("data-postal-code") || "";
-        city.value = display.getAttribute("data-city") || "";
-        country.value = display.getAttribute("data-country") || "";
-        street.defaultValue = street.value;
-        postalCode.defaultValue = postalCode.value;
-        city.defaultValue = city.value;
-        country.defaultValue = country.value;
-    }
-    showGymModal("gym-edit-location-modal");
-}
-
-function saveGymLocationEdit() {
-    const street = document.getElementById("gym-edit-street").value.trim();
-    const postalCode = document.getElementById("gym-edit-postal-code").value.trim();
-    const city = document.getElementById("gym-edit-address-city").value.trim();
-    const country = document.getElementById("gym-edit-country").value.trim();
-    const display = document.getElementById("gym-address-display");
-    const address = formatGymAddress(street, postalCode, city, country);
-    if (display) {
-        display.textContent = address;
-        display.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-        display.setAttribute("data-street", street);
-        display.setAttribute("data-postal-code", postalCode);
-        display.setAttribute("data-city", city);
-        display.setAttribute("data-country", country);
-    }
-    commitFormDefaults(document.getElementById("gym-edit-location-form"));
-    hideGymModalById("gym-edit-location-modal");
-}
-
 document.addEventListener("DOMContentLoaded", () => {
     initGymPhotoCarousel();
     document.querySelectorAll(".gym-hours-edit-row").forEach((row) => {

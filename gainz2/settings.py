@@ -45,6 +45,7 @@ CSRF_COOKIE_SECURE = not DEBUG
 # Application definition
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GOOGLEMAPS_API_KEY = os.getenv('GOOGLEMAPS_API_KEY')
 AI_PROVIDER = 'gemini'
 AI_MODEL = 'gemini-3.5-flash-lite'
 AI_MODEL_EDIT = 'gemini-3.8-flash'
@@ -193,3 +194,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

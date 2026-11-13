@@ -1,8 +1,13 @@
 import datetime
+import json
 import re
 from decimal import Decimal, ROUND_HALF_UP
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
+from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
@@ -41,6 +46,17 @@ def save_gym_info(gym, update_fields):
     fields = list(update_fields)
     fields.append("info_updated_at")
     gym.save(update_fields=fields)
+
+
+def update_gym_name(gym_id, name):
+    gym = Gym.objects.get(pk=gym_id)
+    name = name.strip()
+    if not name:
+        return {"gym": gym}
+    gym.name = name
+    gym.save(update_fields=["name"])
+    save_gym_info(gym, ["name"])
+    return {"gym": gym}
 
 
 def update_gym_description(gym_id, description):
@@ -289,8 +305,6 @@ def gym_hours_context(gym):
 
 def update_gym_hours(gym_id, schedule):
     gym = Gym.objects.get(pk=gym_id)
-    if not schedule:
-        return {"gym": gym}
     prefix_to_label = {prefix: day_label for day_label, prefix in DAY_SCHEDULE}
     for prefix, day in schedule.items():
         if day["closed"]:
@@ -355,9 +369,132 @@ def update_gym_contact(gym_id, phone=None, email=None, website=None, instagram=N
     if instagram is not None:
         instagram = instagram.strip()
         pending["instagram"] = instagram.lstrip("@") if instagram else ""
-    if not pending:
-        return {"gym": gym}
     for field, value in pending.items():
         setattr(gym, field, value)
     save_gym_info(gym, list(pending.keys()))
     return {"gym": gym}
+
+
+def gym_formatted_address(gym):
+    address_parts = []
+    if gym.street:
+        address_parts.append(gym.street)
+    city_line = " ".join(
+        part for part in (gym.postal_code, gym.city) if part
+    )
+    if city_line:
+        address_parts.append(city_line)
+    if gym.country:
+        address_parts.append(gym.country)
+    return ", ".join(address_parts)
+
+
+def gym_location_display(gym):
+    address = gym_formatted_address(gym)
+    maps_search_url = ""
+    if address:
+        maps_search_url = (
+            "https://www.google.com/maps/search/?api=1&query=" + address.replace(" ", "+")
+        )
+    map_preview_url = ""
+    has_map = False
+    if gym.map_preview:
+        has_map = True
+        if gym.info_updated_at:
+            bust = int(gym.info_updated_at.timestamp())
+        else:
+            bust = 0
+        map_preview_url = f"{gym.map_preview.url}?v={bust}"
+    return {
+        "address": address,
+        "maps_search_url": maps_search_url,
+        "has_map": has_map,
+        "map_preview_url": map_preview_url,
+    }
+
+
+def update_gym_location(
+    gym_id,
+    street=None,
+    postal_code=None,
+    city=None,
+    country=None,
+):
+    gym = Gym.objects.get(pk=gym_id)
+    location_fields = []
+    if street is not None:
+        gym.street = street.strip()
+        location_fields.append("street")
+    if postal_code is not None:
+        gym.postal_code = postal_code.strip()
+        location_fields.append("postal_code")
+    if city is not None:
+        gym.city = city.strip()
+        location_fields.append("city")
+    if country is not None:
+        gym.country = country.strip()
+        location_fields.append("country")
+
+    if not (gym.street and gym.postal_code and gym.city and gym.country):
+        return {"error": "Could not find that address."}
+
+    api_key = settings.GOOGLEMAPS_API_KEY
+    if not api_key:
+        return {"error": "Maps not configured."}
+
+    google_address = {
+        "addressLines": [gym.street],
+        "locality": gym.city,
+        "postalCode": gym.postal_code,
+    }
+    if len(gym.country) == 2:
+        google_address["regionCode"] = gym.country.upper()
+    else:
+        google_address["addressLines"] = [gym.street, gym.country]
+    validate_url = (
+        "https://addressvalidation.googleapis.com/v1:validateAddress?"
+        + urlencode({"key": api_key})
+    )
+    validate_request = Request(
+        validate_url,
+        data=json.dumps({"address": google_address}).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urlopen(validate_request) as response:
+        validate_payload = json.loads(response.read().decode("utf-8"))
+    validation_result = validate_payload.get("result")
+    if not validation_result:
+        return {"error": "Could not find that address."}
+    verdict = validation_result.get("verdict") or {}
+    geocode_location = (validation_result.get("geocode") or {}).get("location")
+    if verdict.get("possibleNextAction") != "ACCEPT" or verdict.get("validationGranularity") in ("OTHER", "ROUTE") or not geocode_location:
+        return {"error": "Could not find that address."}
+    lat = geocode_location["latitude"]
+    lng = geocode_location["longitude"]
+
+    static_params = {
+        "center": f"{lat},{lng}",
+        "zoom": "17",
+        "size": "640x320",
+        "markers": f"color:red|{lat},{lng}",
+        "key": api_key,
+    }
+    static_url = (
+        "https://maps.googleapis.com/maps/api/staticmap?" + urlencode(static_params)
+    )
+    with urlopen(static_url) as response:
+        image_bytes = response.read()
+
+    gym.latitude = Decimal(str(lat)).quantize(Decimal("0.000001"))
+    gym.longitude = Decimal(str(lng)).quantize(Decimal("0.000001"))
+    if gym.map_preview:
+        gym.map_preview.delete(save=False)
+    gym.map_preview.save(
+        "map-preview.png",
+        ContentFile(image_bytes),
+        save=False,
+    )
+    update_fields = location_fields + ["latitude", "longitude", "map_preview"]
+    save_gym_info(gym, update_fields)
+    return {"gym": Gym.objects.get(pk=gym_id)}

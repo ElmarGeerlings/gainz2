@@ -7,6 +7,7 @@ staticfiles/
 node_modules/
 android/
 static/img/samples/
+media/
 
 # Python
 __pycache__/

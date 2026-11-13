@@ -1,6 +1,10 @@
 from django.db import models
 
 
+def gym_map_preview_upload_to(instance, filename):
+    return f"gyms/{instance.pk}/{filename}"
+
+
 class Gym(models.Model):
     VIBE_CHOICES = [
         ("unknown", "Unknown"),
@@ -12,12 +16,13 @@ class Gym(models.Model):
     description = models.TextField(blank=True)
     vibe = models.CharField(max_length=20, choices=VIBE_CHOICES, default="unknown")
     
-    address_street = models.CharField(max_length=200, blank=True)
-    address_postal_code = models.CharField(max_length=20, blank=True)
-    address_city = models.CharField(max_length=100, blank=True)
-    address_country = models.CharField(max_length=100, blank=True)
+    street = models.CharField(max_length=200, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    map_preview = models.ImageField(upload_to=gym_map_preview_upload_to, blank=True)
     timezone = models.CharField(max_length=64, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     email = models.CharField(max_length=200, blank=True)

@@ -1,6 +1,7 @@
 import json
 from django.template.defaultfilters import date
 from django.template.loader import render_to_string
+from django.utils.html import escape
 
 from gainz2.utils import render_toast
 from gyms.services import (
@@ -14,8 +15,11 @@ from gyms.services import (
     update_gym_description,
     update_gym_contact,
     update_gym_hours,
+    update_gym_location,
+    update_gym_name,
     update_gym_rules,
     update_gym_vibe,
+    gym_location_display,
 )
 
 
@@ -258,6 +262,82 @@ def handle_update_gym_amenities(user, attributes):
         {
             "target": "#gym-footer-info",
             "html": gym_footer(gym.info_updated_at),
+        },
+    ]
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {"morphs": morphs},
+    }
+
+
+def handle_update_gym_location(user, attributes):
+    gym_id = int(attributes["data-gym-id"])
+    result = update_gym_location(
+        gym_id,
+        str(attributes.get("street", "")),
+        str(attributes.get("postal_code", "")),
+        str(attributes.get("city", "")),
+        str(attributes.get("country", "")),
+    )
+    if "error" in result:
+        toast_html = render_toast(result["error"], variant="danger")
+        return {
+            "status": 400,
+            "headers": [],
+            "json_content": {
+                "toast_html": toast_html,
+                "toast_delay_ms": 3000,
+            },
+        }
+    gym = result["gym"]
+    location_ctx = gym_location_display(gym)
+    morphs = [
+        {
+            "target": "#gym-location-display",
+            "html": render_to_string(
+                "gyms/gym_location_display.html",
+                {"gym": gym, **location_ctx},
+            ),
+        },
+        {
+            "target": "#gym-edit-location-body",
+            "html": render_to_string(
+                "gyms/gym_edit_location_modal.html",
+                {"gym": gym},
+            ),
+        },
+        {
+            "target": "#gym-hero-city",
+            "html": escape(gym.city),
+        },
+        {
+            "target": "#gym-footer-info",
+            "html": gym_footer(gym.info_updated_at),
+        },
+    ]
+    return {
+        "status": 200,
+        "headers": [],
+        "json_content": {"morphs": morphs},
+    }
+
+
+def handle_update_gym_name(user, attributes):
+    gym_id = int(attributes["data-gym-id"])
+    result = update_gym_name(gym_id, str(attributes.get("name", "")))
+    gym = result["gym"]
+    morphs = [
+        {
+            "target": "#gym-hero-title",
+            "html": escape(gym.name),
+        },
+        {
+            "target": "#gym-edit-name-body",
+            "html": render_to_string(
+                "gyms/gym_edit_name_modal.html",
+                {"gym": gym},
+            ),
         },
     ]
     return {

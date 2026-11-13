@@ -1,0 +1,16 @@
+{% if address %}
+<a class="text-sm" href="{{ maps_search_url }}" rel="noopener noreferrer">{{ address }}</a>
+{% else %}
+<p class="text-sm text-muted m-0">No address yet</p>
+{% endif %}
+{% if has_map %}
+<div class="gym-map-clip">
+    <a href="{{ maps_search_url }}" rel="noopener noreferrer">
+        <img class="gym-map-preview"
+            title="Map preview"
+            alt="Map preview for {{ address }}"
+            loading="lazy"
+            src="{{ map_preview_url }}">
+    </a>
+</div>
+{% endif %}

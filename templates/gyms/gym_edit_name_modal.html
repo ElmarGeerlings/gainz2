@@ -1,0 +1,8 @@
+<form id="gym-edit-name-form" class="form-stack">
+    <h2 class="title-md m-0 mb-3">Edit gym name</h2>
+    <label for="gym-edit-name">Name</label>
+    <input type="text" id="gym-edit-name" name="name" class="form-control" value="{{ gym.name }}" autocomplete="off" required>
+    <div class="set-modal-actions mt-4">
+        <button type="button" class="btn btn-primary w-40 mt-1" data-gym-id="{{ gym.pk }}" data-endpoint="click->gyms/update_name" data-close-modal="#gym-edit-name-modal">Save</button>
+    </div>
+</form>

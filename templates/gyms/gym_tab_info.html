@@ -54,19 +54,14 @@
     <section class="panel stack-sm">
         <div class="row-between gap-sm">
             <h2 class="title-sm m-0">Location</h2>
-            <button type="button" class="icon-btn" aria-label="Edit location" data-function="click->openGymLocationEdit">
+            {% if user.is_authenticated %}
+            <button type="button" class="icon-btn" aria-label="Edit location" data-function="click->ShowModal" data-modal-name="gym-edit-location-modal">
                 <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
+            {% endif %}
         </div>
-        {% if address %}
-        <a class="text-sm" id="gym-address-display" href="{{ maps_search_url }}" rel="noopener noreferrer" data-street="{{ gym.address_street }}" data-postal-code="{{ gym.address_postal_code }}" data-city="{{ gym.address_city }}" data-country="{{ gym.address_country }}">{{ address }}</a>
-        {% else %}
-        <p class="text-sm text-muted m-0" id="gym-address-display">No address yet</p>
-        {% endif %}
-        {% if has_map %}
-        <div class="gym-map-clip">
-            <iframe class="gym-map-embed" title="Map preview" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="{{ osm_embed_url }}"></iframe>
+        <div id="gym-location-display">
+            {% include "gyms/gym_location_display.html" %}
         </div>
-        {% endif %}
     </section>
 </section>

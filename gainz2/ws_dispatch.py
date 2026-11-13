@@ -59,6 +59,8 @@ from gyms.ws_handlers import (
     handle_update_gym_description,
     handle_update_gym_contact,
     handle_update_gym_hours,
+    handle_update_gym_location,
+    handle_update_gym_name,
     handle_update_gym_prices,
     handle_update_gym_rules,
     handle_update_gym_vibe,
@@ -164,6 +166,8 @@ WS_ENDPOINT_REGISTRY: dict[str, Handler] = {
     "gyms/update_amenities": handle_update_gym_amenities,
     "gyms/update_hours": handle_update_gym_hours,
     "gyms/update_contact": handle_update_gym_contact,
+    "gyms/update_location": handle_update_gym_location,
+    "gyms/update_name": handle_update_gym_name,
 }
 
 

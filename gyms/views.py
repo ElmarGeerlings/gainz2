@@ -2,7 +2,13 @@ from django.shortcuts import render
 from django.utils.text import slugify
 
 from gyms.models import Equipment, Gym, GymPrice
-from gyms.services import build_price_plans, gym_amenity_rows, gym_hours_context, gym_rule_rows
+from gyms.services import (
+    build_price_plans,
+    gym_amenity_rows,
+    gym_hours_context,
+    gym_location_display,
+    gym_rule_rows,
+)
 
 STATUS_SORT_ORDER = {"confirmed": 0, "assumed": 1, "missing": 2}
 
@@ -73,33 +79,7 @@ def gym_detail_page(req_event):
         for group in equipment_groups
     ]
 
-    address_parts = []
-    if gym.address_street:
-        address_parts.append(gym.address_street)
-    city_line = " ".join(
-        part for part in (gym.address_postal_code, gym.address_city) if part
-    )
-    if city_line:
-        address_parts.append(city_line)
-    if gym.address_country:
-        address_parts.append(gym.address_country)
-    address = ", ".join(address_parts)
-    has_map = gym.latitude is not None and gym.longitude is not None
-    maps_search_url = ""
-    osm_embed_url = ""
-    if address:
-        maps_search_url = (
-            "https://www.google.com/maps/search/?api=1&query=" + address.replace(" ", "+")
-        )
-    if has_map:
-        lat = float(gym.latitude)
-        lng = float(gym.longitude)
-        map_bbox_delta = 0.0018
-        osm_embed_url = (
-            "https://www.openstreetmap.org/export/embed.html?bbox="
-            f"{lng - map_bbox_delta}%2C{lat - map_bbox_delta}%2C{lng + map_bbox_delta}%2C{lat + map_bbox_delta}"
-            f"&layer=mapnik&marker={lat}%2C{lng}"
-        )
+    location_ctx = gym_location_display(gym)
 
     photos = [
         {"src": "img/samples/sample1.jpg", "label": "Main floor"},
@@ -144,9 +124,8 @@ def gym_detail_page(req_event):
         "title": gym.name,
         "tab": tab,
         "gym": gym,
-        "address": address,
+        **location_ctx,
         "has_hours": has_hours,
-        "has_map": has_map,
         "is_open_now": is_open_now,
         "today_hours": today_hours,
         "photos": photos,
@@ -160,8 +139,6 @@ def gym_detail_page(req_event):
         "equipment_groups": equipment_groups,
         "equipment_catalog_not_on_page": equipment_catalog_not_on_page,
         "equipment_filter_groups": equipment_filter_groups,
-        "maps_search_url": maps_search_url,
-        "osm_embed_url": osm_embed_url,
         "hour_open_options": hour_open_options,
         "hour_close_options": hour_close_options,
     }

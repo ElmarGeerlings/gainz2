@@ -1,14 +1,14 @@
 <form id="gym-edit-location-form" class="form-stack">
     <h2 class="title-md m-0 mb-3">Edit location</h2>
     <label for="gym-edit-street">Street</label>
-    <input type="text" id="gym-edit-street" name="street" class="form-control" value="{{ gym.address_street }}" autocomplete="off">
+    <input type="text" id="gym-edit-street" name="street" class="form-control" value="{{ gym.street }}" autocomplete="off">
     <label for="gym-edit-postal-code">Postal code</label>
-    <input type="text" id="gym-edit-postal-code" name="postal_code" class="form-control" value="{{ gym.address_postal_code }}" autocomplete="off">
-    <label for="gym-edit-address-city">City</label>
-    <input type="text" id="gym-edit-address-city" name="address_city" class="form-control" value="{{ gym.address_city }}" autocomplete="off">
+    <input type="text" id="gym-edit-postal-code" name="postal_code" class="form-control" value="{{ gym.postal_code }}" autocomplete="off">
+    <label for="gym-edit-city">City</label>
+    <input type="text" id="gym-edit-city" name="city" class="form-control" value="{{ gym.city }}" autocomplete="off">
     <label for="gym-edit-country">Country</label>
-    <input type="text" id="gym-edit-country" name="country" class="form-control" value="{{ gym.address_country }}" autocomplete="off">
+    <input type="text" id="gym-edit-country" name="country" class="form-control" value="{{ gym.country }}" autocomplete="off">
     <div class="set-modal-actions mt-4">
-        <button type="button" class="btn btn-primary w-40 mt-1" data-function="click->saveGymLocationEdit">Save</button>
+        <button type="button" class="btn btn-primary w-40 mt-1" data-gym-id="{{ gym.pk }}" data-endpoint="click->gyms/update_location" data-close-modal="#gym-edit-location-modal">Save</button>
     </div>
 </form>
