@@ -346,8 +346,20 @@ function commitFormDefaults(form) {
     });
 }
 
-function cloneGymPriceEditRow() {
-    const template = document.getElementById("gym-price-edit-row-template");
+let gymPricesEditKind = "membership";
+
+const gymPriceKinds = [
+    { kind: "membership", readBodyId: "gym-prices-membership-body", editBodyId: "gym-prices-edit-membership-body", editWrapId: "gym-prices-edit-membership-wrap", isMembership: true },
+    { kind: "other", readBodyId: "gym-prices-other-body", editBodyId: "gym-prices-edit-other-body", editWrapId: "gym-prices-edit-other-wrap", isMembership: false },
+];
+
+function gymPriceKindConfig(kind) {
+    return gymPriceKinds.find((entry) => entry.kind === kind);
+}
+
+function cloneGymPriceEditRow(isMembership) {
+    const templateId = isMembership ? "gym-price-edit-row-template" : "gym-price-edit-extra-row-template";
+    const template = document.getElementById(templateId);
     return template.content.firstElementChild.cloneNode(true);
 }
 
@@ -355,17 +367,24 @@ function fillGymPriceEditRow(row, readTr) {
     row.querySelector(".gym-price-edit-name").value = readTr.getAttribute("data-title") || "";
     row.querySelector(".gym-price-edit-note").value = readTr.getAttribute("data-subtitle") || "";
     row.querySelector(".gym-price-edit-price").value = readTr.getAttribute("data-amount") || "";
-    row.querySelector(".gym-price-edit-count").value = readTr.getAttribute("data-billing-count") || "1";
-    row.querySelector(".gym-price-edit-unit").value = readTr.getAttribute("data-billing-unit") || "month";
+    const countInput = row.querySelector(".gym-price-edit-count");
+    const unitInput = row.querySelector(".gym-price-edit-unit");
+    if (countInput) {
+        countInput.value = readTr.getAttribute("data-billing-count") || "1";
+    }
+    if (unitInput) {
+        unitInput.value = readTr.getAttribute("data-billing-unit") || "month";
+    }
 }
 
 function setGymPricesMode(editMode) {
     const readWrap = document.getElementById("gym-prices-read");
     const editWrap = document.getElementById("gym-prices-edit");
+    const readHeader = document.getElementById("gym-prices-read-header");
+    const editHeader = document.getElementById("gym-prices-edit-header");
     const editBtn = document.getElementById("gym-prices-edit-btn");
     const addBtn = document.getElementById("gym-prices-add-row");
     const actions = document.getElementById("gym-prices-edit-actions");
-    const deleteHead = document.getElementById("gym-prices-delete-head");
     if (readWrap) {
         readWrap.classList.toggle("hidden", editMode);
         readWrap.hidden = editMode;
@@ -373,6 +392,14 @@ function setGymPricesMode(editMode) {
     if (editWrap) {
         editWrap.classList.toggle("hidden", !editMode);
         editWrap.hidden = !editMode;
+    }
+    if (readHeader) {
+        readHeader.classList.toggle("hidden", editMode);
+        readHeader.hidden = editMode;
+    }
+    if (editHeader) {
+        editHeader.classList.toggle("hidden", !editMode);
+        editHeader.hidden = !editMode;
     }
     if (editBtn) {
         editBtn.classList.toggle("hidden", editMode);
@@ -386,47 +413,99 @@ function setGymPricesMode(editMode) {
         actions.classList.toggle("hidden", !editMode);
         actions.hidden = !editMode;
     }
-    if (deleteHead) {
-        deleteHead.classList.toggle("hidden", !editMode);
-        deleteHead.hidden = !editMode;
+}
+
+function switchGymPricesKind(event) {
+    const kind = event.currentTarget.getAttribute("data-kind");
+    if (!kind || kind === gymPricesEditKind) {
+        return;
     }
+    gymPricesEditKind = kind;
+    document.querySelectorAll(".gym-prices-kind-btn").forEach((btn) => {
+        btn.classList.remove("btn-primary");
+        btn.classList.add("btn-outline");
+    });
+    event.currentTarget.classList.remove("btn-outline");
+    event.currentTarget.classList.add("btn-primary");
+    gymPriceKinds.forEach((entry) => {
+        const wrap = document.getElementById(entry.editWrapId);
+        const show = entry.kind === kind;
+        wrap.classList.toggle("hidden", !show);
+        wrap.hidden = !show;
+    });
+    const active = gymPriceKindConfig(kind);
+    syncGymPriceRowMoveButtons(document.getElementById(active.editBodyId));
 }
 
 function readGymPriceEditRows() {
-    const rows = document.querySelectorAll("#gym-prices-edit-body .gym-price-edit-row");
     const plans = [];
-    rows.forEach((row) => {
-        const title = row.querySelector(".gym-price-edit-name").value.trim();
-        const subtitle = row.querySelector(".gym-price-edit-note").value.trim();
-        const amount = row.querySelector(".gym-price-edit-price").value.trim();
-        const billing_count = row.querySelector(".gym-price-edit-count").value.trim() || "1";
-        const billing_unit = row.querySelector(".gym-price-edit-unit").value;
-        if (title === "" && amount === "") {
+    gymPriceKinds.forEach((entry) => {
+        const tbody = document.getElementById(entry.editBodyId);
+        if (!tbody) {
             return;
         }
-        plans.push({ title, subtitle, amount, billing_count, billing_unit });
+        tbody.querySelectorAll(".gym-price-edit-row").forEach((row) => {
+            const title = row.querySelector(".gym-price-edit-name").value.trim();
+            const subtitle = row.querySelector(".gym-price-edit-note").value.trim();
+            const amount = row.querySelector(".gym-price-edit-price").value.trim();
+            if (title === "" && amount === "") {
+                return;
+            }
+            const plan = { title, subtitle, amount, is_membership: entry.isMembership };
+            if (entry.isMembership) {
+                const billing_count = row.querySelector(".gym-price-edit-count").value.trim() || "1";
+                const billing_unit = row.querySelector(".gym-price-edit-unit").value;
+                plan.billing_count = billing_count;
+                plan.billing_unit = billing_unit;
+            }
+            plans.push(plan);
+        });
     });
     return plans;
 }
 
-function enterGymPricesEdit() {
-    const readBody = document.getElementById("gym-prices-table-body");
-    const editBody = document.getElementById("gym-prices-edit-body");
-    editBody.innerHTML = "";
-    readBody.querySelectorAll("tr").forEach((readTr) => {
-        const row = cloneGymPriceEditRow();
-        fillGymPriceEditRow(row, readTr);
-        editBody.appendChild(row);
+function resetGymPricesEditKind() {
+    gymPricesEditKind = "membership";
+    document.querySelectorAll(".gym-prices-kind-btn").forEach((btn) => {
+        const isMember = btn.getAttribute("data-kind") === "membership";
+        btn.classList.toggle("btn-primary", isMember);
+        btn.classList.toggle("btn-outline", !isMember);
     });
-    syncGymPriceRowMoveButtons();
+    gymPriceKinds.forEach((entry) => {
+        const wrap = document.getElementById(entry.editWrapId);
+        const show = entry.kind === "membership";
+        wrap.classList.toggle("hidden", !show);
+        wrap.hidden = !show;
+    });
+}
+
+function enterGymPricesEdit() {
+    gymPriceKinds.forEach((entry) => {
+        const readBody = document.getElementById(entry.readBodyId);
+        const editBody = document.getElementById(entry.editBodyId);
+        editBody.innerHTML = "";
+        if (!readBody) {
+            return;
+        }
+        readBody.querySelectorAll("tr").forEach((readTr) => {
+            const row = cloneGymPriceEditRow(entry.isMembership);
+            fillGymPriceEditRow(row, readTr);
+            editBody.appendChild(row);
+        });
+        syncGymPriceRowMoveButtons(editBody);
+    });
+    resetGymPricesEditKind();
     setGymPricesMode(true);
 }
 
 function cancelGymPricesEdit() {
-    const editBody = document.getElementById("gym-prices-edit-body");
-    if (editBody) {
-        editBody.innerHTML = "";
-    }
+    gymPriceKinds.forEach((entry) => {
+        const editBody = document.getElementById(entry.editBodyId);
+        if (editBody) {
+            editBody.innerHTML = "";
+        }
+    });
+    resetGymPricesEditKind();
     setGymPricesMode(false);
 }
 
@@ -436,7 +515,10 @@ function saveGymPricesEdit(event) {
     sendWsRequest("gyms/update_prices", trigger).then((response) => {
         if (response.json_content?.morphs) {
             for (const morph of response.json_content.morphs) {
-                document.querySelector(morph.target).innerHTML = morph.html;
+                const target = document.querySelector(morph.target);
+                if (target) {
+                    target.innerHTML = morph.html;
+                }
             }
         }
         if (response.status === 200) {
@@ -446,23 +528,25 @@ function saveGymPricesEdit(event) {
 }
 
 function addGymPriceRow() {
-    const editBody = document.getElementById("gym-prices-edit-body");
-    const row = cloneGymPriceEditRow();
-    editBody.appendChild(row);
-    syncGymPriceRowMoveButtons();
+    const entry = gymPriceKindConfig(gymPricesEditKind);
+    const tbody = document.getElementById(entry.editBodyId);
+    const row = cloneGymPriceEditRow(entry.isMembership);
+    tbody.appendChild(row);
+    syncGymPriceRowMoveButtons(tbody);
 }
 
 function removeGymPriceRow(event) {
     const row = event.currentTarget.closest(".gym-price-edit-row");
+    const tbody = row ? row.closest("tbody") : null;
     if (row) {
         row.remove();
-        syncGymPriceRowMoveButtons();
+        syncGymPriceRowMoveButtons(tbody);
     }
 }
 
 function moveGymPriceRow(event) {
     const row = event.currentTarget.closest(".gym-price-edit-row");
-    const tbody = document.getElementById("gym-prices-edit-body");
+    const tbody = row ? row.closest("tbody") : null;
     if (!row || !tbody) {
         return;
     }
@@ -477,11 +561,14 @@ function moveGymPriceRow(event) {
             tbody.insertBefore(next, row);
         }
     }
-    syncGymPriceRowMoveButtons();
+    syncGymPriceRowMoveButtons(tbody);
 }
 
-function syncGymPriceRowMoveButtons() {
-    const rows = document.querySelectorAll("#gym-prices-edit-body .gym-price-edit-row");
+function syncGymPriceRowMoveButtons(tbody) {
+    if (!tbody) {
+        return;
+    }
+    const rows = tbody.querySelectorAll(".gym-price-edit-row");
     rows.forEach((row, index) => {
         const upBtn = row.querySelector(".gym-price-move-up");
         const downBtn = row.querySelector(".gym-price-move-down");

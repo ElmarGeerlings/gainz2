@@ -406,6 +406,28 @@ button:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.segment-toggle {
+    display: flex;
+    gap: 0;
+    flex-shrink: 0;
+    width: fit-content;
+}
+
+.segment-toggle .btn {
+    border-radius: 0;
+    min-height: 32px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+.segment-toggle .btn:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.segment-toggle .btn:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
 .grid-3 {
     display: grid;
     gap: var(--space-2);

@@ -83,20 +83,29 @@ def build_price_plans(gym):
             amount_text = str(int(normalized))
         else:
             amount_text = format(normalized, "f").rstrip("0").rstrip(".")
-        if count == 1:
-            read_period = PERIOD_SINGULAR[unit]
-        else:
-            read_period = f"{count} {PERIOD_PLURAL[unit]}"
+        read_period = ""
+        if row.is_membership and unit:
+            if count == 1:
+                read_period = PERIOD_SINGULAR[unit]
+            else:
+                read_period = f"{count} {PERIOD_PLURAL[unit]}"
         price_plans.append({
             "name": row.title,
             "price": f"€{amount_text}",
             "amount": amount_text,
             "billing_count": count,
             "billing_unit": unit,
+            "is_membership": row.is_membership,
             "read_period": read_period,
             "note": row.subtitle,
         })
     return price_plans
+
+
+def split_price_plans(price_plans):
+    membership_plans = [plan for plan in price_plans if plan["is_membership"]]
+    extra_plans = [plan for plan in price_plans if not plan["is_membership"]]
+    return membership_plans, extra_plans
 
 
 def replace_gym_prices(gym_id, rows):
@@ -111,6 +120,7 @@ def replace_gym_prices(gym_id, rows):
             if title == "" and amount_raw == "":
                 continue
             amount = Decimal(amount_raw.replace(",", "."))
+            is_membership = bool(row.get("is_membership"))
             billing_count = int(row.get("billing_count") or 1)
             billing_unit = row.get("billing_unit") or "month"
             GymPrice.objects.create(
@@ -118,6 +128,7 @@ def replace_gym_prices(gym_id, rows):
                 title=title,
                 subtitle=subtitle,
                 amount=amount,
+                is_membership=is_membership,
                 billing_count=billing_count,
                 billing_unit=billing_unit,
                 sort_order=sort_order,
@@ -131,11 +142,11 @@ def replace_gym_prices(gym_id, rows):
 def refresh_gym_price_headlines(gym):
     day_pass_price = None
     cheapest_monthly = None
-    for row in gym.prices.all():
+    for row in gym.prices.filter(is_membership=True):
         count = row.billing_count
         unit = row.billing_unit
         amount = row.amount
-        is_day_pass = (unit == "day" and count == 1) or (unit == "session" and count == 1)
+        is_day_pass = unit == "day" and count == 1
         if is_day_pass:
             if day_pass_price is None or amount < day_pass_price:
                 day_pass_price = amount
@@ -475,7 +486,7 @@ def update_gym_location(
 
     static_params = {
         "center": f"{lat},{lng}",
-        "zoom": "17",
+        "zoom": "16",
         "size": "640x320",
         "markers": f"color:red|{lat},{lng}",
         "key": api_key,

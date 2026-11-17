@@ -34,6 +34,15 @@ Tokens live in `:root` in `base.css` only. Do not duplicate a utility or compone
 <button type="button" class="btn btn-primary w-100">Save</button>
 ```
 
+**Segment toggle:** `segment-toggle` with `btn btn-sm` children; active segment uses `btn-primary`, inactive `btn-outline` (progress 1RM | Volume, gym prices Member | Other).
+
+```html
+<div class="segment-toggle" role="group">
+  <button type="button" class="btn btn-sm btn-primary">Member</button>
+  <button type="button" class="btn btn-sm btn-outline">Other</button>
+</div>
+```
+
 **Form:** `form-stack` wrapping `label` + `form-control` (no Django Forms)
 
 ```html

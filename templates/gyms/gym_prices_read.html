@@ -1,0 +1,30 @@
+<p class="title-sm m-0 mb-2">Membership</p>
+<div class="table-shell">
+    <table class="table table-compact gym-prices-modal-table">
+        <thead>
+            <tr>
+                <th>Plan</th>
+                <th colspan="2">Price</th>
+            </tr>
+        </thead>
+        <tbody id="gym-prices-membership-body">
+            {% include "gyms/gym_prices_table_body.html" with price_plans=membership_plans %}
+        </tbody>
+    </table>
+</div>
+<div id="gym-prices-other-section" class="{% if not extra_plans %}hidden{% endif %}"{% if not extra_plans %} hidden{% endif %}>
+    <p class="title-sm mt-3 mb-2 m-0">Other</p>
+    <div class="table-shell">
+        <table class="table table-compact gym-prices-modal-table">
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th colspan="2">Price</th>
+                </tr>
+            </thead>
+            <tbody id="gym-prices-other-body">
+                {% include "gyms/gym_prices_table_body.html" with price_plans=extra_plans %}
+            </tbody>
+        </table>
+    </div>
+</div>

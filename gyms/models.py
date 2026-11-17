@@ -74,8 +74,11 @@ class GymPrice(models.Model):
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=200, blank=True)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
+    is_membership = models.BooleanField(default=True)
     billing_count = models.PositiveSmallIntegerField(default=1)
-    billing_unit = models.CharField(max_length=10, choices=BILLING_UNIT_CHOICES, default="month")
+    billing_unit = models.CharField(
+        max_length=10, choices=BILLING_UNIT_CHOICES, default="month", blank=True
+    )
     sort_order = models.IntegerField(default=0)
 
     class Meta:

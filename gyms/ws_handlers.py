@@ -11,6 +11,7 @@ from gyms.services import (
     gym_hours_context,
     gym_rule_rows,
     replace_gym_prices,
+    split_price_plans,
     update_gym_amenities,
     update_gym_description,
     update_gym_contact,
@@ -352,12 +353,13 @@ def handle_update_gym_prices(user, attributes):
     rows = json.loads(attributes["prices"])
     gym = replace_gym_prices(gym_id, rows)
     price_plans = build_price_plans(gym)
+    membership_plans, extra_plans = split_price_plans(price_plans)
     morphs = [
         {
-            "target": "#gym-prices-table-body",
+            "target": "#gym-prices-read",
             "html": render_to_string(
-                "gyms/gym_prices_table_body.html",
-                {"price_plans": price_plans},
+                "gyms/gym_prices_read.html",
+                {"membership_plans": membership_plans, "extra_plans": extra_plans},
             ),
         },
         {
